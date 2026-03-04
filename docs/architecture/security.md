@@ -42,8 +42,8 @@ No code inside the sandbox has any **implicit** permissions. Every interaction w
 │              │                                   │
 │              ▼                                   │
 │   ┌──────────────────────┐                       │
-│   │  Permission Bridge   │──── "May I read       │
-│   │  (inside VM)         │     /data?"           │
+│   │  Permission Bridge   │── File.Read("/data")  │
+│   │  (inside VM)         │                       │
 │   └──────────┬───────────┘         │             │
 └──────────────┼─────────────────────┼─────────────┘
                │                     │
@@ -53,7 +53,7 @@ No code inside the sandbox has any **implicit** permissions. Every interaction w
      │    ┌─────────────────────────────┐    │
      │    │  Policy Engine / User GUI   │    │
      │    │                             │    │
-     │    │  ✓ Allow  /  ✗ Deny         │    │
+     │    │  ✓ Granted  /  ✗ Denied     │    │
      │    └─────────────────────────────┘    │
      └───────────────────────────────────────┘
 ```
@@ -63,23 +63,22 @@ No code inside the sandbox has any **implicit** permissions. Every interaction w
 When the VM encounters a library call tagged as requiring permission (e.g., `File.read`, `Http.get`):
 
 1. **The VM pauses execution** of the current instruction
-2. **Calls `RuntimeContext.requestPermission(action, details)`** with:
-   - `action`: A namespaced permission string (e.g., `"file.read"`, `"http.get"`)
-   - `details`: A context object containing specifics (file path, URL, etc.)
-3. **The Sandbox's coroutine suspends**
-4. **The Host evaluates** the request against its police. For example:
+2. **Constructs a typed `PermissionRequest`.** For example, `PermissionRequest.File.Read("/data/file.txt")`
+3. **Calls `RuntimeContext.requestPermission(request)`** and the Sandbox's coroutine suspends
+4. **The Host pattern-matches** on the request type and evaluates its policy. For example:
    - **Auto-grant policies** for pre-approved operations
    - **User prompts** via GUI for sensitive requests
-   - **Blanket deny** for prohibited operations
-5. **The response flows back** to the Sandbox
+   - **Blanket deny** for prohibited categories
+5. **Returns a typed `PermissionResponse`** and the response flows back to the Sandbox
 6. **The Sandbox inspects the response:**
-   - `GRANTED` -> The operation proceeds
-   - `DENIED` -> A `SecurityException` is thrown inside the sandbox
+   - `Granted`: The operation proceeds (with constraints if provided)
+   - `Denied`: A `SecurityException` is thrown inside the sandbox, carrying the denial `reason`
 
 #### Why This Works
 
 - **Granularity:** Permissions are checked per-operation, not per-program. A program can read one file but be denied another.
-- **Context-Aware:** The Host sees exactly what is being requested (which file, which URL) and can make informed decisions.
+- **Context-Aware:** The Host receives a typed request object with all details (path, URL, etc.) and can make informed decisions.
+- **Constraint-Capable:** The Host can attach typed constraints to a grant (e.g., `FileGrant(maxBytes = 1_048_576)`).
 - **Non-Bypassable:** The permission check lives inside the VM instruction handler. There is no way to call `File.read` without going through the bridge.
 
 ### Pillar 3: Resource Exhaustion Prevention
@@ -143,6 +142,8 @@ Program authors can declare expected permissions in the file header. These are *
 | Arbitrary code execution on host | ✗ Blocked | Custom bytecode VM, no JVM bytecode generation |
 | File system access without permission | ✗ Blocked | Permission Bridge on all `File.*` calls |
 | Network access without permission | ✗ Blocked | Permission Bridge on all `Http.*` calls |
+| Secret/env variable leakage | ✗ Blocked | Permission Bridge on all `Env.*` calls |
+| System fingerprinting via OS properties | ✗ Blocked | `Env.SystemInfo` gated behind Permission Bridge |
 | Infinite loop / CPU exhaustion | ✗ Blocked | Instruction counter watchdog |
 | Memory bomb / OOM | ✗ Blocked | Memory cap watchdog |
 | Stack overflow | ✗ Blocked | Fixed-size call stack |

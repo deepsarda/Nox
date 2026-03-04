@@ -80,7 +80,93 @@ interface RuntimeContext {
     fun returnResult(data: String)
 
     /** Request permission for a sensitive operation (suspends the coroutine) */
-    fun requestPermission(action: String): PermissionResponse
+    suspend fun requestPermission(request: PermissionRequest): PermissionResponse
+}
+```
+
+### PermissionRequest
+
+A sealed class hierarchy representing every type of permission the sandbox can request. The type itself encodes the category and action, and constructor parameters carry typed details:
+
+```kotlin
+sealed class PermissionRequest {
+
+    /** File system operations */
+    sealed class File : PermissionRequest() {
+        data class Read(val path: String) : File()
+        data class Write(val path: String) : File()
+        data class Append(val path: String) : File()
+        data class Delete(val path: String) : File()
+        data class List(val directory: String) : File()
+        data class Metadata(val path: String) : File()         // Size, timestamps, exists
+        data class CreateDirectory(val path: String) : File()
+    }
+
+    /** Network operations */
+    sealed class Http : PermissionRequest() {
+        data class Get(val url: String) : Http()
+        data class Post(val url: String, val contentType: String? = null) : Http()
+        data class Put(val url: String, val contentType: String? = null) : Http()
+        data class Delete(val url: String) : Http()
+    }
+
+    /** Environment and system information */
+    sealed class Env : PermissionRequest() {
+        data class ReadVar(val name: String) : Env()           // e.g. "API_KEY", "HOME"
+        data class SystemInfo(val property: String) : Env()    // e.g. "os.name", "arch"
+    }
+
+    /** Escape hatch for plugin-defined permissions */
+    data class Plugin(
+        val category: String,
+        val action: String,
+        val details: Map<String, Any> = emptyMap()
+    ) : PermissionRequest()
+}
+```
+
+### PermissionResponse
+
+A sealed class hierarchy returned by the Host. Simple hosts can return `Granted.Unconstrained`; sophisticated policy engines can return typed constraints:
+
+```kotlin
+sealed class PermissionResponse {
+
+    sealed class Granted : PermissionResponse() {
+        /** No restrictions, full access approved */
+        object Unconstrained : Granted()
+
+        /** File operation approved with optional limits */
+        data class FileGrant(
+            val maxBytes: Long? = null,
+            val rewrittenPath: String? = null,
+            val allowedDirectories: List<String>? = null,  // e.g. ["/safe/", "/tmp/"]
+            val allowedExtensions: List<String>? = null,   // e.g. [".json", ".txt"]
+            val readOnly: Boolean = false                   // Write/Delete/Append is denied
+        ) : Granted()
+
+        /** HTTP operation approved with optional limits */
+        data class HttpGrant(
+            val maxResponseSize: Long? = null,
+            val timeoutMs: Long? = null,
+            val allowedDomains: List<String>? = null,      // e.g. ["api.example.com"]
+            val allowedPorts: List<Int>? = null,           // e.g. [443]
+            val httpsOnly: Boolean = false
+        ) : Granted()
+
+        /** Env operation approved with optional limits */
+        data class EnvGrant(
+            val allowedVarNames: List<String>? = null      // Restrict which vars are readable
+        ) : Granted()
+
+        /** Plugin-defined constraints */
+        data class PluginGrant(
+            val values: Map<String, Any> = emptyMap()
+        ) : Granted()
+    }
+
+    /** Permission denied with optional reason */
+    data class Denied(val reason: String? = null) : PermissionResponse()
 }
 ```
 
@@ -103,17 +189,17 @@ Sends an intermediate result to the Host. The Sandbox continues executing.
 
 Sends the final result and terminates the Sandbox. The Host receives the value and cleans up the Sandbox's resources.
 
-#### `requestPermission(action)` -- Capability Request
+#### `requestPermission(request)` -- Capability Request
 
 A **suspending** call. The Sandbox's coroutine suspends (at near-zero cost) while the Host makes a decision.
 
 **Flow:**
 1. Sandbox encounters a restricted operation (e.g., `File.read("path")`)
-2. The VM calls `context.requestPermission("file.read", {path: "/data/file.txt"})`
+2. The VM constructs `PermissionRequest.File.Read("/data/file.txt")` and calls `context.requestPermission(request)`
 3. The coroutine **suspends** so no OS resources are consumed
-4. The Host evaluates the request (auto-policy, user prompt, etc.)
-5. Returns `PermissionResponse` (granted/denied + optional constraints)
-6. Sandbox unblocks, inspects the response, proceeds or throws `SecurityException`
+4. The Host pattern-matches on the request type and evaluates its policy
+5. Returns a typed `PermissionResponse` (`Granted` with optional constraints, or `Denied` with reason)
+6. Sandbox inspects the response, proceeds or throws `SecurityException`
  
 ## Execution Lifecycle
 
@@ -130,9 +216,9 @@ The complete lifecycle of a `.nox` execution:
     │◀── yield("progress...") ─────────────────│
     │   (Host prints / buffers / streams)      │── Continue executing...
     │                                          │
-    │◀── requestPermission("file.read") ───────│
-    │   (Host evaluates policy)                │   (Coroutine suspended)
-    │── GRANTED ──────────────────────────────▶│
+    │◀── requestPermission(File.Read(path)) ───│
+    │   (Host pattern-matches request)         │   (Coroutine suspended)
+    │── Granted.Unconstrained ─────────────────▶│
     │                                          │── Resume execution...
     │                                          │
     │◀── returnResult("done") ─────────────────│
@@ -179,9 +265,32 @@ runtime.registerModule(MathExtension::class)
 runtime.registerModule(GameAPI::class)
 
 // 3. Set permission policy
-runtime.setPermissionHandler { action, _ ->
-    if (action.startsWith("file.")) PermissionResponse.DENIED
-    else PermissionResponse.GRANTED
+runtime.setPermissionHandler { request ->
+    when (request) {
+        is PermissionRequest.File.Read ->
+            PermissionResponse.Granted.FileGrant(
+                allowedDirectories = listOf("/data/"),
+                allowedExtensions = listOf(".json", ".txt"),
+                maxBytes = 1_048_576
+            )
+        is PermissionRequest.File ->
+            PermissionResponse.Denied("Only File.Read is permitted")
+
+        is PermissionRequest.Http.Get ->
+            PermissionResponse.Granted.HttpGrant(
+                allowedDomains = listOf("api.example.com"),
+                httpsOnly = true,
+                maxResponseSize = 10_000_000
+            )
+        is PermissionRequest.Http ->
+            PermissionResponse.Denied("Only GET requests are permitted")
+
+        is PermissionRequest.Env ->
+            PermissionResponse.Denied("Environment access disabled")
+
+        is PermissionRequest.Plugin ->
+            PermissionResponse.Denied()
+    }
 }
 
 // 4. Execute a script

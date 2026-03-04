@@ -17,17 +17,24 @@ The **Library Registry** defines every available function, its namespace, parame
 |---|---|---|
 | `File.read` | `string File.read(string path)` | Read the entire contents of a file as a string |
 | `File.write` | `void File.write(string path, string content)` | Write content to a file (creates or overwrites) |
-| `File.exists` | `boolean File.exists(string path)` | Check if a file exists at the given path |
+| `File.append` | `void File.append(string path, string content)` | Append content to an existing file |
+| `File.delete` | `void File.delete(string path)` | Delete a file |
+| `File.exists` | `boolean File.exists(string path)` | Check whether a path exists |
+| `File.list` | `string[] File.list(string dir)` | List entries in a directory |
+| `File.metadata` | `json File.metadata(string path)` | Get size, timestamps, and type for a path |
+| `File.createDir` | `void File.createDir(string path)` | Create a directory (and parents) |
 
 #### Example
 
 ```c
-if (File.exists("/data/config.json")) {
-    string content = File.read("/data/config.json");
-    yield `Config loaded: ${content.length} bytes`;
+string[] entries = File.list("/data/");
+foreach (string name in entries) {
+    json meta = File.metadata(`/data/${name}`);
+    yield `${name}: ${meta.getInt("size", 0)} bytes`;
 }
 
-File.write("/output/result.txt", "Processing complete.");
+string content = File.read("/data/config.json");
+File.append("/output/log.txt", `Loaded config at ${Date.now()}\n`);
 ```
 
 #### Permission Flow
@@ -36,11 +43,21 @@ File.write("/output/result.txt", "Processing complete.");
 Script: File.read("/data/secret.txt")
    │
    ▼
-VM: requestPermission("file.read", { path: "/data/secret.txt" })
+VM: requestPermission(PermissionRequest.File.Read("/data/secret.txt"))
    │
    ▼
-Host: Evaluate policy -> Allow / Deny / Prompt user
+Host: Pattern-match on request type -> FileGrant(allowedDirectories, allowedExtensions, ...) / Denied
 ```
+
+#### Grant Constraints (`FileGrant`)
+
+| Constraint | Type | Effect |
+|---|---|---|
+| `maxBytes` | `Long?` | Maximum file size the operation may read/write |
+| `rewrittenPath` | `String?` | Redirect the path to a safe location |
+| `allowedDirectories` | `List<String>?` | Restrict access to specific directories |
+| `allowedExtensions` | `List<String>?` | Restrict to specific file extensions |
+| `readOnly` | `Boolean` | Deny any write/append/delete attempt |
  
 ### `Http` -- Network Operations
 
@@ -49,17 +66,59 @@ Host: Evaluate policy -> Allow / Deny / Prompt user
 | Function | Signature | Description |
 |---|---|---|
 | `Http.get` | `string Http.get(string url)` | Perform an HTTP GET, return response body as string |
-| `Http.post` | `string Http.post(string url, string body)` | Perform an HTTP POST, return response body |
 | `Http.getJson` | `json Http.getJson(string url)` | GET and parse response as JSON |
+| `Http.post` | `string Http.post(string url, string body)` | Perform an HTTP POST, return response body |
+| `Http.put` | `string Http.put(string url, string body)` | Perform an HTTP PUT, return response body |
+| `Http.delete` | `string Http.delete(string url)` | Perform an HTTP DELETE, return response body |
 
 #### Example
 
 ```c
 json data = Http.getJson("https://api.example.com/users");
-string[] keys = data.keys();
-yield `Received ${keys.length} fields`;
+yield `Received ${data.size()} users`;
+
+string result = Http.put("https://api.example.com/users/42", `{"name": "Alice"}`);
 ```
+
+#### Grant Constraints (`HttpGrant`)
+
+| Constraint | Type | Effect |
+|---|---|---|
+| `maxResponseSize` | `Long?` | Maximum response body size in bytes |
+| `timeoutMs` | `Long?` | Maximum time to wait for a response |
+| `allowedDomains` | `List<String>?` | Restrict requests to specific domains |
+| `allowedPorts` | `List<Int>?` | Restrict to specific ports (e.g. `[443]`) |
+| `httpsOnly` | `Boolean` | Deny any plain HTTP request |
  
+### `Env` -- Environment Access
+
+> **All `Env` operations trigger the Permission Bridge.** Environment variables can carry secrets; system properties can be used for fingerprinting.
+
+| Function | Signature | Description |
+|---|---|---|
+| `Env.get` | `string? Env.get(string name)` | Read an environment variable (returns `null` if not set) |
+| `Env.system` | `string? Env.system(string property)` | Read a system property (e.g. `"os.name"`, `"os.arch"`) |
+
+#### Example
+
+```c
+string? apiKey = Env.get("API_KEY");
+if (apiKey == null) {
+    return "Missing API_KEY environment variable";
+}
+
+string os = Env.system("os.name");
+yield `Running on ${os}`;
+```
+
+#### Grant Constraints (`EnvGrant`)
+
+| Constraint | Type | Effect |
+|---|---|---|
+| `allowedVarNames` | `List<String>?` | Restrict which variable/property names are readable |
+
+---
+
 ### `Math` -- Mathematical Operations
 
 > **No permissions required.** All `Math` functions are pure computations.
@@ -188,13 +247,14 @@ for (int i = 0; i < rows.size(); i++) {
  
 ## Permission Summary
 
-| Namespace | Requires Permission | Permission String |
+| Namespace | Requires Permission | Request Type |
 |---|---|---|
-| `File.*` | Yes | `file.read`, `file.write` |
-| `Http.*` | Yes | `http.get`, `http.post` |
-| `Math.*` | No | - |
-| `Date.*` | No | - |
-| Built-in methods | No | - |
+| `File.*` | Yes | `PermissionRequest.File.*` |
+| `Http.*` | Yes | `PermissionRequest.Http.*` |
+| `Env.*` | Yes | `PermissionRequest.Env.*` |
+| `Math.*` | No | — |
+| `Date.*` | No | — |
+| Built-in methods | No | — |
  
 ## Type-Bound Conversion Methods
 

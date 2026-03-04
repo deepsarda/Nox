@@ -111,10 +111,17 @@ object SecureIO {
     @NoxFunction(name = "log")
     @JvmStatic
     fun log(ctx: RuntimeContext, message: String) {
-        if (ctx.requestPermission("log.write")) {
-            println("[Nox] $message")
-        } else {
-            throw SecurityException("Permission denied: log.write")
+        val response = ctx.requestPermission(
+            PermissionRequest.Plugin(
+                category = "log",
+                action = "write",
+                details = mapOf("message" to message)
+            )
+        )
+        when (response) {
+            is PermissionResponse.Granted -> println("[Nox] $message")
+            is PermissionResponse.Denied ->
+                throw SecurityException("Permission denied: log.write. ${response.reason}")
         }
     }
 

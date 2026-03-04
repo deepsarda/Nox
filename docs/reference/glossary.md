@@ -141,10 +141,16 @@ A Host-provided callback that receives `yield` and `return` output from scripts.
 ## P
 
 **Permission Bridge**
-The protocol by which the VM pauses to request permission from the Host before executing sensitive operations (file I/O, network access). See [Security Model](../architecture/security.md).
+The protocol by which the VM pauses to request permission from the Host before executing sensitive operations (file I/O, network access). Constructs a typed `PermissionRequest` and suspends the coroutine until the Host returns a `PermissionResponse`. See [Security Model](../architecture/security.md).
 
 **Permission Handler**
-A Host-provided policy that decides whether to grant or deny capability requests from scripts. Implementations range from interactive CLI prompts to automated policy engines. See [Architecture Overview](../architecture/overview.md).
+A Host-provided policy that pattern-matches on `PermissionRequest` types to decide whether to grant or deny capability requests from scripts. Can return typed constraints via `PermissionResponse.Granted` subclasses. See [Architecture Overview](../architecture/overview.md).
+
+**PermissionRequest**
+A sealed class hierarchy representing every type of permission the sandbox can request. File variants: `File.Read`, `File.Write`, `File.Append`, `File.Delete`, `File.List`, `File.Metadata`, `File.CreateDirectory`. Http variants: `Http.Get`, `Http.Post`, `Http.Put`, `Http.Delete`. Env variants: `Env.ReadVar`, `Env.SystemInfo`. The `Plugin(category, action, details)` variant is an escape hatch for plugin-defined permissions. See [Architecture Overview](../architecture/overview.md).
+
+**PermissionResponse**
+A sealed class hierarchy returned by the Host in response to a `PermissionRequest`. `Granted` subclasses carry typed constraints: `FileGrant` (maxBytes, allowedDirectories, allowedExtensions, readOnly), `HttpGrant` (allowedDomains, allowedPorts, httpsOnly, timeoutMs), `EnvGrant` (allowedVarNames), `PluginGrant` (values), and `Unconstrained`. `Denied(reason)` carries an optional human-readable denial reason. See [Architecture Overview](../architecture/overview.md).
 
 **pMem (Primitive Memory)**
 The `long[]` array that stores primitive values (int, double, boolean). Part of the dual-bank register file.
@@ -158,7 +164,7 @@ The compiler process of mapping variable names to integer register indices. Uses
 The `Object[]` array that stores reference types (String, NoxObject, arrays). Part of the dual-bank register file.
 
 **RuntimeContext**
-The interface bridging Sandboxes to the Host. Provides `yield()`, `returnResult()`, and `requestPermission()`. See [Architecture Overview](../architecture/overview.md).
+The interface bridging Sandboxes to the Host. Provides `yield()`, `returnResult()`, and `requestPermission(PermissionRequest)`. See [Architecture Overview](../architecture/overview.md).
 
 ## S
 
