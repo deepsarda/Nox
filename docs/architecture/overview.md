@@ -18,7 +18,7 @@ Nox is divided into two primary layers that **never share mutable state**:
 │  │                   Sandbox Manager                       │ │
 │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐               │ │
 │  │  │Sandbox 1 │  │Sandbox 2 │  │Sandbox N │               │ │
-│  │  │(VThread) │  │(VThread) │  │(VThread) │               │ │
+│  │  │(Coroutn) │  │(Coroutn) │  │(Coroutn) │               │ │
 │  │  └──────────┘  └──────────┘  └──────────┘               │ │
 │  └─────────────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────────┘
@@ -63,17 +63,10 @@ The Sandbox is an **ephemeral, isolated execution environment** created to run e
 |---|---|
 | **Isolation** | No direct access to the file system, network, system clock, or any host resource. All capabilities are proxied through the `RuntimeContext`. |
 | **Single-Use** | One Sandbox per execution request. No state carries over between invocations. |
-| **Lightweight** | Built on JVM Virtual Threads (Project Loom). An application can run thousands of Sandboxes concurrently with minimal OS overhead. |
+| **Lightweight** | Built on Kotlin Coroutines. An application can run thousands of Sandboxes concurrently with minimal OS overhead. |
 | **Role** | Hosts the VM execution loop that runs the compiled bytecode of a `.nox` script. |
 
-### Why Virtual Threads?
 
-Virtual Threads (Project Loom) are the ideal fit for Nox Sandboxes:
-
-- **Cheap blocking:** When a Sandbox calls `requestPermission()`, its Virtual Thread **parks** without consuming an OS thread. This makes synchronous permission checks essentially free.
-- **Massive concurrency:** The JVM can manage millions of Virtual Threads, allowing applications to run thousands of sandboxed scripts simultaneously.
-- **Simple programming model:** Sandboxes can use straightforward blocking code without callback complexity.
- 
 ## The RuntimeContext: The Air Gap Bridge
 
 The only communication channel between a Sandbox and its Host is the `RuntimeContext` interface. This is a direct Kotlin interface: no queues, no serialization, no network calls.
@@ -86,7 +79,7 @@ interface RuntimeContext {
     /** Send final result and terminate the Sandbox */
     fun returnResult(data: String)
 
-    /** Request permission for a sensitive operation (blocks the Virtual Thread) */
+    /** Request permission for a sensitive operation (suspends the coroutine) */
     fun requestPermission(action: String): PermissionResponse
 }
 ```
@@ -112,12 +105,12 @@ Sends the final result and terminates the Sandbox. The Host receives the value a
 
 #### `requestPermission(action)` -- Capability Request
 
-A **synchronous, blocking** call. The Sandbox's Virtual Thread parks (at near-zero cost) while the Host makes a decision.
+A **suspending** call. The Sandbox's coroutine suspends (at near-zero cost) while the Host makes a decision.
 
 **Flow:**
 1. Sandbox encounters a restricted operation (e.g., `File.read("path")`)
 2. The VM calls `context.requestPermission("file.read", {path: "/data/file.txt"})`
-3. The Virtual Thread **blocks** so no OS resources are consumed
+3. The coroutine **suspends** so no OS resources are consumed
 4. The Host evaluates the request (auto-policy, user prompt, etc.)
 5. Returns `PermissionResponse` (granted/denied + optional constraints)
 6. Sandbox unblocks, inspects the response, proceeds or throws `SecurityException`
@@ -127,7 +120,7 @@ A **synchronous, blocking** call. The Sandbox's Virtual Thread parks (at near-ze
 The complete lifecycle of a `.nox` execution:
 
 ```
-  Host                                    Sandbox (VThread)
+  Host                                    Sandbox (Coroutine)
     │                                          │
     │── Create Sandbox ───────────────────────▶│
     │                                          │── Compile .nox
@@ -138,12 +131,12 @@ The complete lifecycle of a `.nox` execution:
     │   (Host prints / buffers / streams)      │── Continue executing...
     │                                          │
     │◀── requestPermission("file.read") ───────│
-    │   (Host evaluates policy)                │   (VThread parked)
+    │   (Host evaluates policy)                │   (Coroutine suspended)
     │── GRANTED ──────────────────────────────▶│
     │                                          │── Resume execution...
     │                                          │
     │◀── returnResult("done") ─────────────────│
-    │                                          ╳ (Thread terminates)
+    │                                          ╳ (Coroutine completes)
     │── Cleanup ──▶ (GC)                      
 ```
  

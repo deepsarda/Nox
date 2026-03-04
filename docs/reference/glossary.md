@@ -79,6 +79,9 @@ A watchdog that increments on every VM loop iteration. Terminates execution if t
 **KILL_REF**
 An instruction emitted by the compiler at scope exits to null out reference registers, enabling garbage collection of objects that are no longer needed.
 
+**Kotlin Coroutine**
+A lightweight concurrency primitive managed by the Kotlin runtime. Sandboxes run on coroutines, enabling thousands of concurrent executions. Suspending a coroutine (e.g., during `requestPermission()`) does not consume OS threads.
+
 ## L
 
 **Landing Zone**
@@ -160,7 +163,7 @@ The interface bridging Sandboxes to the Host. Provides `yield()`, `returnResult(
 ## S
 
 **Sandbox**
-An ephemeral, isolated execution environment created to run one `.nox` program. Runs on a Virtual Thread. Has no direct access to host resources; all capabilities are proxied through the `RuntimeContext`. See [Architecture Overview](../architecture/overview.md).
+An ephemeral, isolated execution environment created to run one `.nox` program. Runs on a Kotlin Coroutine. Has no direct access to host resources; all capabilities are proxied through the `RuntimeContext`. See [Architecture Overview](../architecture/overview.md).
 
 **SCALL (System Call)**
 The VM opcode for calling linked plugin functions via the FFI. Dispatches to a `NoxNativeFunc` by function ID.
@@ -186,11 +189,6 @@ An annotation used to register a Kotlin method as a type-bound method in NSL. Sp
 
 **UFCS (Unified Function Call Syntax)**
 A syntactic feature where `variable.method(args)` is equivalent to `method(variable, args)`. Provides method-call ergonomics without requiring classes. See [Functions](../language/functions.md).
-
-## V
-
-**Virtual Thread**
-A lightweight thread managed by the JVM (Project Loom). Sandboxes run on Virtual Threads, enabling thousands of concurrent executions. Blocking a Virtual Thread (e.g., during `requestPermission()`) does not consume OS resources.
 
 ## W
 

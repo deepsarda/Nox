@@ -66,7 +66,7 @@ When the VM encounters a library call tagged as requiring permission (e.g., `Fil
 2. **Calls `RuntimeContext.requestPermission(action, details)`** with:
    - `action`: A namespaced permission string (e.g., `"file.read"`, `"http.get"`)
    - `details`: A context object containing specifics (file path, URL, etc.)
-3. **The Sandbox's Virtual Thread blocks**
+3. **The Sandbox's coroutine suspends**
 4. **The Host evaluates** the request against its police. For example:
    - **Auto-grant policies** for pre-approved operations
    - **User prompts** via GUI for sensitive requests
@@ -120,7 +120,7 @@ Layer 4: Resource Watchdogs (Runtime)
   │
   ▼
 Layer 5: Sandbox Isolation (Architecture)
-     Sandboxes are single-use Virtual Threads.
+     Sandboxes are single-use coroutines.
      No state persists between invocations.
      Failure in one Sandbox cannot affect others.
 ```

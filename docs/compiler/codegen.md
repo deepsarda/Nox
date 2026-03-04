@@ -521,7 +521,7 @@ double root = Math.sqrt(144);
     SCALL dest_reg, funcId, arg_reg
 ```
 
-`SCALL` invokes the linked `NoxNativeFunc` directly via `MethodHandle`. No frame push, the Kotlin function runs on the same Virtual Thread.
+`SCALL` invokes the linked `NoxNativeFunc` directly via `MethodHandle`. No frame push, the Kotlin function runs on the same coroutine.
 
 ### Method Call (Resolution-Dependent)
 

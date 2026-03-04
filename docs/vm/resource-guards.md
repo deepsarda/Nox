@@ -66,7 +66,7 @@ Each `yield` counts as an instruction. The loop condition check counts. The jump
 Scripts that are stuck waiting (e.g., on a slow network call), or scripts that circumvent the instruction counter through long-running system calls.
 
 ### Mechanism
-The Host tracks the wall-clock time of each Sandbox Virtual Thread. If a Sandbox exceeds the maximum duration, the Host forcibly terminates it.
+The Host tracks the wall-clock time of each Sandbox coroutine. If a Sandbox exceeds the maximum duration, the Host cancels it.
 
 ```
 Host:
@@ -167,7 +167,7 @@ The JVM's default thread stack size (typically 512KB–1MB) would also catch inf
 
 1. A `StackOverflowError` in the JVM is **unrecoverable** and can corrupt internal state
 2. The error message would reference JVM internals, not NSL source code
-3. Virtual Threads have configurable but limited stack space
+3. Coroutines rely on heap-allocated continuation frames, but unchecked recursion still risks excessive memory use
 4. We want to throw a **Nox exception** with proper source mapping, not a JVM error
  
 ## Guard 5: Register File Limits
