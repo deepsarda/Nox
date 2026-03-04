@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.ktlint)
     antlr
 }
 
@@ -31,7 +32,7 @@ dependencies {
     // Kotlin coroutines: used for lightweight Sandbox execution (each Sandbox is a coroutine)
     implementation(libs.coroutines.core)
 
-    // kotest-runner 
+    // kotest-runner
     testImplementation(libs.kotest.runner)
     testImplementation(libs.kotest.assertions)
     testImplementation(libs.coroutines.test)
@@ -50,19 +51,23 @@ dependencies {
  *    -no-listener  →  skip listener boilerplate (we use visitors in the ASTBuilder)
  *    -package      →  put generated classes in the nox.parser package
  */
-val antlrOutputDir = layout.buildDirectory
-    .dir("generated-src/antlr/main")
-    .get().asFile
+val antlrOutputDir =
+    layout.buildDirectory
+        .dir("generated-src/antlr/main")
+        .get()
+        .asFile
 
 tasks.generateGrammarSource {
     outputDirectory = antlrOutputDir
-    arguments = arguments + listOf(
-        "-visitor",
-        "-no-listener",
-        "-package", "nox.parser",
-        "-Werror",         // Grammar warnings are errors
-        "-Xlog",           // Verbose grammar diagnostics
-    )
+    arguments = arguments +
+        listOf(
+            "-visitor",
+            "-no-listener",
+            "-package",
+            "nox.parser",
+            "-Werror", // Grammar warnings are errors
+            "-Xlog", // Verbose grammar diagnostics
+        )
 }
 
 // Make sure ANTLR runs before Kotlin compiles
@@ -97,4 +102,13 @@ tasks.test {
     }
     // Enable virtual threads for coroutine tests (JVM 21+)
     jvmArgs("-XX:+EnableDynamicAgentLoading")
+}
+
+// ktlint, exclude ANTLR-generated Java (not our code)
+ktlint {
+    version.set("1.5.0")
+    filter {
+        exclude { entry -> entry.file.path.contains("generated-src") }
+        exclude { entry -> entry.file.path.contains("antlr4") }
+    }
 }
