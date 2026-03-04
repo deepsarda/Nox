@@ -28,3 +28,5 @@ out/
 # Logs
 *.log
 logs/
+
+PLAN.md
