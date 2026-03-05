@@ -100,7 +100,7 @@ import "path/to/file.nox" as namespace;
 | **Placement** | After headers, before type definitions and functions |
 | **Path** | Relative to the importing file's directory |
 | **Namespace** | Explicitly chosen by the developer; must be a valid identifier |
-| **Collision** | Namespace must not clash with built-in namespaces (Math, File, Http, etc.) or native plugin namespaces |
+| **Collision** | Namespace must not clash with built-in namespaces (Math, File, Http, etc.) or external plugin namespaces |
 | **Duplicates** | Two imports cannot use the same namespace name |
 | **Cycles** | Circular imports are a compile-time error |
 

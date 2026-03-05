@@ -9,7 +9,7 @@ Nox uses a **3-tier plugin architecture** that provides multiple ways to extend 
 | Tier | Name | How It Works | Distribution | Performance |
 |---|---|---|---|---|
 | **Tier 0** | Built-in | Compiled into the binary (Kotlin annotations) | Part of the runtime | Fastest (inlined) |
-| **Tier 1** | Native Plugin | Loaded via C ABI (`dlopen` / `LoadLibrary`) | `.so` / `.dylib` / `.dll` | Near-native |
+| **Tier 1** | External Plugin | Loaded via C ABI (`dlopen` / `LoadLibrary`) | `.so` / `.dylib` / `.dll` | Near-native |
 | **Tier 2** | Script Import | Loaded as Nox source (`import "file.nox" as ns`) | `.nox` files | Interpreted |
  
 ## Tier 0: Built-in Functions
@@ -247,11 +247,11 @@ object TextUtils {
 }
 ```
  
-## Tier 1: Native Plugins (C ABI)
+## Tier 1: External Plugins (C ABI)
 
 ### Overview
 
-When running as a **GraalVM Native Image binary**, Tier 0 annotation scanning is unavailable. Tier 1 plugins are shared libraries (`.so`, `.dylib`, `.dll`) loaded at runtime via `dlopen` / `LoadLibrary` and called through a C ABI bridge.
+When running as a **GraalVM Native Image binary**, Tier 0 annotation scanning is unavailable. Tier 1 (external) plugins are shared libraries (`.so`, `.dylib`, `.dll`) loaded at runtime via `dlopen` / `LoadLibrary` and called through a C ABI bridge.
 
 ### Plugin Contract
 
@@ -313,7 +313,7 @@ $ nox run --plugin ./plugins/libmath_ext.so script.nox
 
 ### JVM vs Native Mode
 
-| Feature | JVM Mode (Tier 0) | Native Mode (Tier 1) |
+| Feature | JVM Mode (Tier 0) | External Plugin Mode (Tier 1) |
 |---|---|---|
 | Discovery | Classpath scanning | `dlopen` + symbol lookup |
 | Call overhead | Inlined by JIT | C ABI call (~5ns) |
@@ -341,7 +341,7 @@ main(double x, double y) {
 import "path/to/file.nox" as namespace;
 ```
 
-The namespace is **mandatory** and must be explicitly chosen by the developer. It must not clash with Tier 0 built-in namespaces (Math, File, Http, etc.) or Tier 1 native plugin namespaces.
+The namespace is **mandatory** and must be explicitly chosen by the developer. It must not clash with Tier 0 built-in namespaces (Math, File, Http, etc.) or Tier 1 external plugin namespaces.
 
 ### What Gets Imported
 

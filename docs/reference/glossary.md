@@ -66,7 +66,7 @@ A super-instruction that calls a method on a host-managed type (strings, arrays,
 ## I
 
 **`import` (keyword)**
-A declaration that loads functions and types from another `.nox` file into a user-chosen namespace. Syntax: `import "path.nox" as namespace;`. Paths are resolved relative to the importing file's directory. The namespace must not clash with built-in (Tier 0) or native plugin (Tier 1) namespaces. See [Plugin Guide, Tier 2](../extensibility/plugin-guide.md) and [File Format, Import Declarations](../reference/file-format.md#import-declarations).
+A declaration that loads functions and types from another `.nox` file into a user-chosen namespace. Syntax: `import "path.nox" as namespace;`. Paths are resolved relative to the importing file's directory. The namespace must not clash with built-in (Tier 0) or external plugin (Tier 1) namespaces. See [Plugin Guide, Tier 2](../extensibility/plugin-guide.md) and [File Format, Import Declarations](../reference/file-format.md#import-declarations).
 
 **ImportDecl**
 An AST node representing an `import` statement. Holds the raw path, user-chosen namespace, and resolved absolute path (set during import resolution).

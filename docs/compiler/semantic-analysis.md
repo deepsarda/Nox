@@ -95,15 +95,15 @@ class ImportResolver(
 // Built-in namespaces (Tier 0), always reserved
 val builtinNamespaces = setOf("Math", "File", "Http", "Date", "Json") // Auto populated from built-in plugins
 
-// Tier 1 native plugin namespaces, registered at runtime startup
-val nativePluginNamespaces: Set<String>   // From loaded .so/.dylib plugins
+// Tier 1 external plugin namespaces, registered at runtime startup
+val externalPluginNamespaces: Set<String>   // From loaded plugins (.so/.dylib or manual registration)
 
 fun validateNamespace(name: String, loc: SourceLocation) {
     when {
         name in builtinNamespaces ->
             error(loc, "Import namespace '$name' clashes with built-in namespace")
-        name in nativePluginNamespaces ->
-            error(loc, "Import namespace '$name' clashes with native plugin namespace")
+        name in externalPluginNamespaces ->
+            error(loc, "Import namespace '$name' clashes with external plugin namespace")
         name in importedNamespaces ->
             error(loc, "Duplicate import namespace '$name'")
     }
