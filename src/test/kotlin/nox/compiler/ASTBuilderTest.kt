@@ -879,4 +879,23 @@ class ASTBuilderTest :
             errors.hasErrors() shouldBe true
             (errors.count >= 2) shouldBe true
         }
+
+        test("empty struct produces parse error but TypeDef survives via ANTLR recovery") {
+            val errors = CompilerErrors()
+            val prog =
+                NoxParsing.parse(
+                    """
+                    type Empty { }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                    "err.nox",
+                    errors,
+                )
+
+            errors.hasErrors() shouldBe true
+            // ANTLR error recovery still produces a TypeDef node with empty fields.
+            // DeclarationCollector rejects it with a semantic error.
+            prog.typesByName["Empty"].shouldNotBeNull()
+            prog.typesByName["Empty"]!!.fields shouldHaveSize 0
+        }
     })
