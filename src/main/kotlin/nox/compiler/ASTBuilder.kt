@@ -322,7 +322,7 @@ class ASTBuilder(
                         ctx.MINUS() != null -> UnaryOp.NEG
                         ctx.BANG() != null -> UnaryOp.NOT
                         ctx.TILDE() != null -> UnaryOp.BIT_NOT
-                        else -> null
+                        else -> null //DEFENSIVE: Unreachable defensive guard
                     }
                 if (op == null) {
                     ErrorExpr(locOf(ctx))
@@ -374,7 +374,7 @@ class ASTBuilder(
                         TemplatePart.Text(resolveTemplateEscapes(part.TEMPLATE_TEXT().text))
                     is NoxParser.TemplateExprPartContext ->
                         TemplatePart.Interpolation(visitExpression(part.expression()))
-                    else -> TemplatePart.ErrorPart
+                    else -> TemplatePart.ErrorPart //DEFENSIVE: Unreachable defensive guard
                 }
             }
         return TemplateLiteralExpr(parts, locOf(ctx))
@@ -418,20 +418,20 @@ class ASTBuilder(
                     ctx.STAR() != null -> BinaryOp.MUL
                     ctx.SLASH() != null -> BinaryOp.DIV
                     ctx.PERCENT() != null -> BinaryOp.MOD
-                    else -> null
+                    else -> null //DEFENSIVE: Unreachable defensive guard
                 }
             is NoxParser.AddSubExprContext ->
                 when {
                     ctx.PLUS() != null -> BinaryOp.ADD
                     ctx.MINUS() != null -> BinaryOp.SUB
-                    else -> null
+                    else -> null //DEFENSIVE: Unreachable defensive guard
                 }
             is NoxParser.ShiftExprContext ->
                 when {
                     ctx.SHL() != null -> BinaryOp.SHL
                     ctx.SHR() != null -> BinaryOp.SHR
                     ctx.USHR() != null -> BinaryOp.USHR
-                    else -> null
+                    else -> null //DEFENSIVE: Unreachable defensive guard
                 }
             is NoxParser.CompareExprContext ->
                 when {
@@ -439,20 +439,20 @@ class ASTBuilder(
                     ctx.LE() != null -> BinaryOp.LE
                     ctx.GT() != null -> BinaryOp.GT
                     ctx.GE() != null -> BinaryOp.GE
-                    else -> null
+                    else -> null //DEFENSIVE: Unreachable defensive guard
                 }
             is NoxParser.EqualityExprContext ->
                 when {
                     ctx.EQ() != null -> BinaryOp.EQ
                     ctx.NE() != null -> BinaryOp.NE
-                    else -> null
+                    else -> null //DEFENSIVE: Unreachable defensive guard
                 }
             is NoxParser.BitAndExprContext -> BinaryOp.BIT_AND
             is NoxParser.BitXorExprContext -> BinaryOp.BIT_XOR
             is NoxParser.BitOrExprContext -> BinaryOp.BIT_OR
             is NoxParser.LogicAndExprContext -> BinaryOp.AND
             is NoxParser.LogicOrExprContext -> BinaryOp.OR
-            else -> null
+            else -> null //DEFENSIVE: Unreachable defensive guard
         }
 
     // Map assignment operators
@@ -464,7 +464,7 @@ class ASTBuilder(
             ctx.STAR_ASSIGN() != null -> AssignOp.MUL_ASSIGN
             ctx.SLASH_ASSIGN() != null -> AssignOp.DIV_ASSIGN
             ctx.PERCENT_ASSIGN() != null -> AssignOp.MOD_ASSIGN
-            else -> null
+            else -> null //DEFENSIVE: Unreachable defensive guard
         }
 
     // Source location extraction

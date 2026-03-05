@@ -803,21 +803,80 @@ class ASTBuilderTest :
             prog.main.shouldNotBeNull()
         }
 
-        // Parsing Errors
+        // Error Recovery
 
-        test("syntax errors are reported to CompilerErrors") {
+        test("syntax error in expression reports error and produces partial AST") {
             val errors = CompilerErrors()
-            NoxParsing.parse("main() { int x = }", "err.nox", errors)
+            val prog = NoxParsing.parse("main() { int x = ; return \"ok\"; }", "err.nox", errors)
 
             errors.hasErrors() shouldBe true
-            errors.count shouldBe 1
-            errors.all()[0].message.contains("Syntax Error") shouldBe true
+            errors.all().any { it.message.contains("Syntax Error") } shouldBe true
+            // The main function should still be parsed
+            prog.main.shouldNotBeNull()
         }
 
-        test("lexical errors are reported to CompilerErrors") {
+        test("lexical error reports error via CompilerErrors") {
             val errors = CompilerErrors()
             NoxParsing.parse("main() { @invalid }", "err.nox", errors)
 
             errors.hasErrors() shouldBe true
+        }
+
+        test("valid declarations survive alongside broken ones") {
+            val errors = CompilerErrors()
+            val prog =
+                NoxParsing.parse(
+                    """
+                    type Point { int x; int y; }
+                    broken garbage here !!!
+                    int add(int a, int b) { return a + b; }
+                    """.trimIndent(),
+                    "err.nox",
+                    errors,
+                )
+
+            errors.hasErrors() shouldBe true
+            // The valid type definition should still be in the AST
+            prog.typesByName["Point"].shouldNotBeNull()
+        }
+
+        test("broken statement in a function body produces ErrorStmt but preserves others") {
+            val errors = CompilerErrors()
+            val prog =
+                NoxParsing.parse(
+                    """
+                    main() {
+                        int x = 10;
+                        ??? ;
+                        return "ok";
+                    }
+                    """.trimIndent(),
+                    "err.nox",
+                    errors,
+                )
+
+            errors.hasErrors() shouldBe true
+            prog.main.shouldNotBeNull()
+            // At least the valid variable declaration should survive
+            val stmts = prog.main!!.body.statements
+            stmts.any { it is VarDeclStmt } shouldBe true
+        }
+
+        test("multiple syntax errors are all reported") {
+            val errors = CompilerErrors()
+            NoxParsing.parse(
+                """
+                main() {
+                    int x = ;
+                    int y = ;
+                    return "ok";
+                }
+                """.trimIndent(),
+                "err.nox",
+                errors,
+            )
+
+            errors.hasErrors() shouldBe true
+            (errors.count >= 2) shouldBe true
         }
     })
