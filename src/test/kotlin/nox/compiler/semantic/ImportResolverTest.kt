@@ -237,7 +237,7 @@ class ImportResolverTest :
         test("depth-first recursive resolution order") {
             val errors = CompilerErrors()
 
-            // main imports A, A imports B → B resolved first, then A
+            // main imports A, A imports B, B resolved first, then A
             val fs = fileSystem(
                 "/project/a.nox" to """
                     import "b.nox" as b;
@@ -274,7 +274,7 @@ class ImportResolverTest :
         test("deduplicates same file imported from multiple locations") {
             val errors = CompilerErrors()
 
-            // Both a.nox and b.nox import utils.nox — it should only be resolved once
+            // Both a.nox and b.nox import utils.nox, it should only be resolved once
             val fs = fileSystem(
                 "/project/a.nox" to """
                     import "utils.nox" as u;

@@ -76,7 +76,7 @@ class ImportResolver(
         // 4. Check deduplication cache
         val cached = resolvedFiles[resolved]
         if (cached != null) {
-            // File was already resolved — reuse the program, register under new namespace
+            // File was already resolved, so reuse the program, register under new namespace
             modules.add(
                 ResolvedModule(
                     namespace = imp.namespace,
@@ -175,19 +175,6 @@ class ImportResolver(
          * Tier 0 built-in namespace names that are always reserved.
          * TODO: Replace with a proper LibraryRegistry lookup.
          */
-        val DEFAULT_BUILTIN_NAMESPACES = setOf("Math", "File", "Http", "Date", "Json")
+        val DEFAULT_BUILTIN_NAMESPACES = setOf("Math", "File", "Http", "Date", "Json", "Env")
     }
 }
-
-/**
- * Cache entry for an already-resolved file.
- *
- * When the same `.nox` file is imported from multiple locations, we reuse
- * the parsed [Program] and its global memory allocation rather than
- * re-parsing and re-resolving the file.
- */
-data class ResolvedFile(
-    val program: Program,
-    val globalBaseOffset: Int,
-    val globalCount: Int,
-)

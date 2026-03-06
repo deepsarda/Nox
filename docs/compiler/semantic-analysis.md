@@ -336,6 +336,8 @@ fun resolveBinary(scope: SymbolTable, expr: BinaryExpr): TypeRef {
         BinaryOp.ADD, BinaryOp.SUB, BinaryOp.MUL, BinaryOp.DIV, BinaryOp.MOD -> when {
             left == TypeRef.INT && right == TypeRef.INT -> TypeRef.INT
             isNumeric(left) && isNumeric(right)         -> TypeRef.DOUBLE  // Implicit widening
+            // String concatenation (ADD only)
+            op == BinaryOp.ADD && left == TypeRef.STRING && right == TypeRef.STRING -> TypeRef.STRING
             else -> error(expr, "Operator '%s' requires numeric operands, got %s and %s",
                           expr.op, left, right)
         }
@@ -574,6 +576,15 @@ fun resolveStructLiteral(scope: SymbolTable, expr: StructLiteralExpr): TypeRef {
         return error(expr, "Cannot infer struct type from context. Use an explicit type.")
     }
 
+    // json literal: {key: value, ...} with no struct validation
+    // json is dynamic so any field names and value types are valid
+    if (expr.structType == TypeRef.JSON) {
+        for (init in expr.fields) {
+            resolveExpr(scope, init.value)
+        }
+        return TypeRef.JSON
+    }
+
     val typeSym = lookupType(expr.structType!!.name)!!
 
     // Check for unknown/mistyped fields
@@ -809,8 +820,9 @@ fun isAssignable(target: TypeRef, value: TypeRef?): Boolean {
     // null -> any nullable type
     if (value == null) return target.isNullable()
 
-    // struct -> json (implicit upcast)
-    if (target == TypeRef.JSON && isStructType(value)) return true
+    // struct -> json (implicit upcast), supports both scalar and array forms
+    // e.g. Config -> json, Config[] -> json[]
+    if (target.name == "json" && !isBuiltinType(value.name) && target.isArray == value.isArray) return true
 
     // array element type must match exactly
     if (target.isArray && value!!.isArray)
@@ -830,6 +842,7 @@ fun isAssignable(target: TypeRef, value: TypeRef?): Boolean {
 | **`string`** | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✗ |
 | **`json`** | ✗ | ✗ | ✗ | ✗ | ✓ | `as` cast | ✗ |
 | **`Struct`** | ✗ | ✗ | ✗ | ✗ | ✓ implicit | same type | ✗ |
+| **`Struct[]`** | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ json[] |
 | **`T[]`** | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | same `T` |
 | **`null`** | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ |
  

@@ -76,3 +76,63 @@ enum class AssignOp {
     DIV_ASSIGN,
     MOD_ASSIGN,
 }
+
+
+/**
+ * Readable symbol for binary operators in error messages.
+ */
+val BinaryOp.symbol: String
+    get() = when (this) {
+        BinaryOp.ADD -> "+"
+        BinaryOp.SUB -> "-"
+        BinaryOp.MUL -> "*"
+        BinaryOp.DIV -> "/"
+        BinaryOp.MOD -> "%"
+        BinaryOp.EQ -> "=="
+        BinaryOp.NE -> "!="
+        BinaryOp.LT -> "<"
+        BinaryOp.LE -> "<="
+        BinaryOp.GT -> ">"
+        BinaryOp.GE -> ">="
+        BinaryOp.AND -> "&&"
+        BinaryOp.OR -> "||"
+        BinaryOp.BIT_AND -> "&"
+        BinaryOp.BIT_OR -> "|"
+        BinaryOp.BIT_XOR -> "^"
+        BinaryOp.SHL -> "<<"
+        BinaryOp.SHR -> ">>"
+        BinaryOp.USHR -> ">>>"
+    }
+
+/**
+ * Readable symbol for unary operators in error messages.
+ */
+val UnaryOp.symbol: String
+    get() = when (this) {
+        UnaryOp.NEG -> "-"
+        UnaryOp.NOT -> "!"
+        UnaryOp.BIT_NOT -> "~"
+    }
+
+/**
+ * Readable symbol for postfix operators in error messages.
+ */
+val PostfixOp.symbol: String
+    get() = when (this) {
+        PostfixOp.INCREMENT -> "++"
+        PostfixOp.DECREMENT -> "--"
+    }
+
+/**
+ * Readable symbol for assignment operators in error messages.
+ */
+val AssignOp.symbol: String
+    get() = when (this) {
+        AssignOp.ASSIGN -> "="
+        AssignOp.ADD_ASSIGN -> "+="
+        AssignOp.SUB_ASSIGN -> "-="
+        AssignOp.MUL_ASSIGN -> "*="
+        AssignOp.DIV_ASSIGN -> "/="
+        AssignOp.MOD_ASSIGN -> "%="
+    }
+

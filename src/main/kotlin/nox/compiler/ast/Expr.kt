@@ -1,5 +1,8 @@
 package nox.compiler.ast
 
+import nox.compiler.semantic.CallTarget
+import nox.compiler.semantic.Symbol
+
 /**
  * Base class for all expression nodes.
  * Every expression carries a [SourceLocation] and two mutable
@@ -158,7 +161,7 @@ class IdentifierExpr(
     loc: SourceLocation,
 ) : Expr(loc) {
     /** Resolved symbol (VarSymbol, ParamSymbol, GlobalSymbol). Set by semantic analyzer. */
-    var resolvedSymbol: Any? = null
+    var resolvedSymbol: Symbol? = null
 }
 
 /**
@@ -172,7 +175,7 @@ class FuncCallExpr(
     loc: SourceLocation,
 ) : Expr(loc) {
     /** Resolved function definition. Set by semantic analyzer. */
-    var resolvedFunction: Any? = null
+    var resolvedFunction: FuncDef? = null
 }
 
 /**
@@ -192,11 +195,10 @@ class MethodCallExpr(
         UFCS,
         TYPE_BOUND,
         NAMESPACE,
-        STRUCT_METHOD,
     }
 
     var resolution: Resolution? = null
-    var resolvedTarget: Any? = null
+    var resolvedTarget: CallTarget? = null
 }
 
 /** Field access: `target.field` */

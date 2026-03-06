@@ -1,0 +1,172 @@
+package nox.compiler.semantic
+
+import nox.compiler.CompilerErrors
+import nox.compiler.ast.*
+
+/**
+ * Pass 2: Type Resolution
+ *
+ * Coordinates struct field resolution, function body type-checking,
+ * and global variable initialization validation. After this pass,
+ * every `Expr` node has its `.resolvedType` set, every `IdentifierExpr`
+ * has its `.resolvedSymbol` set, and every `MethodCallExpr` knows
+ * exactly what it calls.
+ *
+ * See docs/compiler/semantic-analysis.md § Pass 2.
+ *
+ * @property globalScope the root symbol table (populated by Pass 1)
+ * @property errors      shared error collector
+ * @property modules     resolved import modules (from Phase 0)
+ */
+class TypeResolver(
+    private val globalScope: SymbolTable,
+    private val errors: CompilerErrors,
+    private val modules: List<ResolvedModule> = emptyList(),
+) {
+    private val exprResolver = ExpressionResolver(globalScope, errors, modules)
+    private val stmtResolver = StatementResolver(exprResolver, errors)
+    private val resolvedModulePaths = mutableSetOf<String>()
+
+    /**
+     * Run Pass 2 on the given [program].
+     *
+     * 0. Analyze imported modules (Pass 1 + Pass 2, depth-first order).
+     * 1. Resolve struct field types (all type names are now known from Pass 1).
+     * 2. Resolve each function body.
+     * 3. Resolve the `main` body (implicitly returns `string`).
+     * 4. Resolve global variable initializers.
+     */
+    fun resolve(program: Program) {
+        // Step 0: Analyze imported modules (docs/compiler/semantic-analysis.md line 71-73)
+        // ImportResolver resolves in depth-first order, so we iterate in that order.
+        for (module in modules) {
+            if (module.sourcePath in resolvedModulePaths) continue
+            resolvedModulePaths.add(module.sourcePath)
+
+            val moduleScope = SymbolTable()
+            DeclarationCollector(moduleScope, errors).collect(module.program)
+            TypeResolver(moduleScope, errors).resolve(module.program)
+        }
+
+        // Step 1: Resolve struct field types
+        for (decl in program.declarations) {
+            if (decl is TypeDef) resolveStructFields(decl)
+        }
+
+        // Step 2: Resolve each function body
+        for (decl in program.declarations) {
+            if (decl is FuncDef) resolveFunction(decl)
+        }
+
+        // Step 3: Resolve main body
+        program.main?.let { resolveMain(it) }
+
+        // Step 4: Resolve global variable initializers
+        for (decl in program.declarations) {
+            if (decl is GlobalVarDecl) resolveGlobalInit(decl)
+        }
+    }
+
+    /**
+     * Populate the [TypeSymbol.fields] map for a struct definition.
+     *
+     * Each field's type is validated: primitives, arrays, and other
+     * struct types (forward references work because Pass 1 registered
+     * all type names).
+     */
+    private fun resolveStructFields(typeDef: TypeDef) {
+        val typeSym = globalScope.lookup(typeDef.name) as? TypeSymbol ?: return
+
+        val seenFields = mutableSetOf<String>()
+        for (field in typeDef.fields) {
+            // Check for duplicate field names
+            if (field.name in seenFields) {
+                errors.report(field.loc, "Duplicate field '${field.name}' in struct '${typeDef.name}'")
+                continue
+            }
+            seenFields.add(field.name)
+
+            // Validate the field type exists
+            if (!isKnownType(field.type)) {
+                errors.report(field.loc, "Unknown type '${field.type}' for field '${field.name}' in struct '${typeDef.name}'")
+                continue
+            }
+
+            typeSym.fields[field.name] = field.type
+        }
+    }
+
+    /**
+     * Check whether a [TypeRef] refers to a known type.
+     *
+     * Known types include primitives, built-in types (`string`, `json`, `void`),
+     * and user-defined struct types registered in the global scope.
+     */
+    private fun isKnownType(type: TypeRef): Boolean {
+        val baseName = type.name
+        // Built-in type names are always valid
+        if (baseName in BUILTIN_TYPE_NAMES) return true
+        // User-defined struct types must be in the global scope
+        return globalScope.lookup(baseName) is TypeSymbol
+    }
+
+    /**
+     * Resolve a user-defined function: create a function scope,
+     * register parameters, and resolve the body.
+     */
+    private fun resolveFunction(funcDef: FuncDef) {
+        val funcScope = globalScope.child()
+        registerParams(funcScope, funcDef.params)
+        stmtResolver.resolveBlock(funcScope, funcDef.body, funcDef.returnType)
+    }
+
+    /**
+     * Resolve the `main` entry point.
+     * `main` implicitly returns `string`.
+     */
+    private fun resolveMain(mainDef: MainDef) {
+        val mainScope = globalScope.child()
+        registerParams(mainScope, mainDef.params)
+        stmtResolver.resolveBlock(mainScope, mainDef.body, TypeRef.STRING)
+    }
+
+    /**
+     * Register function parameters as [ParamSymbol] entries in the given scope.
+     *
+     * Validates that no two parameters share the same name, and that
+     * each parameter's type is known.
+     */
+    private fun registerParams(scope: SymbolTable, params: List<Param>) {
+        for (param in params) {
+            if (!isKnownType(param.type)) {
+                errors.report(param.loc, "Unknown parameter type '${param.type}'")
+            }
+
+            val symbol = ParamSymbol(param.name, param.type, param.defaultValue)
+            if (!scope.define(param.name, symbol)) {
+                errors.report(param.loc, "Duplicate parameter name '${param.name}'")
+            }
+        }
+    }
+
+    /**
+     * Resolve and type-check a global variable's initializer expression.
+     */
+    private fun resolveGlobalInit(decl: GlobalVarDecl) {
+        if (decl.initializer == null) return
+
+        // Set struct type for struct literal initializers
+        val init = decl.initializer
+        if (init is StructLiteralExpr && decl.type.isStructType()) {
+            init.structType = decl.type
+        }
+
+        val initType = exprResolver.resolveExpr(globalScope, decl.initializer)
+        if (!decl.type.isAssignableFrom(initType)) {
+            errors.report(
+                decl.loc,
+                "Type mismatch for global '${decl.name}': expected '${decl.type}', got '${initType ?: "null"}'",
+            )
+        }
+    }
+}
