@@ -127,12 +127,13 @@ class TypeResolver(
 
     /**
      * Resolve the `main` entry point.
-     * `main` implicitly returns `string`.
+     * `main` can return any type — the runtime auto-converts to string.
+     * We pass VOID as expectedReturn so resolveReturn accepts anything.
      */
     private fun resolveMain(mainDef: MainDef) {
         val mainScope = globalScope.child()
         registerParams(mainScope, mainDef.params)
-        stmtResolver.resolveBlock(mainScope, mainDef.body, TypeRef.STRING)
+        stmtResolver.resolveBlock(mainScope, mainDef.body, TypeRef.VOID)
     }
 
     /**

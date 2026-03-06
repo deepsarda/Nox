@@ -145,12 +145,18 @@ object TempRegistry {
         // Array methods
         if (targetType.isArray && methodName in arrayMethods) {
             return when (methodName) {
-                "push" -> target("push", listOf("item" to TypeRef(targetType.name)), TypeRef.VOID)
-                "pop" -> target("pop", emptyList(), TypeRef(targetType.name))
+                "push" -> target("push", listOf("item" to targetType.elementType()), TypeRef.VOID)
+                "pop" -> target("pop", emptyList(), targetType.elementType())
                 else -> null
             }
         }
-        return builtinMethods[targetType.name]?.get(methodName)
+        // Direct type match (e.g. string.upper(), json.size())
+        builtinMethods[targetType.name]?.get(methodName)?.let { return it }
+        // Struct types can call json methods (implicit upcast)
+        if (targetType.isStructType()) {
+            builtinMethods["json"]?.get(methodName)?.let { return it }
+        }
+        return null
     }
 
     /**

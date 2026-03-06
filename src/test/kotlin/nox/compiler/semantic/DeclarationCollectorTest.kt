@@ -28,6 +28,13 @@ class DeclarationCollectorTest :
             return Triple(globalScope, errors, program)
         }
 
+        fun collectError(source: String, msg: String) {
+            val (_, errors) = collect(source)
+            errors.hasErrors() shouldBe true
+            errors.all().any { it.message.contains(msg) } shouldBe true
+        }
+
+
         test("registers type definitions as TypeSymbol with empty fields") {
             val (scope, errors) = collect(
                 """
@@ -221,13 +228,6 @@ class DeclarationCollectorTest :
         }
 
         // Varargs & Parameter Ordering
-
-        fun collectError(source: String, msg: String) {
-            val (_, errors) = collect(source)
-            errors.hasErrors() shouldBe true
-            errors.all().any { it.message.contains(msg) } shouldBe true
-        }
-
         test("rejects multiple varargs parameters") {
             collectError(
                 """

@@ -79,7 +79,7 @@ class StatementResolver(
 
         // If the initializer is an array literal, propagate context into elements
         if (init is ArrayLiteralExpr && stmt.type.isArray) {
-            val elementType = TypeRef(stmt.type.name)
+            val elementType = stmt.type.elementType()
 
             // Empty array: infer element type
             if (init.elements.isEmpty()) {
@@ -159,13 +159,21 @@ class StatementResolver(
         when (op) {
             AssignOp.ADD_ASSIGN -> {
                 if (targetType == TypeRef.STRING && valueType == TypeRef.STRING) return
-                if (targetType.isNumeric() && valueType.isNumeric()) return
+                if (targetType.isNumeric() && valueType.isNumeric()) {
+                    // Prevent int += double (narrowing)
+                    if (targetType == TypeRef.INT && valueType == TypeRef.DOUBLE) {
+                        errors.report(loc, "Operator '${op.symbol}' would narrow 'double' to 'int'. Use explicit conversion")
+                    }
+                    return
+                }
                 errors.report(loc, "Operator '${op.symbol}' requires numeric or string operands, got '$targetType' and '$valueType'")
             }
 
             AssignOp.SUB_ASSIGN, AssignOp.MUL_ASSIGN, AssignOp.DIV_ASSIGN, AssignOp.MOD_ASSIGN -> {
                 if (!targetType.isNumeric() || !valueType.isNumeric()) {
                     errors.report(loc, "Operator '${op.symbol}' requires numeric operands, got '$targetType' and '$valueType'")
+                } else if (targetType == TypeRef.INT && valueType == TypeRef.DOUBLE) {
+                    errors.report(loc, "Operator '${op.symbol}' would narrow 'double' to 'int'. Use explicit conversion")
                 }
             }
 
@@ -219,7 +227,7 @@ class StatementResolver(
         }
 
         // Extract element type from array type
-        val elemType = TypeRef(iterType.name)
+        val elemType = iterType.elementType()
 
         // Check that declared element type matches
         if (!stmt.elementType.isAssignableFrom(elemType)) {
@@ -238,11 +246,14 @@ class StatementResolver(
     private fun resolveReturn(scope: SymbolTable, stmt: ReturnStmt, expectedReturn: TypeRef) {
         if (stmt.value != null) {
             val returnType = exprResolver.resolveExpr(scope, stmt.value)
-            if (!expectedReturn.isAssignableFrom(returnType)) {
-                errors.report(
-                    stmt.loc,
-                    "Return type mismatch: expected '$expectedReturn', got '${returnType ?: "null"}'",
-                )
+            // If expectedReturn is VOID, main can return anything (runtime auto-converts to string)
+            if (expectedReturn != TypeRef.VOID) {
+                if (!expectedReturn.isAssignableFrom(returnType)) {
+                    errors.report(
+                        stmt.loc,
+                        "Return type mismatch: expected '$expectedReturn', got '${returnType ?: "null"}'",
+                    )
+                }
             }
         } else if (expectedReturn != TypeRef.VOID) {
             errors.report(stmt.loc, "Missing return value. Expected '$expectedReturn'")

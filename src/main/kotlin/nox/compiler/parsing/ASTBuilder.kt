@@ -1,5 +1,6 @@
 package nox.compiler.parsing
 
+import nox.compiler.CompilerErrors
 import nox.compiler.ast.*
 import nox.compiler.types.*
 import nox.parser.NoxParser
@@ -20,10 +21,12 @@ import org.antlr.v4.runtime.ParserRuleContext
  * - Template literal tokens are combined into [TemplateLiteralExpr] parts
  *
  * @property fileName the source file name, attached to every [SourceLocation]
+ * @property errors   shared error collector for reporting issues during AST construction
  * @see <a href="file:///docs/compiler/ast.md">AST Design</a>
  */
 class ASTBuilder(
     private val fileName: String,
+    private val errors: CompilerErrors = CompilerErrors(),
 ) : NoxParserBaseVisitor<Any>() {
     // Program
     override fun visitProgram(ctx: NoxParser.ProgramContext): Program {
@@ -121,15 +124,15 @@ class ASTBuilder(
         val name = ctx.Identifier().text
         val defaultValue = ctx.expression()?.let { visitExpression(it) }
 
-        val actualType = if (isVarargs) TypeRef(type.name, isArray = true) else type
+        val actualType = if (isVarargs) type.arrayOf() else type
         return Param(actualType, name, defaultValue, isVarargs, locOf(ctx))
     }
 
     // Type references
     override fun visitTypeRef(ctx: NoxParser.TypeRefContext): TypeRef {
         val baseName = ctx.primitiveType()?.text ?: ctx.Identifier().text
-        val isArray = ctx.LBRACK() != null
-        return TypeRef(baseName, isArray)
+        val arrayDepth = ctx.LBRACK().size
+        return TypeRef(baseName, arrayDepth)
     }
 
     // Block

@@ -12,6 +12,8 @@ import nox.compiler.types.*
 
 /**
  * Tests for Pass 2: Type Resolution.
+ * 
+ * TODO: There is a desperate need to refactor the tests to be more organized and split acorss more files. In fact for the whole test suit this probably should be done.
  *
  * Each test parses a Nox source snippet, runs Pass 1 (declaration collection)
  * and Pass 2 (type resolution), then verifies resolved types and/or error messages.
@@ -33,6 +35,7 @@ class TypeResolverTest :
 
         /** Shorthand: resolve and expect no errors. */
         fun resolveOk(source: String): Triple<SymbolTable, CompilerErrors, Program> {
+
             val result = resolve(source)
             result.second.hasErrors() shouldBe false
             return result
@@ -1141,5 +1144,697 @@ class TypeResolverTest :
             """.trimIndent()
             val (_, errors) = resolve(source)
             errors.hasErrors() shouldBe false
+        }
+
+        // Compound Assignment
+
+        test("compound assign int += int ok") {
+            resolveOk("""
+                main() { int x = 1; x += 2; return "ok"; }
+            """.trimIndent())
+        }
+
+        test("compound assign double += int ok") {
+            resolveOk("""
+                main() { double d = 1.0; d += 2; return "ok"; }
+            """.trimIndent())
+        }
+
+        test("compound assign double += double ok") {
+            resolveOk("""
+                main() { double d = 1.0; d += 2.5; return "ok"; }
+            """.trimIndent())
+        }
+
+        test("compound assign int += double fails") {
+            resolveError("""
+                main() { int x = 1; x += 2.5; return "ok"; }
+            """.trimIndent(), "narrow")
+        }
+
+        test("compound assign int -= double fails") {
+            resolveError("""
+                main() { int x = 10; x -= 1.5; return "ok"; }
+            """.trimIndent(), "narrow")
+        }
+
+        test("compound assign int *= double fails") {
+            resolveError("""
+                main() { int x = 3; x *= 2.0; return "ok"; }
+            """.trimIndent(), "narrow")
+        }
+
+        test("compound assign string += string ok") {
+            resolveOk("""
+                main() { string s = "a"; s += "b"; return "ok"; }
+            """.trimIndent())
+        }
+
+        test("compound assign string -= string fails") {
+            resolveError("""
+                main() { string s = "a"; s -= "b"; return "ok"; }
+            """.trimIndent(), "requires numeric")
+        }
+
+        test("compound assign int += string fails") {
+            resolveError("""
+                main() { int x = 1; x += "a"; return "ok"; }
+            """.trimIndent(), "requires numeric or string")
+        }
+
+        // Struct-to-JSON Autoboxing
+
+        test("struct assigned to json ok") {
+            resolveOk("""
+                type Pt { int x; int y; }
+                main() {
+                    Pt p = { x: 1, y: 2 };
+                    json j = p;
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("struct returned as json ok") {
+            resolveOk("""
+                type Pt { int x; int y; }
+                json getJ() {
+                    Pt p = { x: 1, y: 2 };
+                    return p;
+                }
+                main() { return "ok"; }
+            """.trimIndent())
+        }
+
+        test("struct compared to json with == ok") {
+            resolveOk("""
+                type Pt { int x; int y; }
+                main() {
+                    Pt p = { x: 1, y: 2 };
+                    json j = p;
+                    boolean eq = p == j;
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("struct compared to json with != ok") {
+            resolveOk("""
+                type Pt { int x; int y; }
+                main() {
+                    Pt p = { x: 1, y: 2 };
+                    json j = p;
+                    boolean neq = j != p;
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("struct calls json size method") {
+            resolveOk("""
+                type Pt { int x; int y; }
+                main() {
+                    Pt p = { x: 1, y: 2 };
+                    int sz = p.size();
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("struct calls json getString method") {
+            resolveOk("""
+                type Pt { int x; int y; }
+                main() {
+                    Pt p = { x: 1, y: 2 };
+                    string s = p.getString("x", "def");
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("struct calls json has method") {
+            resolveOk("""
+                type Pt { int x; int y; }
+                main() {
+                    Pt p = { x: 1, y: 2 };
+                    boolean h = p.has("x");
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("struct calls json keys method") {
+            resolveOk("""
+                type Pt { int x; int y; }
+                main() {
+                    Pt p = { x: 1, y: 2 };
+                    string[] k = p.keys();
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("struct in json varargs ok") {
+            resolveOk("""
+                type Pt { int x; int y; }
+                void process(json ...items[]) { }
+                main() {
+                    Pt p = { x: 1, y: 2 };
+                    process(p);
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        // Varargs
+
+        test("varargs with required prefix ok") {
+            resolveOk("""
+                void greet(string prefix, string ...names[]) { }
+                main() { greet("Hi", "Alice", "Bob"); return "ok"; }
+            """.trimIndent())
+        }
+
+        test("varargs direct array pass ok") {
+            resolveOk("""
+                void process(int ...vals[]) { }
+                main() {
+                    int[] arr = [1, 2, 3];
+                    process(arr);
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("varargs direct array pass with prefix args ok") {
+            resolveOk("""
+                void greet(string prefix, string ...names[]) { }
+                main() {
+                    string[] n = ["Alice", "Bob"];
+                    greet("Hi", n);
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("varargs direct inline array pass ok") {
+            resolveOk("""
+                int sum(int ...vals[]) { return 0; }
+                main() {
+                    int x = sum([1, 0, 10]);
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        // Main Return Type
+
+        test("main returns string ok") {
+            resolveOk("""
+                main() { return "ok"; }
+            """.trimIndent())
+        }
+
+        test("main returns int ok") {
+            resolveOk("""
+                main() { return 42; }
+            """.trimIndent())
+        }
+
+        test("main returns double ok") {
+            resolveOk("""
+                main() { return 3.14; }
+            """.trimIndent())
+        }
+
+        test("main returns boolean ok") {
+            resolveOk("""
+                main() { return true; }
+            """.trimIndent())
+        }
+
+        test("main returns null ok") {
+            resolveOk("""
+                main() { return null; }
+            """.trimIndent())
+        }
+
+        test("main returns json ok") {
+            resolveOk("""
+                main() {
+                    json j = { k: "v" };
+                    return j;
+                }
+            """.trimIndent())
+        }
+
+        test("main returns struct ok") {
+            resolveOk("""
+                type Pt { int x; int y; }
+                main() {
+                    Pt p = { x: 1, y: 2 };
+                    return p;
+                }
+            """.trimIndent())
+        }
+
+        // Int-to-Double Widening
+
+        test("int assigned to double ok") {
+            resolveOk("""
+                main() { double d = 42; return "ok"; }
+            """.trimIndent())
+        }
+
+        test("int returned as double ok") {
+            resolveOk("""
+                double foo() { return 1; }
+                main() { return "ok"; }
+            """.trimIndent())
+        }
+
+        test("int passed to double param ok") {
+            resolveOk("""
+                void foo(double d) { }
+                main() { foo(1); return "ok"; }
+            """.trimIndent())
+        }
+
+        test("double assigned to int fails") {
+            resolveError("""
+                main() { int x = 3.14; return "ok"; }
+            """.trimIndent(), "Type mismatch")
+        }
+
+        test("double returned as int fails") {
+            resolveError("""
+                int foo() { return 3.14; }
+                main() { return "ok"; }
+            """.trimIndent(), "Return type mismatch")
+        }
+
+        // Duplicate JSON Keys
+
+        test("json literal with unique keys ok") {
+            resolveOk("""
+                main() {
+                    json j = { a: 1, b: 2 };
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("json literal with duplicate keys fails") {
+            resolveError("""
+                main() {
+                    json j = { a: 1, a: 2 };
+                    return "ok";
+                }
+            """.trimIndent(), "Duplicate key 'a'")
+        }
+
+        // Miscellaneous Edge Cases
+
+        test("null to non-nullable int fails") {
+            resolveError("""
+                main() { int x = null; return "ok"; }
+            """.trimIndent(), "Cannot assign null to non-nullable")
+        }
+
+        test("null to nullable string ok") {
+            resolveOk("""
+                main() { string s = null; return "ok"; }
+            """.trimIndent())
+        }
+
+        test("empty array with type context ok") {
+            resolveOk("""
+                main() { int[] a = []; return "ok"; }
+            """.trimIndent())
+        }
+
+        test("function call with too many args fails") {
+            resolveError("""
+                void foo(int a) { }
+                main() { foo(1, 2, 3); return "ok"; }
+            """.trimIndent(), "expects at most")
+        }
+
+        test("index access with non-int fails") {
+            resolveError("""
+                main() {
+                    int[] arr = [1, 2];
+                    int x = arr[1.5];
+                    return "ok";
+                }
+            """.trimIndent(), "Array index must be 'int'")
+        }
+
+        test("string plus int fails") {
+            resolveError("""
+                main() {
+                    string s = "hello" + 1;
+                    return "ok";
+                }
+            """.trimIndent(), "requires numeric operands")
+        }
+
+        test("boolean in arithmetic fails") {
+            resolveError("""
+                main() {
+                    int x = true + 1;
+                    return "ok";
+                }
+            """.trimIndent(), "requires numeric operands")
+        }
+
+        test("non-boolean in if condition fails") {
+            resolveError("""
+                main() { if (42) { } return "ok"; }
+            """.trimIndent(), "requires 'boolean'")
+        }
+
+        test("foreach on non-array fails") {
+            resolveError("""
+                main() { foreach (int x in 42) { } return "ok"; }
+            """.trimIndent(), "foreach requires an array")
+        }
+
+        test("throw non-string fails") {
+            resolveError("""
+                main() { throw 42; return "ok"; }
+            """.trimIndent(), "throw requires a string")
+        }
+
+        test("cast non-json fails") {
+            resolveError("""
+                type Pt { int x; int y; }
+                main() {
+                    string s = "hi";
+                    Pt p = s as Pt;
+                    return "ok";
+                }
+            """.trimIndent(), "Cannot cast from 'string'")
+        }
+
+        test("variable shadows outer scope ok") {
+            resolveOk("""
+                main() {
+                    int x = 1;
+                    if (true) {
+                        int x = 2;
+                    }
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("nested struct literal ok") {
+            resolveOk("""
+                type Inner { int x; }
+                type Outer { Inner i; }
+                main() {
+                    Outer o = { i: { x: 42 } };
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        // Multi-dimensional Arrays
+
+        test("2d array declaration ok") {
+            resolveOk("""
+                main() {
+                    int[][] matrix = [[1, 2], [3, 4]];
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("2d array index gives 1d array") {
+            val (_, _, program) = resolveOk("""
+                main() {
+                    int[][] matrix = [[1, 2], [3, 4]];
+                    int[] row = matrix[0];
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("2d array double index gives scalar") {
+            resolveOk("""
+                main() {
+                    int[][] matrix = [[1, 2], [3, 4]];
+                    int cell = matrix[0][1];
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("2d array assigned to 1d fails") {
+            resolveError("""
+                main() {
+                    int[][] matrix = [[1, 2]];
+                    int[] row = matrix;
+                    return "ok";
+                }
+            """.trimIndent(), "Type mismatch")
+        }
+
+        test("foreach over 2d array gives 1d element") {
+            resolveOk("""
+                main() {
+                    int[][] matrix = [[1, 2], [3, 4]];
+                    foreach (int[] row in matrix) { }
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("foreach over 2d with wrong element type fails") {
+            resolveError("""
+                main() {
+                    int[][] matrix = [[1, 2]];
+                    foreach (int x in matrix) { }
+                    return "ok";
+                }
+            """.trimIndent(), "foreach element type mismatch")
+        }
+
+        test("3d array declaration ok") {
+            resolveOk("""
+                main() {
+                    int[][][] cube = [[[1]]];
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("2d array as function param ok") {
+            resolveOk("""
+                void process(int[][] matrix) { }
+                main() {
+                    int[][] m = [[1, 2], [3, 4]];
+                    process(m);
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("2d array as function return ok") {
+            resolveOk("""
+                int[][] identity() {
+                    int[][] m = [[1, 0], [0, 1]];
+                    return m;
+                }
+                main() { return "ok"; }
+            """.trimIndent())
+        }
+
+        test("2d array return type mismatch fails") {
+            resolveError("""
+                int[] flat() {
+                    int[][] m = [[1, 2]];
+                    return m;
+                }
+                main() { return "ok"; }
+            """.trimIndent(), "Return type mismatch")
+        }
+
+        test("varargs with 1d elements builds 1d array ok") {
+            resolveOk("""
+                void sum(int ...vals[]) { }
+                main() { sum(1, 2, 3); return "ok"; }
+            """.trimIndent())
+        }
+
+        test("varargs with 1d array elements builds 2d ok") {
+            resolveOk("""
+                void processRows(int[] ...rows[]) { }
+                main() {
+                    int[] r1 = [1, 2];
+                    int[] r2 = [3, 4];
+                    processRows(r1, r2);
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("varargs 2d direct array pass ok") {
+            resolveOk("""
+                void processRows(int[] ...rows[]) { }
+                main() {
+                    int[][] matrix = [[1, 2], [3, 4]];
+                    processRows(matrix);
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("varargs 2d wrong element type fails") {
+            resolveError("""
+                void processRows(int[] ...rows[]) { }
+                main() {
+                    processRows("bad");
+                    return "ok";
+                }
+            """.trimIndent(), "expected 'int[]'")
+        }
+
+        test("2d array push 1d element ok") {
+            resolveOk("""
+                main() {
+                    int[][] matrix = [[1, 2]];
+                    int[] newRow = [3, 4];
+                    matrix.push(newRow);
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("2d array push scalar fails") {
+            resolveError("""
+                main() {
+                    int[][] matrix = [[1, 2]];
+                    matrix.push(5);
+                    return "ok";
+                }
+            """.trimIndent(), "expected 'int[]'")
+        }
+
+        test("2d array in struct field ok") {
+            resolveOk("""
+                type Grid { int[][] cells; }
+                main() {
+                    Grid g = { cells: [[1, 2], [3, 4]] };
+                    int[] row = g.cells[0];
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("2d array global variable ok") {
+            resolveOk("""
+                int[][] MATRIX = [[1, 0], [0, 1]];
+                main() { return "ok"; }
+            """.trimIndent())
+        }
+
+        test("2d array default param ok") {
+            resolveOk("""
+                void foo(int[][] m = [[1]]) { }
+                main() { return "ok"; }
+            """.trimIndent())
+        }
+
+        test("2d array length property ok") {
+            resolveOk("""
+                main() {
+                    int[][] matrix = [[1, 2], [3, 4]];
+                    int rows = matrix.length;
+                    int cols = matrix[0].length;
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("3d array index chain ok") {
+            resolveOk("""
+                main() {
+                    int[][][] cube = [[[1, 2], [3, 4]]];
+                    int[][] slice = cube[0];
+                    int[] row = cube[0][0];
+                    int cell = cube[0][0][1];
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("3d array foreach peels one layer") {
+            resolveOk("""
+                main() {
+                    int[][][] cube = [[[1]]];
+                    foreach (int[][] slice in cube) { }
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("3d array push 2d ok") {
+            resolveOk("""
+                main() {
+                    int[][][] cube = [[[1, 2]]];
+                    int[][] newSlice = [[3, 4]];
+                    cube.push(newSlice);
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("3d array length property ok") {
+            resolveOk("""
+                main() {
+                    int[][][] cube = [[[1, 2], [3, 4]]];
+                    int slices = cube.length;
+                    int rows = cube[0].length;
+                    int cols = cube[0][0].length;
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("4d array declaration and access ok") {
+            resolveOk("""
+                main() {
+                    int[][][][] hyper = [[[[1]]]];
+                    int[][][] s = hyper[0];
+                    int[][] m = hyper[0][0];
+                    int[] r = hyper[0][0][0];
+                    int v = hyper[0][0][0][0];
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("varargs of 2d array elements ok") {
+            resolveOk("""
+                void process(int[][] ...cubeSlices[]) { }
+                main() {
+                    int[][] a = [[1, 2]];
+                    int[][] b = [[3, 4]];
+                    process(a, b);
+                    return "ok";
+                }
+            """.trimIndent())
+        }
+
+        test("string array length ok") {
+            resolveOk("""
+                main() {
+                    string[] names = ["a", "b", "c"];
+                    int n = names.length;
+                    return "ok";
+                }
+            """.trimIndent())
         }
     })

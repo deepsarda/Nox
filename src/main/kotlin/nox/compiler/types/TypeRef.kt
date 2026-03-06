@@ -5,15 +5,20 @@ package nox.compiler.types
  *
  * This is **not** a resolved type, resolution happens during semantic analysis.
  * `TypeRef` simply captures what the programmer wrote (e.g. `int`, `string[]`,
- * `ApiConfig`).
+ * `int[][]`, `ApiConfig`).
  *
  * @property name the base type name (e.g. `"int"`, `"string"`, `"Point"`)
- * @property isArray whether this is an array type (e.g. `int[]`)
+ * @property arrayDepth how many array dimensions (0 = scalar, 1 = `int[]`, 2 = `int[][]`)
  */
 data class TypeRef(
     val name: String,
-    val isArray: Boolean = false,
+    val arrayDepth: Int = 0,
 ) {
+    /**
+     * Backward-compatible constructor: `TypeRef("int", isArray = true)` → `TypeRef("int", 1)`.
+     */
+    constructor(name: String, isArray: Boolean) : this(name, if (isArray) 1 else 0)
+
     companion object {
         val INT = TypeRef("int")
         val DOUBLE = TypeRef("double")
@@ -22,6 +27,23 @@ data class TypeRef(
         val JSON = TypeRef("json")
         val VOID = TypeRef("void")
     }
+
+    /** Whether this is an array type (any depth). */
+    val isArray: Boolean get() = arrayDepth > 0
+
+    /**
+     * Returns the element type by peeling one array dimension.
+     * e.g. `int[][]` → `int[]`, `int[]` → `int`.
+     * Returns `this` if not an array.
+     */
+    fun elementType(): TypeRef =
+        if (arrayDepth > 0) TypeRef(name, arrayDepth - 1) else this
+
+    /**
+     * Returns a new TypeRef with one additional array dimension.
+     * e.g. `int` → `int[]`, `int[]` → `int[][]`.
+     */
+    fun arrayOf(): TypeRef = TypeRef(name, arrayDepth + 1)
 
     /**
      * Primitive types are stored directly in the primitive register bank (`pMem`).
@@ -57,10 +79,14 @@ data class TypeRef(
      * Comparability rules:
      * - Same type is always comparable.
      * - `null` (represented as `null` TypeRef) is comparable with any nullable type.
+     * - Struct and json are comparable (struct implicitly upcasts to json).
      */
     fun isComparable(other: TypeRef?): Boolean {
         if (other == null) return isNullable()
         if (this == other) return true
+        // Struct and json are comparable (implicit upcast)
+        if (this == JSON && other.isStructType()) return true
+        if (this.isStructType() && other == JSON) return true
         return false
     }
 
@@ -72,7 +98,7 @@ data class TypeRef(
      * - `int to double`: implicit widening.
      * - `null to nullable`: ok for reference types.
      * - `struct to json`: implicit upcast.
-     * - Arrays: element types must match exactly.
+     * - Arrays: element types must match exactly, and array depth must match.
      */
     fun isAssignableFrom(value: TypeRef?): Boolean {
         // null to any nullable type
@@ -85,23 +111,20 @@ data class TypeRef(
         if (this == DOUBLE && value == INT) return true
 
         // struct to json (implicit upcast), supports both scalar and array forms
-        // e.g. Config to json, Config[] to json[]
+        // e.g. Config to json, Config[] to json[], Config[][] to json[][]
         // Note: can't use isStructType() here since it checks !isArray
-        if (this.name == "json" && value.name !in BUILTIN_TYPE_NAMES && this.isArray == value.isArray) return true
+        if (this.name == "json" && value.name !in BUILTIN_TYPE_NAMES && this.arrayDepth == value.arrayDepth) return true
 
-        // Array element type must match exactly
-        if (isArray && value.isArray) return name == value.name
-
-        return false
+         return false
     }
 
     /**
      * Whether this type is valid for a variable, parameter, or struct field.
-     * Rejects 'void' and 'void[]'.
+     * Rejects 'void' and 'void[]' (any depth).
      */
     fun isValidAsVariable(): Boolean = name != "void"
 
-    override fun toString(): String = if (isArray) "$name[]" else name
+    override fun toString(): String = name + "[]".repeat(arrayDepth)
 }
 
 

@@ -126,7 +126,7 @@ class ExpressionResolver(
         }
 
         expr.elementType = elementType
-        return TypeRef(elementType.name, isArray = true)
+        return elementType.arrayOf()
     }
 
     /**
@@ -144,7 +144,11 @@ class ExpressionResolver(
         // json literal: {key: value, ...} with no struct validation
         // json is dynamic so any field names and value types are valid
         if (expr.structType == TypeRef.JSON) {
+            val seenKeys = mutableSetOf<String>()
             for (init in expr.fields) {
+                if (!seenKeys.add(init.name)) {
+                    errors.report(init.loc, "Duplicate key '${init.name}' in json literal")
+                }
                 resolveExpr(scope, init.value)
             }
             return TypeRef.JSON
@@ -168,6 +172,11 @@ class ExpressionResolver(
                 continue
             }
 
+            // Propagate struct type into nested struct literal values
+            if (init.value is StructLiteralExpr && (expectedFieldType.isStructType() || expectedFieldType == TypeRef.JSON)) {
+                (init.value as StructLiteralExpr).structType = expectedFieldType
+            }
+
             val actualType = resolveExpr(scope, init.value)
             if (!expectedFieldType.isAssignableFrom(actualType)) {
                 errors.report(
@@ -175,7 +184,6 @@ class ExpressionResolver(
                     "Type mismatch for field '${init.name}': expected '$expectedFieldType', found '${actualType ?: "null"}'",
                 )
             }
-
         }
 
         // Check for missing required fields
@@ -238,7 +246,7 @@ class ExpressionResolver(
             if (indexType != TypeRef.INT) {
                 errors.report(expr.index.loc, "Array index must be 'int', found '$indexType'")
             }
-            return TypeRef(targetType.name)
+            return targetType.elementType()
         }
 
         errors.report(expr.loc, "Cannot index into type '$targetType'")
@@ -547,8 +555,15 @@ class ExpressionResolver(
 
             if (param != null) {
                 val expectedType = if (param.isVarargs) {
-                    // For varargs, we expect the element type (which is param.type.name without [])
-                    TypeRef(param.type.name)
+                    // Allow direct array passing: sum([1,2,3]) for int ...vals[]
+                    // Check if exactly one arg maps to the varargs slot and it matches the array type
+                    val varargSlotIndex = params.size - 1
+                    val argsInVarargSlot = args.size - varargSlotIndex
+                    if (argsInVarargSlot == 1 && param.type.isAssignableFrom(argType)) {
+                        continue
+                    }
+                    // For individual varargs elements, expect the element type
+                    param.type.elementType()
                 } else {
                     param.type
                 }

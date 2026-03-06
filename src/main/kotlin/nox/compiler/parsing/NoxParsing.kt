@@ -57,7 +57,7 @@ object NoxParsing {
         parser.addErrorListener(errorListener)
 
         val tree = parser.program()
-        val builder = ASTBuilder(fileName)
+        val builder = ASTBuilder(fileName, errors)
         return builder.visitProgram(tree)
     }
 }

@@ -72,8 +72,8 @@ parameter
  
  // Types
  typeRef
-    : primitiveType (LBRACK RBRACK)?                // int, string[], json, etc.
-    | Identifier    (LBRACK RBRACK)?                // ApiConfig, Point[], etc.
+    : primitiveType (LBRACK RBRACK)*                // int, string[], int[][], etc.
+    | Identifier    (LBRACK RBRACK)*                // ApiConfig, Point[][], etc.
     ;
 
 primitiveType
