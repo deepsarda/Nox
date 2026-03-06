@@ -1047,4 +1047,99 @@ class TypeResolverTest :
                 """.trimIndent(),
             )
         }
+
+        test("validates varargs calls") {
+            val source = """
+                int sum(int ...vals[]) { return 0; }
+                main() {
+                    int s1 = sum();
+                    int s2 = sum(1);
+                    int s3 = sum(1, 2, 3);
+                    return "ok";
+                }
+            """.trimIndent()
+            val (_, errors) = resolve(source)
+            errors.hasErrors() shouldBe false
+        }
+
+        test("rejects varargs calls with wrong element type") {
+            resolveError(
+                """
+                void foo(int ...vals[]) { }
+                main() { foo(1, "bad"); return "ok"; }
+                """.trimIndent(),
+                "Argument 2 of 'foo': expected 'int', got 'string'"
+            )
+        }
+
+        test("rejects void in struct fields") {
+            resolveError(
+                """
+                type Bad { void x; }
+                main() { return "ok"; }
+                """.trimIndent(),
+                "Invalid type 'void' for field 'x' in struct 'Bad'"
+            )
+        }
+
+        test("rejects void in function parameters") {
+            resolveError(
+                """
+                void foo(void x) { }
+                main() { return "ok"; }
+                """.trimIndent(),
+                "Invalid parameter type 'void'"
+            )
+        }
+
+        test("rejects void in global variables") {
+            resolveError(
+                """
+                void g = null;
+                main() { return "ok"; }
+                """.trimIndent(),
+                "Invalid type 'void' for global variable 'g'"
+            )
+        }
+
+        test("rejects void in local variables") {
+            resolveError(
+                """
+                main() { void x = null; return "ok"; }
+                """.trimIndent(),
+                "Invalid type 'void' for variable 'x'"
+            )
+        }
+
+        test("rejects void in foreach element") {
+            resolveError(
+                """
+                main() {
+                    int[] arr = [1];
+                    foreach (void v in arr) { }
+                    return "ok";
+                }
+                """.trimIndent(),
+                "Invalid type 'void' for foreach element 'v'"
+            )
+        }
+
+        test("validates default value types") {
+            resolveError(
+                """
+                void foo(int x = "bad") { }
+                main() { return "ok"; }
+                """.trimIndent(),
+                "Default value for parameter 'x' does not match parameter type 'int': got 'string'"
+            )
+        }
+
+        test("allows compatible default value types (int to double)") {
+            val source = """
+                void foo(double x = 42) { }
+                main() { return "ok"; }
+            """.trimIndent()
+            val (_, errors) = resolve(source)
+            errors.hasErrors() shouldBe false
+        }
     })

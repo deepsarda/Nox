@@ -512,11 +512,11 @@ class ExpressionResolver(
      * Both user-defined [ParamSymbol] and built-in `Pair<String, TypeRef>` params
      * convert to this via extension helpers below.
      */
-    private data class ArgSpec(val name: String, val type: TypeRef, val hasDefault: Boolean)
+    private data class ArgSpec(val name: String, val type: TypeRef, val hasDefault: Boolean, val isVarargs: Boolean = false)
 
     /**
      * Validate call arguments against a parameter list.
-     * Handles default values (optional params) and type checking.
+     * Handles default values (optional params), varargs, and type checking.
      * Works for both user-defined functions and built-in methods.
      */
     private fun validateArgs(
@@ -526,22 +526,37 @@ class ExpressionResolver(
         args: List<Expr>,
         scope: SymbolTable,
     ) {
-        val requiredCount = params.count { !it.hasDefault }
+        val hasVarargs = params.lastOrNull()?.isVarargs == true
+        val requiredCount = params.count { !it.hasDefault && !it.isVarargs }
 
         if (args.size < requiredCount) {
             errors.report(callLoc, "'$funcName' expects at least $requiredCount arguments, got ${args.size}")
-        } else if (args.size > params.size) {
+        } else if (!hasVarargs && args.size > params.size) {
             errors.report(callLoc, "'$funcName' expects at most ${params.size} arguments, got ${args.size}")
         }
 
         for (i in args.indices) {
             val argType = resolveExpr(scope, args[i])
-            if (i < params.size) {
-                val paramType = params[i].type
-                if (!paramType.isAssignableFrom(argType)) {
+            val param = if (hasVarargs && i >= params.size - 1) {
+                params.last()
+            } else if (i < params.size) {
+                params[i]
+            } else {
+                null
+            }
+
+            if (param != null) {
+                val expectedType = if (param.isVarargs) {
+                    // For varargs, we expect the element type (which is param.type.name without [])
+                    TypeRef(param.type.name)
+                } else {
+                    param.type
+                }
+
+                if (!expectedType.isAssignableFrom(argType)) {
                     errors.report(
                         args[i].loc,
-                        "Argument ${i + 1} of '$funcName': expected '$paramType', got '${argType ?: "null"}'",
+                        "Argument ${i + 1} of '$funcName': expected '$expectedType', got '${argType ?: "null"}'",
                     )
                 }
             }
@@ -550,7 +565,7 @@ class ExpressionResolver(
 
     /** Convert user-defined params to [ArgSpec]. */
     private fun paramSpecs(params: List<ParamSymbol>): List<ArgSpec> =
-        params.map { ArgSpec(it.name, it.type, it.defaultValue != null) }
+        params.map { ArgSpec(it.name, it.type, it.defaultValue != null, it.isVarargs) }
 
     /** Convert built-in params to [ArgSpec] (all required). */
     private fun builtinSpecs(params: List<Pair<String, TypeRef>>): List<ArgSpec> =

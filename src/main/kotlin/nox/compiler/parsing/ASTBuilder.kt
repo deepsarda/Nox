@@ -98,14 +98,16 @@ class ASTBuilder(
         val returnType = visitTypeRef(ctx.typeRef())
         val name = ctx.Identifier().text
         val params = buildParamList(ctx.parameterList())
-        val body = visitBlock(ctx.block())
+        val blockCtx = ctx.block()
+        val body = if (blockCtx != null) visitBlock(blockCtx) else Block(emptyList(), locOf(ctx))
         return FuncDef(returnType, name, params, body, locOf(ctx))
     }
 
     // Main definition
     override fun visitMainDefinition(ctx: NoxParser.MainDefinitionContext): MainDef {
         val params = buildParamList(ctx.parameterList())
-        val body = visitBlock(ctx.block())
+        val blockCtx = ctx.block()
+        val body = if (blockCtx != null) visitBlock(blockCtx) else Block(emptyList(), locOf(ctx))
         return MainDef(params, body, locOf(ctx))
     }
 

@@ -64,6 +64,9 @@ class StatementResolver(
     }
 
     private fun resolveVarDecl(scope: SymbolTable, stmt: VarDeclStmt) {
+        if (!stmt.type.isValidAsVariable()) {
+            errors.report(stmt.loc, "Invalid type '${stmt.type}' for variable '${stmt.name}'")
+        }
         val init = stmt.initializer
 
         // If the initializer is a struct literal, set its type from the declaration
@@ -209,6 +212,10 @@ class StatementResolver(
         if (!iterType.isArray) {
             errors.report(stmt.loc, "foreach requires an array, got '$iterType'")
             return
+        }
+
+        if (!stmt.elementType.isValidAsVariable()) {
+            errors.report(stmt.loc, "Invalid type '${stmt.elementType}' for foreach element '${stmt.elementName}'")
         }
 
         // Extract element type from array type

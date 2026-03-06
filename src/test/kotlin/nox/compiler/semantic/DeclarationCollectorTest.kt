@@ -219,4 +219,52 @@ class DeclarationCollectorTest :
             globalScope.allSymbols().size shouldBe 0
             program.main.shouldBeNull()
         }
+
+        // Varargs & Parameter Ordering
+
+        fun collectError(source: String, msg: String) {
+            val (_, errors) = collect(source)
+            errors.hasErrors() shouldBe true
+            errors.all().any { it.message.contains(msg) } shouldBe true
+        }
+
+        test("rejects multiple varargs parameters") {
+            collectError(
+                """
+                void foo(int ...a[], string ...b[]) { }
+                main() { return "ok"; }
+                """.trimIndent(),
+                "At most one varargs parameter is allowed"
+            )
+        }
+
+        test("rejects varargs not as last parameter") {
+            collectError(
+                """
+                void foo(int ...a[], int b) { }
+                main() { return "ok"; }
+                """.trimIndent(),
+                "Varargs parameter 'a' must be the last parameter"
+            )
+        }
+
+        test("rejects varargs with default value") {
+            collectError(
+                """
+                void foo(int ...a[] = [1]) { }
+                main() { return "ok"; }
+                """.trimIndent(),
+                "Varargs parameter 'a' cannot have a default value"
+            )
+        }
+
+        test("rejects required parameter after optional") {
+            collectError(
+                """
+                void foo(int a = 1, int b) { }
+                main() { return "ok"; }
+                """.trimIndent(),
+                "Required parameter 'b' must appear before optional parameters"
+            )
+        }
     })

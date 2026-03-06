@@ -87,9 +87,13 @@ class TypeResolver(
             }
             seenFields.add(field.name)
 
-            // Validate the field type exists
+            // Validate the field type exists and is a valid variable type (not void)
             if (!isKnownType(field.type)) {
                 errors.report(field.loc, "Unknown type '${field.type}' for field '${field.name}' in struct '${typeDef.name}'")
+                continue
+            }
+            if (!field.type.isValidAsVariable()) {
+                errors.report(field.loc, "Invalid type '${field.type}' for field '${field.name}' in struct '${typeDef.name}'")
                 continue
             }
 
@@ -142,8 +146,26 @@ class TypeResolver(
             if (!isKnownType(param.type)) {
                 errors.report(param.loc, "Unknown parameter type '${param.type}'")
             }
+            if (!param.type.isValidAsVariable()) {
+                errors.report(param.loc, "Invalid parameter type '${param.type}'")
+            }
 
-            val symbol = ParamSymbol(param.name, param.type, param.defaultValue)
+            // Validate default value type (P2)
+            if (param.defaultValue != null) {
+                // Set struct type for struct literal default values
+                if (param.defaultValue is StructLiteralExpr && param.type.isStructType()) {
+                    param.defaultValue.structType = param.type
+                }
+                val defaultValueType = exprResolver.resolveExpr(scope, param.defaultValue)
+                if (!param.type.isAssignableFrom(defaultValueType)) {
+                    errors.report(
+                        param.defaultValue.loc,
+                        "Default value for parameter '${param.name}' does not match parameter type '${param.type}': got '${defaultValueType ?: "null"}'"
+                    )
+                }
+            }
+
+            val symbol = ParamSymbol(param.name, param.type, param.defaultValue, param.isVarargs)
             if (!scope.define(param.name, symbol)) {
                 errors.report(param.loc, "Duplicate parameter name '${param.name}'")
             }
@@ -154,6 +176,9 @@ class TypeResolver(
      * Resolve and type-check a global variable's initializer expression.
      */
     private fun resolveGlobalInit(decl: GlobalVarDecl) {
+        if (!decl.type.isValidAsVariable()) {
+            errors.report(decl.loc, "Invalid type '${decl.type}' for global variable '${decl.name}'")
+        }
         if (decl.initializer == null) return
 
         // Set struct type for struct literal initializers

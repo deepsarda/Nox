@@ -36,6 +36,7 @@ data class ParamSymbol(
     override val name: String,
     override val type: TypeRef,
     val defaultValue: Expr?,
+    val isVarargs: Boolean = false,
 ) : Symbol
 
 /**

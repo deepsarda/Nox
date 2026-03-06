@@ -75,9 +75,34 @@ class DeclarationCollector(
      * @param decl the function definition to collect
      */
     private fun collectFunction(decl: FuncDef) {
-        val params = decl.params.map { p ->
-            ParamSymbol(p.name, p.type, p.defaultValue)
+        var optionalSeen = false
+        var varargsSeen = false
+
+        val params = decl.params.mapIndexed { index, p ->
+            // Validate Optional Param Ordering
+            if (p.defaultValue != null) {
+                optionalSeen = true
+            } else if (!p.isVarargs && optionalSeen) {
+                errors.report(p.loc, "Required parameter '${p.name}' must appear before optional parameters")
+            }
+
+            // Validate Varargs Constraints
+            if (p.isVarargs) {
+                if (varargsSeen) {
+                    errors.report(p.loc, "At most one varargs parameter is allowed")
+                }
+                if (index != decl.params.size - 1) {
+                    errors.report(p.loc, "Varargs parameter '${p.name}' must be the last parameter")
+                }
+                if (p.defaultValue != null) {
+                    errors.report(p.loc, "Varargs parameter '${p.name}' cannot have a default value")
+                }
+                varargsSeen = true
+            }
+
+            ParamSymbol(p.name, p.type, p.defaultValue, p.isVarargs)
         }
+
         val symbol = FuncSymbol(decl.name, decl.returnType, params, decl)
         if (!globalScope.define(decl.name, symbol)) {
             errors.report(decl.loc, "Duplicate function definition '${decl.name}'")

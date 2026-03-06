@@ -95,6 +95,12 @@ data class TypeRef(
         return false
     }
 
+    /**
+     * Whether this type is valid for a variable, parameter, or struct field.
+     * Rejects 'void' and 'void[]'.
+     */
+    fun isValidAsVariable(): Boolean = name != "void"
+
     override fun toString(): String = if (isArray) "$name[]" else name
 }
 

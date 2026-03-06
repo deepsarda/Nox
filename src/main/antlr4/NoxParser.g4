@@ -64,8 +64,8 @@ parameterList
     ;
 
 parameter
-    : typeRef ELLIPSIS Identifier LBRACK RBRACK     // Varargs: int ...values[]
-    | typeRef Identifier (ASSIGN expression)?        // Regular or default
+    : typeRef ELLIPSIS Identifier LBRACK RBRACK (ASSIGN expression)?  // Varargs: int ...values[]
+    | typeRef Identifier (ASSIGN expression)?                         // Regular or default
     ;
 
 
