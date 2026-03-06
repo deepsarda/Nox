@@ -1,7 +1,6 @@
-package nox.compiler.semantic
+package nox.compiler.types
 
 import nox.compiler.ast.FuncDef
-import nox.compiler.ast.TypeRef
 
 /**
  * A resolved function or method that can be called at runtime.

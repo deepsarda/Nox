@@ -1,4 +1,4 @@
-package nox.compiler.ast
+package nox.compiler.types
 
 /**
  * Binary operators, grouped by category.

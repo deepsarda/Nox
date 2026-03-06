@@ -7,9 +7,9 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import nox.compiler.CompilerErrors
-import nox.compiler.NoxParsing
-import nox.compiler.ast.TypeRef
-
+import nox.compiler.parsing.NoxParsing
+import nox.compiler.types.TypeRef
+import nox.compiler.types.*
 /**
  * Tests for [DeclarationCollector] (Pass 1).
  *

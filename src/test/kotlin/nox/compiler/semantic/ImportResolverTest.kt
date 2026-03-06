@@ -5,9 +5,9 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import nox.compiler.CompilerErrors
-import nox.compiler.ast.TypeRef
+import nox.compiler.types.TypeRef
 import java.nio.file.Path
-
+import nox.compiler.parsing.NoxParsing
 /**
  * Tests for [ImportResolver]: path resolution, cycle detection,
  * namespace validation, and global slot assignment.
@@ -44,7 +44,7 @@ class ImportResolverTest :
             val errors = CompilerErrors()
             val fs = fileSystem("/project/utils/helpers.nox" to minNoxSource())
 
-            val program = nox.compiler.NoxParsing.parse(
+            val program = NoxParsing.parse(
                 source = """import "utils/helpers.nox" as helpers;""",
                 fileName = "/project/main.nox",
                 errors = errors,
@@ -71,7 +71,7 @@ class ImportResolverTest :
                 "/project/b.nox" to """import "a.nox" as a;""",
             )
 
-            val programA = nox.compiler.NoxParsing.parse(
+            val programA = NoxParsing.parse(
                 source = """import "b.nox" as b;""",
                 fileName = "/project/a.nox",
                 errors = errors,
@@ -92,7 +92,7 @@ class ImportResolverTest :
             val errors = CompilerErrors()
             val fs = fileSystem("/project/math.nox" to minNoxSource())
 
-            val program = nox.compiler.NoxParsing.parse(
+            val program = NoxParsing.parse(
                 source = """import "math.nox" as Math;""",
                 fileName = "/project/main.nox",
                 errors = errors,
@@ -113,7 +113,7 @@ class ImportResolverTest :
             val errors = CompilerErrors()
             val fs = fileSystem("/project/game.nox" to minNoxSource())
 
-            val program = nox.compiler.NoxParsing.parse(
+            val program = NoxParsing.parse(
                 source = """import "game.nox" as GameAPI;""",
                 fileName = "/project/main.nox",
                 errors = errors,
@@ -138,7 +138,7 @@ class ImportResolverTest :
                 "/project/b.nox" to minNoxSource("b"),
             )
 
-            val program = nox.compiler.NoxParsing.parse(
+            val program = NoxParsing.parse(
                 source = """
                     import "a.nox" as helpers;
                     import "b.nox" as helpers;
@@ -165,7 +165,7 @@ class ImportResolverTest :
                 "/project/b.nox" to noxSourceWithGlobals("g3", "g4", "g5"), // 3 globals
             )
 
-            val program = nox.compiler.NoxParsing.parse(
+            val program = NoxParsing.parse(
                 source = """
                     import "a.nox" as modA;
                     import "b.nox" as modB;
@@ -199,7 +199,7 @@ class ImportResolverTest :
             val errors = CompilerErrors()
             val fs = fileSystem<String>() // empty file system
 
-            val program = nox.compiler.NoxParsing.parse(
+            val program = NoxParsing.parse(
                 source = """import "nonexistent.nox" as missing;""",
                 fileName = "/project/main.nox",
                 errors = errors,
@@ -218,7 +218,7 @@ class ImportResolverTest :
 
         test("handles file with no imports gracefully") {
             val errors = CompilerErrors()
-            val program = nox.compiler.NoxParsing.parse(
+            val program = NoxParsing.parse(
                 source = minNoxSource(),
                 fileName = "/project/main.nox",
                 errors = errors,
@@ -250,7 +250,7 @@ class ImportResolverTest :
                 """.trimIndent(),
             )
 
-            val program = nox.compiler.NoxParsing.parse(
+            val program = NoxParsing.parse(
                 source = """import "a.nox" as a;""",
                 fileName = "/project/main.nox",
                 errors = errors,
@@ -289,7 +289,7 @@ class ImportResolverTest :
                 "/project/utils.nox" to noxSourceWithGlobals("utilG1", "utilG2"),
             )
 
-            val program = nox.compiler.NoxParsing.parse(
+            val program = NoxParsing.parse(
                 source = """
                     import "a.nox" as a;
                     import "b.nox" as b;

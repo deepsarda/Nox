@@ -1,5 +1,7 @@
 package nox.compiler.ast
 
+import nox.compiler.types.*
+
 /**
  * Root of the AST for a single `.nox` file.
  *

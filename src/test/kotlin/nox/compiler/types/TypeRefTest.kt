@@ -1,4 +1,4 @@
-package nox.compiler.ast
+package nox.compiler.types
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe

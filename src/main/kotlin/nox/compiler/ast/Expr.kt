@@ -1,7 +1,7 @@
 package nox.compiler.ast
 
-import nox.compiler.semantic.CallTarget
-import nox.compiler.semantic.Symbol
+import nox.compiler.types.*
+
 
 /**
  * Base class for all expression nodes.

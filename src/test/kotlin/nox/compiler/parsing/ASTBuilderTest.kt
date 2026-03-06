@@ -1,4 +1,4 @@
-package nox.compiler
+package nox.compiler.parsing
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
@@ -7,6 +7,8 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import nox.compiler.ast.*
+import nox.compiler.types.*
+import nox.compiler.CompilerErrors
 
 /**
  * Tests that the [ASTBuilder] correctly converts ANTLR parse trees

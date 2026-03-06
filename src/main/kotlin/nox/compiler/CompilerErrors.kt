@@ -1,6 +1,6 @@
 package nox.compiler
 
-import nox.compiler.ast.SourceLocation
+import nox.compiler.types.SourceLocation
 
 /**
  * A single compiler error with source location and optional suggestion.

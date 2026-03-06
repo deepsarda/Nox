@@ -1,4 +1,4 @@
-package nox.compiler.ast
+package nox.compiler.types
 
 /**
  * A syntactic reference to a type as it appears in source code.

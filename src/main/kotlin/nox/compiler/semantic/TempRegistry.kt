@@ -1,6 +1,7 @@
 package nox.compiler.semantic
 
-import nox.compiler.ast.TypeRef
+import nox.compiler.types.TypeRef
+import nox.compiler.types.CallTarget
 
 /**
  * Temporary compile-time registry for Tier 0 (built-in) and Tier 1 (external plugin)

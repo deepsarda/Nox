@@ -1,6 +1,7 @@
-package nox.compiler
+package nox.compiler.parsing
 
 import nox.compiler.ast.*
+import nox.compiler.types.*
 import nox.parser.NoxParser
 import nox.parser.NoxParserBaseVisitor
 import org.antlr.v4.runtime.ParserRuleContext

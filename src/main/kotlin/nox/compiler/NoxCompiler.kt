@@ -1,10 +1,11 @@
 package nox.compiler
 
 import nox.compiler.ast.Program
+import nox.compiler.parsing.NoxParsing
 import nox.compiler.semantic.DeclarationCollector
 import nox.compiler.semantic.ImportResolver
 import nox.compiler.semantic.ResolvedModule
-import nox.compiler.semantic.SymbolTable
+import nox.compiler.types.SymbolTable
 import nox.compiler.semantic.TypeResolver
 import java.nio.file.Path
 

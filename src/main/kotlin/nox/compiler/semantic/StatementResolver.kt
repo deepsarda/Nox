@@ -2,6 +2,7 @@ package nox.compiler.semantic
 
 import nox.compiler.CompilerErrors
 import nox.compiler.ast.*
+import nox.compiler.types.*
 
 /**
  * Resolves types and validates all [Stmt] nodes in the AST.

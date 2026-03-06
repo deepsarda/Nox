@@ -2,6 +2,7 @@ package nox.compiler.semantic
 
 import nox.compiler.CompilerErrors
 import nox.compiler.ast.*
+import nox.compiler.types.*
 
 /**
  * Resolves the type of every [Expr] node in the AST.

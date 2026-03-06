@@ -1,7 +1,7 @@
 package nox.compiler.semantic
 
 import nox.compiler.CompilerErrors
-import nox.compiler.NoxParsing
+import nox.compiler.parsing.NoxParsing
 import nox.compiler.ast.ImportDecl
 import nox.compiler.ast.Program
 import java.nio.file.Path

@@ -6,8 +6,9 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import nox.compiler.CompilerErrors
-import nox.compiler.NoxParsing
+import nox.compiler.parsing.NoxParsing
 import nox.compiler.ast.*
+import nox.compiler.types.*
 
 /**
  * Tests for Pass 2: Type Resolution.

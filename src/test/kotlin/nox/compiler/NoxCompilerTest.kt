@@ -4,7 +4,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import nox.compiler.ast.VarDeclStmt
-import nox.compiler.ast.TypeRef
+import nox.compiler.types.TypeRef
 
 /**
  * Tests for the [NoxCompiler] facade.

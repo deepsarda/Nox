@@ -1,4 +1,4 @@
-package nox.compiler.semantic
+package nox.compiler.types
 
 /**
  * A scope in the lexical scope chain.

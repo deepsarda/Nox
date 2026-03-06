@@ -1,4 +1,4 @@
-package nox.compiler.ast
+package nox.compiler.types
 
 /**
  * Represents the source position of an AST node within a `.nox` file.
