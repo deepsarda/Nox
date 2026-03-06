@@ -17,14 +17,15 @@ The `.noxc` format is **not executable** for security reasons and exists solely 
  
 ## Format Specification
 
-A `.noxc` file has five sections, in order:
+A `.noxc` file has six sections, in order:
 
 ```
 1. File Header         (source file, compilation timestamp)
 2. Constant Pool       (all pooled values with indices)
-3. Function Listing    (one block per function, with bytecode)
-4. Exception Table     (try-catch mappings)
-5. Summary             (metrics)
+3. Module Init Blocks  (global variable initialization, one per module)
+4. Function Listing    (one block per function, with bytecode)
+5. Exception Table     (try-catch mappings)
+6. Summary             (metrics)
 ```
  
 ## Complete Example
@@ -109,10 +110,13 @@ main(int a = 1, int b = 2) {
 ; Summary
 
 .summary
+  modules:      1
+  init_blocks:  0
   functions:    2
   instructions: 11
   constants:    1
   exceptions:   0
+  globals:      0p + 0r
   bytecode:     88 bytes
 ```
  
@@ -142,6 +146,42 @@ Types:
 | `lng` | Long constant (> 16 bits) | `100000` |
 | `path` | Cached accessor path | `"server.db.host"` |
 | `type` | Struct type ID | `ApiConfig` |
+
+### Module Init Block
+
+Each module with non-trivial global initializers gets an init block that runs before `main()`:
+
+```
+.init <module_name>
+  ; globals: <register>=<name>  ...
+  ;
+  ; <file>:<line>  <global declaration>
+  <PC>:  <OPCODE>  <operands>  ; <comment>
+```
+
+The `<module_name>` is the module's namespace (e.g., `helpers`, `math`) or `main` for the root module. Init blocks appear **before** function blocks, ordered by execution sequence (depth-first import order).
+
+#### Example
+
+```
+.init c
+  ; globals: g0=PI (double)  g1=MAX_RETRIES (int)
+  ;
+  ; constants.nox:1  double PI = 3.14159;
+  0000:  LDC       p0, #0                   ; p0 = 3.14159
+  0001:  GSTORE    g0, p0                   ; g0 = PI
+  ;
+  ; constants.nox:2  int MAX_RETRIES = 5;
+  0002:  LDI       p0, 5                    ; p0 = 5
+  0003:  GSTORE    g1, p0                   ; g1 = MAX_RETRIES
+  0004:  RET                                ; return (void)
+```
+
+Notice that init blocks:
+- Use `GSTORE`/`GSTORER` to write into global memory, not local registers
+- Use scratch registers (`p0`, `r0`) temporarily but don't retain them after `RET`
+- Have no parameters (no `params:` line, replaced by `globals:` listing)
+- Are purely linear with no jumps, loops, or labels (except for complex initializer expressions)
 
 ### Function Block
 
@@ -220,12 +260,17 @@ Example:
 
 ```
 .summary
+  modules:      <count>
+  init_blocks:  <count>
   functions:    <count>
   instructions: <count>
   constants:    <count>
   exceptions:   <count>
+  globals:      <prim_count>p + <ref_count>r
   bytecode:     <bytes> bytes
 ```
+
+The `modules` count includes the root module. `init_blocks` counts only modules that required init code (modules with all-default globals are excluded). `globals` shows the total primitive and reference global slots across all modules.
  
 ## Complex Example: Control Flow + Exceptions
 
@@ -353,10 +398,13 @@ main(string url) {
 
 
 .summary
+  modules:      1
+  init_blocks:  0
   functions:    1
   instructions: 35
   constants:    8
   exceptions:   1
+  globals:      0p + 0r
   bytecode:     280 bytes
 ```
  
@@ -373,6 +421,7 @@ The emitter generates labels for:
 
 | Pattern | Label Format | Example |
 |---|---|---|
+| Init block start | `.init <name>:` | Module initialization |
 | Loop start | `.loop_start:` | `for`, `while` condition |
 | Loop exit | `.loop_exit:` | After loop body |
 | Loop update | `.loop_update:` | For-loop increment |
@@ -394,6 +443,141 @@ Jump targets reference PCs with the `@` prefix. When a label exists at the targe
 ```
 
 The comment shows the label name for quick scanning.
+ 
+## Multi-Module Example
+
+### Source
+
+```c
+// constants.nox
+double PI = 3.14159;
+int MAX = 100;
+```
+
+```c
+// main.nox
+import "constants.nox" as c;
+
+string PREFIX = "item_";
+
+int circleArea(int radius) {
+    return c.PI * radius * radius;
+}
+
+main(int r = 5) {
+    double area = circleArea(r);
+    return `${PREFIX}area = ${area}`;
+}
+```
+
+### Disassembly: `main.noxc`
+
+```
+;  Nox Bytecode Disassembly
+;  Source:   main.nox
+;  Program:  (unnamed)
+;  Compiled: 2026-03-06T17:00:00+05:30
+;  Modules:  2 (main, c)
+
+
+; Constant Pool
+
+.constants
+  #0  dbl   3.14159
+  #1  str   "item_"
+  #2  str   "area = "
+
+
+; Module Initialization
+
+.init c
+  ; globals: g0=PI (double)  g1=MAX (int)
+  ; source:  constants.nox
+  ;
+  ; constants.nox:1  double PI = 3.14159;
+  0000:  LDC       p0, #0                   ; p0 = 3.14159
+  0001:  GSTORE    g0, p0                   ; g0 = PI
+  ;
+  ; constants.nox:2  int MAX = 100;
+  0002:  LDI       p0, 100                  ; p0 = 100
+  0003:  GSTORE    g1, p0                   ; g1 = MAX
+  0004:  RET                                ; return (void)
+
+.init main
+  ; globals: gr0=PREFIX (string)
+  ; source:  main.nox
+  ;
+  ; main.nox:3  string PREFIX = "item_";
+  0005:  LDC       r0, #1                   ; r0 = "item_"
+  0006:  GSTORER   gr0, r0                  ; gr0 = PREFIX
+  0007:  RET                                ; return (void)
+
+
+; Functions
+
+;  Function: circleArea
+;    Signature:  int circleArea(int radius)
+;    Entry PC:   8
+;    Params:     1
+;    Frame:      pMem=2  rMem=0
+
+.func circleArea
+  ; params: p0=radius
+  ;
+  ; main.nox:6  return c.PI * radius * radius;
+  0008:  GLOAD     p1, g0                   ; p1 = c.PI
+  0009:  DMUL      p1, p1, p0               ; p1 = PI * radius
+  0010:  DMUL      p1, p1, p0               ; p1 = (PI * radius) * radius
+  0011:  RET       p1                       ; return p1
+
+
+;  Function: main
+;    Signature:  main(int r = 5)
+;    Entry PC:   12
+;    Params:     1
+;    Frame:      pMem=3  rMem=3
+
+.func main
+  ; params: p0=r
+  ;
+  ; main.nox:10  double area = circleArea(r);
+  0012:  MOV       p1, p0                   ; arg0 = r
+  0013:  CALL      circleArea, p1           ; call circleArea(r)
+  0014:  MOV       p1, p1                   ; p1 = area (result)
+  ;
+  ; main.nox:11  return `${PREFIX}area = ${area}`;
+  0015:  GLOADR    r0, gr0                  ; r0 = PREFIX
+  0016:  LDC       r1, #2                   ; r1 = "area = "
+  0017:  HINV      STR_CONCAT, r0, r0, r1   ; r0 = PREFIX + "area = "
+  0018:  D2S       r1, p1                   ; r1 = toString(area)
+  0019:  HINV      STR_CONCAT, r0, r0, r1   ; r0 += area
+  0020:  RET       r0                       ; return r0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      2
+  init_blocks:  2
+  functions:    2
+  instructions: 21
+  constants:    3
+  exceptions:   0
+  globals:      2p + 1r
+  bytecode:     168 bytes
+```
+
+NOTE:
+- **Init blocks appear before functions**, in depth-first import order (`c` before `main`)
+- **Global registers** use `g0`/`g1` (primitive) and `gr0` (reference) prefixes
+- **`GSTORE`/`GSTORER`** write into global memory; **`GLOAD`/`GLOADR`** read from it
+- `circleArea` accesses `c.PI` via `GLOAD g0` there is no namespace prefix in bytecode, just the resolved global slot
  
 ## Implementation
 
