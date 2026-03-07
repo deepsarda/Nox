@@ -766,7 +766,6 @@ fun definitelyReturns(stmt: Stmt): Boolean = when (stmt) {
 ```kotlin
 class ControlFlowValidator {
     private var loopDepth = 0
-    private var inMain = false
 
     fun validate(stmt: Stmt) {
         when (stmt) {
@@ -775,9 +774,6 @@ class ControlFlowValidator {
             }
             is ContinueStmt -> {
                 if (loopDepth == 0) error(stmt, "'continue' can only appear inside a loop")
-            }
-            is YieldStmt -> {
-                if (!inMain) error(stmt, "'yield' can only appear inside 'main'")
             }
             is WhileStmt   -> { loopDepth++; validate(stmt.body); loopDepth-- }
             is ForStmt     -> { loopDepth++; validate(stmt.body); loopDepth-- }
@@ -900,7 +896,7 @@ error[E004]: Missing field 'enable_retries' in struct 'ApiConfig'
 |---|---|---|---|
 | **Pass 1** | Raw AST | Global scope populated | Duplicate type/function names |
 | **Pass 2** | AST + global scope | Annotated AST (`.resolvedType` set on every `Expr`) | Type mismatches, unknown identifiers, bad assignments, null safety violations, struct field errors, method resolution failures |
-| **Pass 3** | Annotated AST | Validated AST | Missing returns, break/continue outside loops, yield outside main, unreachable code |
+| **Pass 3** | Annotated AST | Validated AST | Missing returns, break/continue outside loops, unreachable code |
  
 ## Next Steps
 

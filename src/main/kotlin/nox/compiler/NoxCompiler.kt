@@ -2,11 +2,12 @@ package nox.compiler
 
 import nox.compiler.ast.Program
 import nox.compiler.parsing.NoxParsing
+import nox.compiler.semantic.ControlFlowValidator
 import nox.compiler.semantic.DeclarationCollector
 import nox.compiler.semantic.ImportResolver
 import nox.compiler.semantic.ResolvedModule
-import nox.compiler.types.SymbolTable
 import nox.compiler.semantic.TypeResolver
+import nox.compiler.types.SymbolTable
 import java.nio.file.Path
 
 /**
@@ -17,7 +18,7 @@ import java.nio.file.Path
  * 2. **Import Resolution:** resolve `import` declarations ([ImportResolver])
  * 3. **Declaration Collection:** register types, functions, globals ([DeclarationCollector])
  * 4. **Type Resolution:** resolve expression types, validate statements ([TypeResolver])
- * 5. **Control Flow Validation:** (Not implemented)
+ * 5. **Control Flow Validation:** validate return paths, loop context, dead code ([ControlFlowValidator])
  * 6. **Code Generation:** (Not implemented)
  * 7. **Disassembly:** (Not implemented)
  *
@@ -78,7 +79,9 @@ object NoxCompiler {
         // Phase 4: Type Resolution (Pass 2)
         TypeResolver(globalScope, errors, modules).resolve(program)
 
-        //TODO: Phase 5: Control Flow Validation (Pass 3)
+        // Phase 5: Control Flow Validation (Pass 3)
+        ControlFlowValidator(errors, warnings).validate(program)
+
         //TODO: Phase 6: Code Generation
 
         return CompilationResult(program, errors, warnings, modules)

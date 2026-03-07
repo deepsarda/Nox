@@ -65,7 +65,7 @@ Before any bytecode is generated, a dedicated **Validator** walks the AST to cat
 | **Schema Violations** | `Point p = {x: 1};` when `Point` requires `x` and `y` -> "Missing field `y`" |
 | **Operator Type Checks** | `"hello" + 42` -> "Operator `+` not defined for (string, int)" |
 | **Return Type Checks** | Function declared `int` but returns `string` |
-| **Invalid `yield` Usage** | `yield` used outside of a function context |
+| **Invalid `yield` Usage** | `yield` used outside of any function context |
 
 ### Error: `SemanticError`
 
