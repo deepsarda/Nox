@@ -750,12 +750,22 @@ class TypeResolverTest :
             )
         }
 
-        test("voidReturnWithValueFails") {
+        test("voidReturnWithoutValueOK") {
             resolveOk(
                 """
                 void doWork() { return; }
                 main() { return "ok"; }
                 """.trimIndent(),
+            )
+        }
+
+        test("voidReturnWithValueFails") {
+            resolveError(
+                """
+                void doWork() { return "hello"; }
+                main() { return "ok"; }
+                """.trimIndent(),
+                "Return type mismatch",
             )
         }
 

@@ -22,6 +22,13 @@ class StatementResolver(
 ) {
 
     /**
+     * When `true`, the current body being resolved is `main()`.
+     * `main` can return any type (the runtime auto-converts to string),
+     * so return-type checks are skipped. Set by [TypeResolver.resolveMain].
+     */
+    var isMainBody: Boolean = false
+
+    /**
      * Resolve a [block] in a new child scope.
      *
      * @param parentScope   the enclosing scope
@@ -246,16 +253,15 @@ class StatementResolver(
     private fun resolveReturn(scope: SymbolTable, stmt: ReturnStmt, expectedReturn: TypeRef) {
         if (stmt.value != null) {
             val returnType = exprResolver.resolveExpr(scope, stmt.value)
-            // If expectedReturn is VOID, main can return anything (runtime auto-converts to string)
-            if (expectedReturn != TypeRef.VOID) {
-                if (!expectedReturn.isAssignableFrom(returnType)) {
-                    errors.report(
-                        stmt.loc,
-                        "Return type mismatch: expected '$expectedReturn', got '${returnType ?: "null"}'",
-                    )
-                }
+            // main() can return anything as the runtime auto-converts to string.
+            // For all other functions (including void), validate the return type.
+            if (!isMainBody && !expectedReturn.isAssignableFrom(returnType)) {
+                errors.report(
+                    stmt.loc,
+                    "Return type mismatch: expected '$expectedReturn', got '${returnType ?: "null"}'",
+                )
             }
-        } else if (expectedReturn != TypeRef.VOID) {
+        } else if (expectedReturn != TypeRef.VOID && !isMainBody) {
             errors.report(stmt.loc, "Missing return value. Expected '$expectedReturn'")
         }
     }

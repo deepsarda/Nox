@@ -133,7 +133,9 @@ class TypeResolver(
     private fun resolveMain(mainDef: MainDef) {
         val mainScope = globalScope.child()
         registerParams(mainScope, mainDef.params)
+        stmtResolver.isMainBody = true
         stmtResolver.resolveBlock(mainScope, mainDef.body, TypeRef.VOID)
+        stmtResolver.isMainBody = false
     }
 
     /**
