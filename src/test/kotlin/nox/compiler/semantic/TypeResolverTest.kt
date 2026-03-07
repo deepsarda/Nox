@@ -769,6 +769,66 @@ class TypeResolverTest :
             )
         }
 
+        test("voidReturnWithIntFails") {
+            resolveError(
+                """
+                void doWork() { return 42; }
+                main() { return "ok"; }
+                """.trimIndent(),
+                "Return type mismatch",
+            )
+        }
+
+        test("voidReturnWithNullFails") {
+            resolveError(
+                """
+                void doWork() { return null; }
+                main() { return "ok"; }
+                """.trimIndent(),
+                "Return type mismatch",
+            )
+        }
+
+        test("voidReturnInNestedIfFails") {
+            resolveError(
+                """
+                void doWork(boolean cond) {
+                    if (cond) { return 1; }
+                }
+                main() { return "ok"; }
+                """.trimIndent(),
+                "Return type mismatch",
+            )
+        }
+
+        test("mainCanReturnInt") {
+            resolveOk(
+                """
+                main() { return 42; }
+                """.trimIndent(),
+            )
+        }
+
+        test("mainCanReturnBool") {
+            resolveOk(
+                """
+                main() { return true; }
+                """.trimIndent(),
+            )
+        }
+
+        test("mainBareReturnOk") {
+            resolveOk(
+                """
+                main() { return; }
+                """.trimIndent(),
+            )
+        }
+
+        test("voidIsNotNullable") {
+            TypeRef.VOID.isNullable() shouldBe false
+        }
+
         // UFCS (Unified Function Call Syntax)
 
         test("ufcsWithExtraArgs") {

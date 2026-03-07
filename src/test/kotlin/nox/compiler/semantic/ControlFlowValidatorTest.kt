@@ -439,4 +439,104 @@ class ControlFlowValidatorTest :
                 """.trimIndent(),
             )
         }
+
+        test("deadCodeAfterIfElseBothReturn") {
+            validateWarning(
+                """
+                int getValue(boolean cond) {
+                    if (cond) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                    int x = 999;
+                }
+                main() { return "ok"; }
+                """.trimIndent(),
+                "Unreachable code",
+            )
+        }
+
+        test("deadCodeAfterIfElseIfElseAllReturn") {
+            validateWarning(
+                """
+                int getValue(int x) {
+                    if (x > 0) {
+                        return 1;
+                    } else if (x < 0) {
+                        return -1;
+                    } else {
+                        return 0;
+                    }
+                    int dead = 42;
+                }
+                main() { return "ok"; }
+                """.trimIndent(),
+                "Unreachable code",
+            )
+        }
+
+        test("deadCodeAfterTryCatchBothReturn") {
+            validateWarning(
+                """
+                int getValue() {
+                    try {
+                        return 42;
+                    } catch (err) {
+                        return 0;
+                    }
+                    int dead = 99;
+                }
+                main() { return "ok"; }
+                """.trimIndent(),
+                "Unreachable code",
+            )
+        }
+
+        test("noDeadCodeAfterIfWithoutElse") {
+            validateOk(
+                """
+                int getValue(boolean cond) {
+                    if (cond) {
+                        return 1;
+                    }
+                    return 0;
+                }
+                main() { return "ok"; }
+                """.trimIndent(),
+            )
+        }
+
+        test("noDeadCodeAfterIfElsePartialReturn") {
+            validateOk(
+                """
+                int getValue(boolean cond) {
+                    if (cond) {
+                        return 1;
+                    } else {
+                        int x = 0;
+                    }
+                    return 0;
+                }
+                main() { return "ok"; }
+                """.trimIndent(),
+            )
+        }
+
+        test("deadCodeAfterIfElseBothThrow") {
+            validateWarning(
+                """
+                int getValue(boolean cond) {
+                    if (cond) {
+                        throw "error A";
+                    } else {
+                        throw "error B";
+                    }
+                    return 0;
+                }
+                main() { return "ok"; }
+                """.trimIndent(),
+                "Unreachable code",
+            )
+        }
     })

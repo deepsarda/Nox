@@ -99,47 +99,49 @@ class ImportResolver(
 
         processingSet.add(resolved)
 
-        val importedProgram = NoxParsing.parse(source, resolved.pathString, errors)
+        try {
+            val importedProgram = NoxParsing.parse(source, resolved.pathString, errors)
 
-        // 6. Recursively resolve imports in the imported file
-        val childResolver = ImportResolver(
-            basePath = resolved,
-            errors = errors,
-            fileReader = fileReader,
-            builtinNamespaces = builtinNamespaces,
-            externalPluginNamespaces = externalPluginNamespaces,
-            processingSet = processingSet,
-            resolvedFiles = resolvedFiles,
-        )
-        childResolver.nextGlobalOffset = nextGlobalOffset
-        childResolver.resolveImports(importedProgram)
+            // 6. Recursively resolve imports in the imported file
+            val childResolver = ImportResolver(
+                basePath = resolved,
+                errors = errors,
+                fileReader = fileReader,
+                builtinNamespaces = builtinNamespaces,
+                externalPluginNamespaces = externalPluginNamespaces,
+                processingSet = processingSet,
+                resolvedFiles = resolvedFiles,
+            )
+            childResolver.nextGlobalOffset = nextGlobalOffset
+            childResolver.resolveImports(importedProgram)
 
-        // Absorb child's modules and carry forward the global offset
-        modules.addAll(childResolver.modules)
-        nextGlobalOffset = childResolver.nextGlobalOffset
+            // Absorb child's modules and carry forward the global offset
+            modules.addAll(childResolver.modules)
+            nextGlobalOffset = childResolver.nextGlobalOffset
 
-        // 7. Register this module
-        val moduleGlobals = importedProgram.globals.size
-        val globalBaseOffset = nextGlobalOffset
-        modules.add(
-            ResolvedModule(
-                namespace = imp.namespace,
-                sourcePath = resolved.pathString,
+            // 7. Register this module
+            val moduleGlobals = importedProgram.globals.size
+            val globalBaseOffset = nextGlobalOffset
+            modules.add(
+                ResolvedModule(
+                    namespace = imp.namespace,
+                    sourcePath = resolved.pathString,
+                    program = importedProgram,
+                    globalBaseOffset = globalBaseOffset,
+                    globalCount = moduleGlobals,
+                )
+            )
+            nextGlobalOffset += moduleGlobals
+
+            // Cache for deduplication
+            resolvedFiles[resolved] = ResolvedFile(
                 program = importedProgram,
                 globalBaseOffset = globalBaseOffset,
                 globalCount = moduleGlobals,
             )
-        )
-        nextGlobalOffset += moduleGlobals
-
-        // Cache for deduplication
-        resolvedFiles[resolved] = ResolvedFile(
-            program = importedProgram,
-            globalBaseOffset = globalBaseOffset,
-            globalCount = moduleGlobals,
-        )
-
-        processingSet.remove(resolved)
+        } finally {
+            processingSet.remove(resolved)
+        }
     }
 
     /**

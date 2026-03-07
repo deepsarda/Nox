@@ -37,7 +37,7 @@ class TypeRefTest :
 
             TypeRef.STRING.isNullable() shouldBe true
             TypeRef.JSON.isNullable() shouldBe true
-            TypeRef.VOID.isNullable() shouldBe true
+            TypeRef.VOID.isNullable() shouldBe false
             TypeRef("Custom").isNullable() shouldBe true
             TypeRef("int", isArray = true).isNullable() shouldBe true
         }

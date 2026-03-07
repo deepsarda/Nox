@@ -22,9 +22,9 @@ object NoxParsing {
      * Parse a `.nox` source string into a [Program] AST.
      *
      * @param source   the raw source code
-     * @param fileName the file name to attach to [nox.compiler.ast.SourceLocation]s (defaults to `"<input>"`)
+     * @param fileName the file name to attach to [nox.compiler.types.SourceLocation]s (defaults to `"<input>"`)
+     * @param errors   [CompilerErrors] collector used to report syntax and semantic errors
      * @return the parsed [Program]
-     * @throws org.antlr.v4.runtime.RecognitionException on syntax errors
      */
     fun parse(
         source: String,

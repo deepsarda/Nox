@@ -39,8 +39,20 @@ class ASTBuilder(
         // Populate convenience maps
         for (decl in declarations) {
             when (decl) {
-                is TypeDef -> program.typesByName[decl.name] = decl
-                is FuncDef -> program.functionsByName[decl.name] = decl
+                is TypeDef -> {
+                    if (program.typesByName.containsKey(decl.name)) {
+                        errors.report(decl.loc, "Duplicate type declaration: '${decl.name}'")
+                    } else {
+                        program.typesByName[decl.name] = decl
+                    }
+                }
+                is FuncDef -> {
+                    if (program.functionsByName.containsKey(decl.name)) {
+                        errors.report(decl.loc, "Duplicate function declaration: '${decl.name}'")
+                    } else {
+                        program.functionsByName[decl.name] = decl
+                    }
+                }
                 is MainDef -> program.main = decl
                 is GlobalVarDecl -> program.globals.add(decl)
                 is ImportDecl -> Unit
@@ -130,7 +142,12 @@ class ASTBuilder(
 
     // Type references
     override fun visitTypeRef(ctx: NoxParser.TypeRefContext): TypeRef {
-        val baseName = ctx.primitiveType()?.text ?: ctx.Identifier().text
+        val baseName = ctx.primitiveType()?.text
+            ?: ctx.Identifier()?.text
+            ?: run {
+                errors.report(locOf(ctx), "Missing type name in type reference")
+                return TypeRef("error", 0)
+            }
         val arrayDepth = ctx.LBRACK().size
         return TypeRef(baseName, arrayDepth)
     }
@@ -299,8 +316,22 @@ class ASTBuilder(
             // Primaries
             is NoxParser.ParenExprContext -> visitExpression(ctx.expression()) // Desugar: unwrap
             is NoxParser.FuncCallExprContext -> buildFuncCallExpr(ctx)
-            is NoxParser.IntLiteralExprContext -> IntLiteralExpr(ctx.IntegerLiteral().text.toLong(), locOf(ctx))
-            is NoxParser.DoubleLiteralExprContext -> DoubleLiteralExpr(ctx.DoubleLiteral().text.toDouble(), locOf(ctx))
+            is NoxParser.IntLiteralExprContext -> {
+                try {
+                    IntLiteralExpr(ctx.IntegerLiteral().text.toLong(), locOf(ctx))
+                } catch (_: NumberFormatException) {
+                    errors.report(locOf(ctx), "Integer literal overflow: '${ctx.IntegerLiteral().text}'")
+                    ErrorExpr(locOf(ctx))
+                }
+            }
+            is NoxParser.DoubleLiteralExprContext -> {
+                try {
+                    DoubleLiteralExpr(ctx.DoubleLiteral().text.toDouble(), locOf(ctx))
+                } catch (_: NumberFormatException) {
+                    errors.report(locOf(ctx), "Invalid double literal: '${ctx.DoubleLiteral().text}'")
+                    ErrorExpr(locOf(ctx))
+                }
+            }
             is NoxParser.BoolLiteralExprContext -> BoolLiteralExpr(ctx.TRUE() != null, locOf(ctx))
             is NoxParser.StringLiteralExprContext ->
                 StringLiteralExpr(resolveEscapes(unquote(ctx.StringLiteral().text)), locOf(ctx))
@@ -484,7 +515,10 @@ class ASTBuilder(
     // String utilities
 
     /** Remove surrounding double quotes from a string literal token. */
-    private fun unquote(s: String): String = s.substring(1, s.length - 1)
+    private fun unquote(s: String): String {
+        if (s.length < 2 || s.first() != '"' || s.last() != '"') return s
+        return s.substring(1, s.length - 1)
+    }
 
     /** Resolve standard escape sequences in a string literal value. */
     private fun resolveEscapes(s: String): String =
@@ -504,7 +538,12 @@ class ASTBuilder(
                         'u' -> {
                             if (i + 5 < s.length) {
                                 val hex = s.substring(i + 2, i + 6)
-                                append(hex.toInt(16).toChar())
+                                try {
+                                    append(hex.toInt(16).toChar())
+                                } catch (_: NumberFormatException) {
+                                    append("\\u")
+                                    append(hex)
+                                }
                                 i += 6
                                 continue
                             }

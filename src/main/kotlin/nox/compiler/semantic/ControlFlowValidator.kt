@@ -122,9 +122,7 @@ class ControlFlowValidator(
             validateStmt(stmt)
 
             // Mark as terminated if this statement always exits the block
-            if (stmt is ReturnStmt || stmt is ThrowStmt ||
-                stmt is BreakStmt || stmt is ContinueStmt
-            ) {
+            if (stmt is BreakStmt || stmt is ContinueStmt || definitelyTerminates(stmt)) {
                 terminated = true
             }
         }

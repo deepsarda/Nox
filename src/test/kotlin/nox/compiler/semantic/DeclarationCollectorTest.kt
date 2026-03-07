@@ -130,7 +130,7 @@ class DeclarationCollectorTest :
             )
 
             errors.hasErrors() shouldBe true
-            errors.all()[0].message shouldContain "Duplicate type definition 'Point'"
+            errors.all().any { it.message.contains("Duplicate") && it.message.contains("Point") } shouldBe true
         }
 
         test("reports error on duplicate function name") {
@@ -143,7 +143,7 @@ class DeclarationCollectorTest :
             )
 
             errors.hasErrors() shouldBe true
-            errors.all()[0].message shouldContain "Duplicate function definition 'foo'"
+            errors.all().any { it.message.contains("Duplicate") && it.message.contains("foo") } shouldBe true
         }
 
         test("reports error on duplicate global variable name") {

@@ -58,7 +58,7 @@ data class TypeRef(
      * arrays, strings, json, and user-defined struct types.
      * Primitives (`int`, `double`, `boolean`) are never nullable.
      */
-    fun isNullable(): Boolean = isArray || name in NULLABLE_VALUE_NAMES || !isPrimitive()
+    fun isNullable(): Boolean = isArray || name in NULLABLE_VALUE_NAMES || isStructType()
 
     /**
      * Whether this type is numeric (`int` or `double`, non-array).

@@ -132,7 +132,7 @@ class BreakStmt(
     loc: SourceLocation,
 ) : Stmt(loc)
 
-/** `continue;`jumps to the next iteration of the innermost loop. */
+/** `continue;` jumps to the next iteration of the innermost loop. */
 class ContinueStmt(
     loc: SourceLocation,
 ) : Stmt(loc)
