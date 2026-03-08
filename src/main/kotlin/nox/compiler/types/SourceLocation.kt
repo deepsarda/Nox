@@ -15,5 +15,5 @@ data class SourceLocation(
     val line: Int,
     val column: Int,
 ) {
-    override fun toString(): String = "$file:$line:$column"
+    override fun toString(): String = "$file:$line:${column + 1}" // 1-based column for user familiarity
 }

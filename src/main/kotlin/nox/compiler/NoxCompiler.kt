@@ -46,7 +46,7 @@ object NoxCompiler {
      *
      * @param source     the complete `.nox` source code
      * @param fileName   the source file name (for error messages)
-     * @param basePath   absolute path of the source file (for import resolution)
+     * @param basePath   absolute path of the source file (for import resolution, if not provided, it will be inferred from the file name)
      * @param fileReader abstraction over file I/O, for testability
      * @return a [CompilationResult] with the annotated AST, errors, warnings, and modules
      */

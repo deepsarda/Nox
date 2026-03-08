@@ -23,6 +23,7 @@ class NoxCompilerTest :
                 """.trimIndent(),
                 fileName = "test.nox",
             )
+
             result.errors.hasErrors() shouldBe false
             result.warnings.hasWarnings() shouldBe false
             result.program.main shouldNotBe null

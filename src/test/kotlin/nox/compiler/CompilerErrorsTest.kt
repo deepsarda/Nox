@@ -33,9 +33,9 @@ class CompilerErrorsTest :
             allErrors[1].suggestion shouldBe "Fix it"
 
             val formatted = errors.formatAll()
-            formatted shouldBe "Error at test.nox:10:5: First error\n" +
-                "Error at test.nox:20:8: Second error\n" +
-                "  Suggestion: Fix it\n"
+            formatted shouldBe "Error at test.nox:10:6: First error\n" +
+                    "Error at test.nox:20:9: Second error\n" +
+                    "  Suggestion: Fix it\n"
         }
 
         test("CompilerError data class methods") {
@@ -44,8 +44,8 @@ class CompilerErrorsTest :
             val err2 = err1.copy()
             val err3 = err1.copy(message = "other")
 
-            (err1 == err2) shouldBe true
-            (err1 == err3) shouldBe false
+            err1 shouldBe err2
+            err1 shouldNotBe err3
             err1.hashCode() shouldBe err2.hashCode()
             err1.toString() shouldNotBe ""
         }

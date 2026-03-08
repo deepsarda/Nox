@@ -11,7 +11,7 @@ import nox.compiler.types.CallTarget
  * can validate calls during Pass 2 (Type Resolution) without a runtime.
  *
  * **Tier 2 (import) namespaces are NOT registered here.** They are resolved
- * through the [SymbolTable] by the [ImportResolver].
+ * through the [nox.compiler.types.SymbolTable] by the [ImportResolver].
  *
  * This registry will eventually be replaced by a proper `LibraryRegistry`
  * populated from plugin annotations (`@NoxModule`, `@NoxTypeMethod`).
@@ -121,7 +121,7 @@ object TempRegistry {
     /**
      * Whether [name] is a built-in (Tier 0) or external plugin (Tier 1) namespace.
      *
-     * Does **not** check import namespaces (Tier 2); those are in the [SymbolTable].
+     * Does **not** check import namespaces (Tier 2); those are in the [nox.compiler.types.SymbolTable].
      */
     fun isBuiltinNamespace(name: String): Boolean = name in namespaceFunctions
 

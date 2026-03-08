@@ -337,7 +337,7 @@ fun resolveBinary(scope: SymbolTable, expr: BinaryExpr): TypeRef {
             left == TypeRef.INT && right == TypeRef.INT -> TypeRef.INT
             isNumeric(left) && isNumeric(right)         -> TypeRef.DOUBLE  // Implicit widening
             // String concatenation (ADD only)
-            op == BinaryOp.ADD && left == TypeRef.STRING && right == TypeRef.STRING -> TypeRef.STRING
+            expr.op == BinaryOp.ADD && left == TypeRef.STRING && right == TypeRef.STRING -> TypeRef.STRING
             else -> error(expr, "Operator '%s' requires numeric operands, got %s and %s",
                           expr.op, left, right)
         }

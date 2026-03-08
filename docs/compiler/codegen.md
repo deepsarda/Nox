@@ -833,7 +833,7 @@ A `<module_init>` block is a **compiler-generated function** that:
 - Has no parameters (`paramCount = 0`)
 - Returns nothing (void)
 - Appears as a regular `FuncMeta` entry in `CompiledProgram.functions`
-- Is **never callable from user code** instead it's invoked by the VM startup sequence
+- Is **never callable from user code** instead, it's invoked by the VM startup sequence
 
 ```kotlin
 // Generated FuncMeta for a module_init block

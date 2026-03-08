@@ -190,7 +190,7 @@ class TypeResolver(
             init.structType = decl.type
         }
 
-        val initType = exprResolver.resolveExpr(globalScope, decl.initializer)
+        val initType = exprResolver.resolveExpr(globalScope, init)
         if (!decl.type.isAssignableFrom(initType)) {
             errors.report(
                 decl.loc,

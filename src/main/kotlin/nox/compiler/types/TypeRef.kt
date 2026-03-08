@@ -115,7 +115,7 @@ data class TypeRef(
         // Note: can't use isStructType() here since it checks !isArray
         if (this.name == "json" && value.name !in BUILTIN_TYPE_NAMES && this.arrayDepth == value.arrayDepth) return true
 
-         return false
+        return false
     }
 
     /**

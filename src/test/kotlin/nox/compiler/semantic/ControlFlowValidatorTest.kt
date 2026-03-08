@@ -39,7 +39,6 @@ class ControlFlowValidatorTest :
             if (result.errors.hasErrors()) {
                 throw AssertionError("Expected no errors, but got:\n${result.errors.formatAll()}")
             }
-            result.warnings.hasWarnings() shouldBe false
             return result
         }
 

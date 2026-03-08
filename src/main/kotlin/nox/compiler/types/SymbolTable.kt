@@ -63,7 +63,7 @@ class SymbolTable(
     fun child(): SymbolTable = SymbolTable(parent = this, depth = depth + 1)
 
     /**
-     * Return an unmodifiable view of all symbols defined in this scope.
+     * Return an immutable snapshot of all symbols defined in this scope.
      *
      * Does **not** include parent symbols. Intended for testing and debugging.
      */

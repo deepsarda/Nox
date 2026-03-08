@@ -151,17 +151,16 @@ class ImportResolver(
      * @return `true` if valid, `false` if an error was reported
      */
     private fun validateNamespace(imp: ImportDecl): Boolean {
-        val name = imp.namespace
-        return when {
-            name in builtinNamespaces -> {
+        return when (val name = imp.namespace) {
+            in builtinNamespaces -> {
                 errors.report(imp.loc, "Import namespace '$name' clashes with built-in namespace")
                 false
             }
-            name in externalPluginNamespaces -> {
+            in externalPluginNamespaces -> {
                 errors.report(imp.loc, "Import namespace '$name' clashes with external plugin namespace")
                 false
             }
-            name in importedNamespaces -> {
+            in importedNamespaces -> {
                 errors.report(imp.loc, "Duplicate import namespace '$name'")
                 false
             }

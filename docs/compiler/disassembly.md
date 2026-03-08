@@ -129,7 +129,12 @@ main(int a = 1, int b = 2) {
 ;  Source:   <filename>.nox
 ;  Program:  "<@tool:name value>"
 ;  Compiled: <ISO 8601 timestamp>
+;  Modules:  <count> (<name1>, <name2>, ...)
 ```
+
+The `Modules:` line lists the total number of modules followed by a parenthesized, comma-separated list of module names. Module names appear in depth-first import order, with the root module listed last (e.g., `2 (main, c)`).
+
+Module names are bare identifiers taken from the `import ... as <name>` alias; the root module is always called `main`. Names are not quoted or escaped (they are valid Nox identifiers and cannot contain commas or parentheses).
 
 ### Constant Pool
 
@@ -154,6 +159,7 @@ Each module with non-trivial global initializers gets an init block that runs be
 ```
 .init <module_name>
   ; globals: <register>=<name>  ...
+  ; source:  <filename>
   ;
   ; <file>:<line>  <global declaration>
   <PC>:  <OPCODE>  <operands>  ; <comment>
@@ -161,12 +167,14 @@ Each module with non-trivial global initializers gets an init block that runs be
 
 The `<module_name>` is the module's namespace (e.g., `helpers`, `math`) or `main` for the root module. Init blocks appear **before** function blocks, ordered by execution sequence (depth-first import order).
 
+The `; source: <filename>` annotation indicates the originating source file for the init block. It is emitted for readability and debugging so that readers can trace each init block back to the file whose global declarations it initializes (e.g., `; source:  constants.nox`). The annotation appears on its own comment line immediately after the `globals:` listing and before the first source-line annotation. It is always present in multi-module programs and may be omitted for single-module programs where the source is unambiguous.
+
 #### Example
 
 ```
 .init c
   ; globals: g0=PI (double)  g1=MAX_RETRIES (int)
-  ;
+  ; source: constants.nox
   ; constants.nox:1  double PI = 3.14159;
   0000:  LDC       p0, #0                   ; p0 = 3.14159
   0001:  GSTORE    g0, p0                   ; g0 = PI
@@ -181,7 +189,7 @@ Notice that init blocks:
 - Use `GSTORE`/`GSTORER` to write into global memory, not local registers
 - Use scratch registers (`p0`, `r0`) temporarily but don't retain them after `RET`
 - Have no parameters (no `params:` line, replaced by `globals:` listing)
-- Are purely linear with no jumps, loops, or labels (except for complex initializer expressions)
+- Can have jumps, loops, or labels (allows for complex initializer expressions)
 
 ### Function Block
 
@@ -421,7 +429,7 @@ The emitter generates labels for:
 
 | Pattern | Label Format | Example |
 |---|---|---|
-| Init block start | `.init <name>:` | Module initialization |
+| Init block start | `.init <name>` | Module initialization (no trailing colon; this is a section directive, not a jump label) |
 | Loop start | `.loop_start:` | `for`, `while` condition |
 | Loop exit | `.loop_exit:` | After loop body |
 | Loop update | `.loop_update:` | For-loop increment |

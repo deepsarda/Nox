@@ -8,6 +8,7 @@ import nox.compiler.CompilerErrors
 import nox.compiler.types.TypeRef
 import java.nio.file.Path
 import nox.compiler.parsing.NoxParsing
+
 /**
  * Tests for [ImportResolver]: path resolution, cycle detection,
  * namespace validation, and global slot assignment.
@@ -59,7 +60,7 @@ class ImportResolverTest :
 
             errors.hasErrors() shouldBe false
             program.imports[0].resolvedPath shouldBe
-                Path.of("/project/utils/helpers.nox").normalize().toString()
+                    Path.of("/project/utils/helpers.nox").normalize().toString()
         }
 
         test("detects circular imports") {
@@ -197,7 +198,7 @@ class ImportResolverTest :
 
         test("reports error for file not found") {
             val errors = CompilerErrors()
-            val fs = fileSystem<String>() // empty file system
+            val fs = emptyFileSystem() // empty file system
 
             val program = NoxParsing.parse(
                 source = """import "nonexistent.nox" as missing;""",
@@ -323,7 +324,7 @@ class ImportResolverTest :
         }
     })
 
-// Utility to create an empty fileSystem (typed overload)
-private fun <T> fileSystem(): (Path) -> String = { path ->
+// Utility to create an empty file system that always throws
+private fun emptyFileSystem(): (Path) -> String = { path ->
     throw java.io.FileNotFoundException("Not found: $path")
 }

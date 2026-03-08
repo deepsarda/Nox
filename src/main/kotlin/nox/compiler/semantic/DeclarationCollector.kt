@@ -130,12 +130,13 @@ class DeclarationCollector(
      * @param decl the global variable definition to collect
      */
     private fun collectGlobal(decl: GlobalVarDecl) {
-        val slot = globalSlotCounter++
-        val symbol = GlobalSymbol(decl.name, decl.type, slot)
+
+        val symbol = GlobalSymbol(decl.name, decl.type, globalSlotCounter)
         if (!globalScope.define(decl.name, symbol)) {
             errors.report(decl.loc, "Duplicate global variable '${decl.name}'")
             return
         }
-        decl.globalSlot = slot
+        
+        decl.globalSlot = globalSlotCounter++
     }
 }

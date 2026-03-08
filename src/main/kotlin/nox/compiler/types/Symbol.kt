@@ -1,7 +1,6 @@
 package nox.compiler.types
 
 import nox.compiler.ast.*
-import nox.compiler.types.*
 
 /**
  * A named entity registered in a [SymbolTable] scope.

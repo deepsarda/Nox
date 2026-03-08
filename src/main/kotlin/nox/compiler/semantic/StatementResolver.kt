@@ -118,6 +118,8 @@ class StatementResolver(
         }
 
         // Null safety check
+        // isAssignableFrom should handle this, but just in case
+        //TODO: Verify and make sure there is never a case where it is not handled. Report double errors for now
         if (stmt.initializer is NullLiteralExpr && !stmt.type.isNullable()) {
             errors.report(
                 stmt.loc,
@@ -169,18 +171,30 @@ class StatementResolver(
                 if (targetType.isNumeric() && valueType.isNumeric()) {
                     // Prevent int += double (narrowing)
                     if (targetType == TypeRef.INT && valueType == TypeRef.DOUBLE) {
-                        errors.report(loc, "Operator '${op.symbol}' would narrow 'double' to 'int'. Use explicit conversion")
+                        errors.report(
+                            loc,
+                            "Operator '${op.symbol}' would narrow 'double' to 'int'. Use explicit conversion"
+                        )
                     }
                     return
                 }
-                errors.report(loc, "Operator '${op.symbol}' requires numeric or string operands, got '$targetType' and '$valueType'")
+                errors.report(
+                    loc,
+                    "Operator '${op.symbol}' requires numeric or string operands, got '$targetType' and '$valueType'"
+                )
             }
 
             AssignOp.SUB_ASSIGN, AssignOp.MUL_ASSIGN, AssignOp.DIV_ASSIGN, AssignOp.MOD_ASSIGN -> {
                 if (!targetType.isNumeric() || !valueType.isNumeric()) {
-                    errors.report(loc, "Operator '${op.symbol}' requires numeric operands, got '$targetType' and '$valueType'")
+                    errors.report(
+                        loc,
+                        "Operator '${op.symbol}' requires numeric operands, got '$targetType' and '$valueType'"
+                    )
                 } else if (targetType == TypeRef.INT && valueType == TypeRef.DOUBLE) {
-                    errors.report(loc, "Operator '${op.symbol}' would narrow 'double' to 'int'. Use explicit conversion")
+                    errors.report(
+                        loc,
+                        "Operator '${op.symbol}' would narrow 'double' to 'int'. Use explicit conversion"
+                    )
                 }
             }
 
@@ -245,7 +259,10 @@ class StatementResolver(
         }
 
         val feScope = scope.child()
-        feScope.define(stmt.elementName, VarSymbol(stmt.elementName, stmt.elementType, feScope.depth))
+        //TODO: SHould we expose the variable outside the foreach (antipattern) but could be useful
+        if (!feScope.define(stmt.elementName, VarSymbol(stmt.elementName, stmt.elementType, feScope.depth))) {
+            errors.report(stmt.loc, "Variable '${stmt.elementName}' is already declared in this scope")
+        }
         resolveBlock(feScope, stmt.body, expectedReturn)
     }
 
@@ -282,13 +299,19 @@ class StatementResolver(
         resolveBlock(scope, stmt.tryBlock, expectedReturn)
 
         for (cc in stmt.catchClauses) {
+            //TODO: Prevent multiple catch clauses catching the same type.
             val catchScope = scope.child()
+            //TODO: also report error if we cant define the variable. 
+            // Might be some weirdness if the name is already defined in the catch scope and 
+            // we are reporting the catch block variable instead of that variable.
             catchScope.define(
                 cc.variableName,
                 VarSymbol(cc.variableName, TypeRef.STRING, catchScope.depth),
             )
             resolveBlock(catchScope, cc.body, expectedReturn)
         }
+
+        //TODO: Consider if finally is needed or can it just be outside the try-catch block
     }
 
 

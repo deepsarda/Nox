@@ -174,7 +174,7 @@ class ExpressionResolver(
 
             // Propagate struct type into nested struct literal values
             if (init.value is StructLiteralExpr && (expectedFieldType.isStructType() || expectedFieldType == TypeRef.JSON)) {
-                (init.value as StructLiteralExpr).structType = expectedFieldType
+                init.value.structType = expectedFieldType
             }
 
             val actualType = resolveExpr(scope, init.value)
@@ -261,6 +261,11 @@ class ExpressionResolver(
         }
 
         expr.resolvedFunction = symbol.astNode
+
+        for (arg in expr.args) {
+            resolveExpr(scope, arg)
+        }
+
         validateArgs(expr.loc, expr.name, paramSpecs(symbol.params), expr.args, scope)
         return symbol.returnType
     }
@@ -290,16 +295,22 @@ class ExpressionResolver(
             if (module != null) {
                 val importedFunc = module.program.functionsByName[call.methodName]
                 if (importedFunc != null) {
-                    val target = CallTarget(
+                    val callTarget = CallTarget(
                         name = importedFunc.name,
                         params = importedFunc.params.map { it.name to it.type },
                         returnType = importedFunc.returnType,
                         astNode = importedFunc,
                     )
                     call.resolution = MethodCallExpr.Resolution.NAMESPACE
-                    call.resolvedTarget = target
+                    call.resolvedTarget = callTarget
 
-                    validateArgs(call.loc, "${namespaceName}.${call.methodName}", builtinSpecs(target.params), call.args, scope)
+                    validateArgs(
+                        call.loc,
+                        "${namespaceName}.${call.methodName}",
+                        builtinSpecs(callTarget.params),
+                        call.args,
+                        scope
+                    )
                     return importedFunc.returnType
                 }
                 errors.report(call.loc, "Namespace '${namespaceName}' has no function '${call.methodName}'")
@@ -313,7 +324,13 @@ class ExpressionResolver(
                     call.resolution = MethodCallExpr.Resolution.NAMESPACE
                     call.resolvedTarget = builtin
 
-                    validateArgs(call.loc, "${namespaceName}.${call.methodName}", builtinSpecs(builtin.params), call.args, scope)
+                    validateArgs(
+                        call.loc,
+                        "${namespaceName}.${call.methodName}",
+                        builtinSpecs(builtin.params),
+                        call.args,
+                        scope
+                    )
                     return builtin.returnType
                 }
                 errors.report(call.loc, "Namespace '$namespaceName' has no function '${call.methodName}'")
@@ -329,7 +346,13 @@ class ExpressionResolver(
         if (builtinMethod != null) {
             call.resolution = MethodCallExpr.Resolution.TYPE_BOUND
             call.resolvedTarget = builtinMethod
-            validateArgs(call.loc, "${targetType}.${call.methodName}", builtinSpecs(builtinMethod.params), call.args, scope)
+            validateArgs(
+                call.loc,
+                "${targetType}.${call.methodName}",
+                builtinSpecs(builtinMethod.params),
+                call.args,
+                scope
+            )
             return builtinMethod.returnType
         }
 
@@ -338,7 +361,13 @@ class ExpressionResolver(
         if (typeMethod != null) {
             call.resolution = MethodCallExpr.Resolution.TYPE_BOUND
             call.resolvedTarget = typeMethod
-            validateArgs(call.loc, "${targetType}.${call.methodName}", builtinSpecs(typeMethod.params), call.args, scope)
+            validateArgs(
+                call.loc,
+                "${targetType}.${call.methodName}",
+                builtinSpecs(typeMethod.params),
+                call.args,
+                scope
+            )
             return typeMethod.returnType
         }
 
@@ -406,7 +435,10 @@ class ExpressionResolver(
             BinaryOp.LT, BinaryOp.LE, BinaryOp.GT, BinaryOp.GE -> {
                 if (left == null || right == null) return null
                 if (!left.isNumeric() || !right.isNumeric()) {
-                    errors.report(expr.loc, "Comparison operator '${expr.op.symbol}' requires numeric operands, got '$left' and '$right'")
+                    errors.report(
+                        expr.loc,
+                        "Comparison operator '${expr.op.symbol}' requires numeric operands, got '$left' and '$right'"
+                    )
                 }
                 TypeRef.BOOLEAN
             }
@@ -415,10 +447,16 @@ class ExpressionResolver(
             BinaryOp.EQ, BinaryOp.NE -> {
                 if (left == null && right == null) return TypeRef.BOOLEAN // null == null
                 if (left != null && !left.isComparable(right)) {
-                    errors.report(expr.loc, "Equality '${expr.op.symbol}' operator cannot compare '$left' with '${right ?: "null"}'")
+                    errors.report(
+                        expr.loc,
+                        "Equality '${expr.op.symbol}' operator cannot compare '$left' with '${right ?: "null"}'"
+                    )
                 }
                 if (right != null && !right.isComparable(left)) {
-                    errors.report(expr.loc, "Equality '${expr.op.symbol}' operator cannot compare '${left ?: "null"}' with '$right'")
+                    errors.report(
+                        expr.loc,
+                        "Equality '${expr.op.symbol}' operator cannot compare '${left ?: "null"}' with '$right'"
+                    )
                 }
                 TypeRef.BOOLEAN
             }
@@ -437,10 +475,16 @@ class ExpressionResolver(
             // Bitwise: int×int→int
             BinaryOp.BIT_AND, BinaryOp.BIT_OR, BinaryOp.BIT_XOR -> {
                 if (left != null && left != TypeRef.INT) {
-                    errors.report(expr.left.loc, "Bitwise operator '${expr.op.symbol}' requires 'int' operands, got '$left'")
+                    errors.report(
+                        expr.left.loc,
+                        "Bitwise operator '${expr.op.symbol}' requires 'int' operands, got '$left'"
+                    )
                 }
                 if (right != null && right != TypeRef.INT) {
-                    errors.report(expr.right.loc, "Bitwise operator '${expr.op.symbol}' requires 'int' operands, got '$right'")
+                    errors.report(
+                        expr.right.loc,
+                        "Bitwise operator '${expr.op.symbol}' requires 'int' operands, got '$right'"
+                    )
                 }
                 TypeRef.INT
             }
@@ -448,10 +492,16 @@ class ExpressionResolver(
             // Shift: int×int→int
             BinaryOp.SHL, BinaryOp.SHR, BinaryOp.USHR -> {
                 if (left != null && left != TypeRef.INT) {
-                    errors.report(expr.left.loc, "Shift operator '${expr.op.symbol}' requires 'int' operands, got '$left'")
+                    errors.report(
+                        expr.left.loc,
+                        "Shift operator '${expr.op.symbol}' requires 'int' operands, got '$left'"
+                    )
                 }
                 if (right != null && right != TypeRef.INT) {
-                    errors.report(expr.right.loc, "Shift operator '${expr.op.symbol}' requires 'int' operands, got '$right'")
+                    errors.report(
+                        expr.right.loc,
+                        "Shift operator '${expr.op.symbol}' requires 'int' operands, got '$right'"
+                    )
                 }
                 TypeRef.INT
             }
@@ -497,7 +547,7 @@ class ExpressionResolver(
         return operandType
     }
 
-    private fun resolveCast(scope: SymbolTable, expr: CastExpr): TypeRef? {
+    private fun resolveCast(scope: SymbolTable, expr: CastExpr): TypeRef {
         val sourceType = resolveExpr(scope, expr.operand)
 
         // Only json to struct casts are allowed
@@ -520,7 +570,12 @@ class ExpressionResolver(
      * Both user-defined [ParamSymbol] and built-in `Pair<String, TypeRef>` params
      * convert to this via extension helpers below.
      */
-    private data class ArgSpec(val name: String, val type: TypeRef, val hasDefault: Boolean, val isVarargs: Boolean = false)
+    private data class ArgSpec(
+        val name: String,
+        val type: TypeRef,
+        val hasDefault: Boolean,
+        val isVarargs: Boolean = false
+    )
 
     /**
      * Validate call arguments against a parameter list.
@@ -544,7 +599,10 @@ class ExpressionResolver(
         }
 
         for (i in args.indices) {
-            val argType = resolveExpr(scope, args[i])
+            val argType = args[i].resolvedType ?: resolveExpr(
+                scope,
+                args[i]
+            ) // It should have already been resolved, doesn't hurt to make sure
             val param = if (hasVarargs && i >= params.size - 1) {
                 params.last()
             } else if (i < params.size) {

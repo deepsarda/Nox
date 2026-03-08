@@ -13,7 +13,7 @@ import nox.compiler.types.TypeRef
  * - **Loop context tracking:** `break` and `continue` are only valid inside loops.
  * - **Dead code detection:** warns on unreachable statements after `return`, `throw`,
  *   `break`, or `continue`.
- * 
+ *
  * See docs/compiler/semantic-analysis.md.
  *
  * @property errors   shared error collector
@@ -87,14 +87,14 @@ class ControlFlowValidator(
                 } else {
                     val thenTerminates = allPathsReturn(stmt.thenBlock)
                     val elseIfsTerminate = stmt.elseIfs.all { allPathsReturn(it.body) }
-                    val elseTerminates = allPathsReturn(stmt.elseBlock!!)
+                    val elseTerminates = allPathsReturn(stmt.elseBlock)
                     thenTerminates && elseIfsTerminate && elseTerminates
                 }
             }
 
             is TryCatchStmt -> {
                 allPathsReturn(stmt.tryBlock) &&
-                    stmt.catchClauses.all { allPathsReturn(it.body) }
+                        stmt.catchClauses.all { allPathsReturn(it.body) }
             }
 
             is Block -> allPathsReturn(stmt)
@@ -140,6 +140,7 @@ class ControlFlowValidator(
                     errors.report(stmt.loc, "'break' can only appear inside a loop")
                 }
             }
+
             is ContinueStmt -> {
                 if (loopDepth == 0) {
                     errors.report(stmt.loc, "'continue' can only appear inside a loop")
@@ -152,11 +153,13 @@ class ControlFlowValidator(
                 validateBlock(stmt.body)
                 loopDepth--
             }
+
             is ForStmt -> {
                 loopDepth++
                 validateBlock(stmt.body)
                 loopDepth--
             }
+
             is ForEachStmt -> {
                 loopDepth++
                 validateBlock(stmt.body)
@@ -171,19 +174,22 @@ class ControlFlowValidator(
                 }
                 stmt.elseBlock?.let { validateBlock(it) }
             }
+
             is TryCatchStmt -> {
                 validateBlock(stmt.tryBlock)
                 for (cc in stmt.catchClauses) {
                     validateBlock(cc.body)
                 }
             }
+
             is Block -> validateBlock(stmt)
 
             // Leaf statements nothing to recurse into
             is VarDeclStmt, is AssignStmt, is IncrementStmt,
             is ReturnStmt, is YieldStmt, is ThrowStmt,
             is ExprStmt, is ErrorStmt,
-            -> {}
+                -> {
+            }
         }
     }
 }

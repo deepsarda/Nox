@@ -2,6 +2,7 @@ package nox.compiler.parsing
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -775,20 +776,20 @@ class ASTBuilderTest :
                     """
                     @tool:name "processor"
                     @tool:description "Processes data"
-                    
+
                     import "utils.nox" as utils;
-                    
+
                     type Config {
                         string host;
                         int port;
                     }
-                    
+
                     int counter = 0;
-                    
+
                     int increment(int value) {
                         return value + 1;
                     }
-                    
+
                     main(string url = "http://localhost") {
                         Config cfg = { host: url, port: 8080 };
                         yield "starting";
@@ -879,7 +880,7 @@ class ASTBuilderTest :
             )
 
             errors.hasErrors() shouldBe true
-            (errors.count >= 2) shouldBe true
+            errors.count shouldBeGreaterThanOrEqual 2
         }
 
         test("empty struct produces parse error but TypeDef survives via ANTLR recovery") {
