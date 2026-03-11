@@ -154,7 +154,7 @@ catch (NetworkError errMsg) {
  
 ## Host Exception Containment
 
-When a system call (`SCALL`) or super-instruction (`HMOD`, `HINV`) triggers a JVM exception, the VM **must** contain it:
+When a system call (`SCALL`) or super-instruction (`HMOD`) triggers a JVM exception, the VM **must** contain it:
 
 ```kotlin
 SCALL -> {
@@ -208,9 +208,10 @@ These are thrown by VM operations during normal execution. All are **catchable**
 
 | Type | Thrown When | Example |
 |---|---|---|
-| `NullAccessError` | Accessing a property or method on a `null` reference | `null.length`, `null.upper()` |
-| `DivisionByZeroError` | Integer division or modulo by zero | `10 / 0`, `10 % 0` |
-| `IndexOutOfBoundsError` | Array index is negative or ≥ array length | `arr[arr.length]`, `arr[-1]` |
+| `NullAccessError` | Accessing a property or method on a `null` reference | `null.length()`, `null.upper()` |
+| `DivisionByZeroError` | Division by zero | Integer division or modulo division by zero |
+| `TypeError` | Type mismatch during extraction or conversion | `json.getInt("key")` on a string value |
+| `IndexOutOfBoundsError` | Array index is negative or ≥ array length | `arr[arr.length()]`, `arr[-1]` |
 | `KeyNotFoundError` | Accessing a missing key on `json` without a default | `data.missingKey` via `AGET_KEY` on a non-existent key |
 | `CastError` | An `as` cast fails structural validation | `rawJson as ApiConfig` when fields are missing or mistyped |
 | `TypeError` | Runtime type mismatch in a dynamic context | `json` value is a string but code expects int |

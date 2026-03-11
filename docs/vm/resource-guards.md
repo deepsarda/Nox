@@ -52,7 +52,7 @@ Every VM loop iteration = 1 instruction. This includes:
 - Data movement (`MOV`, `LDC`)
 - Control flow (`JMP`, `JIF`, `CALL`, `RET`)
 - System calls (`SCALL`)
-- Host operations (`HMOD`, `HACC`, `HINV`)
+- Host operations (`HMOD`, `HACC`, `SCONCAT`)
 
 This means a potentially blocking call like `Http.get()` will be counted as an single instruction, however, if it takes too long, it will be terminated by the execution timeout guard.
 

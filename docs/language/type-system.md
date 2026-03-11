@@ -168,7 +168,7 @@ ApiConfig[] configs = [];  // Empty typed array
 #### Operations
 
 ```c
-int len = numbers.length;        // Read-only property
+int len = numbers.length();        // Method call
 int first = numbers[0];          // Index access
 numbers[0] = 99;                 // Index assignment
 numbers.push(6);                 // Append element
@@ -198,7 +198,7 @@ json generic = config;  // Implicit upcast (always safe)
 
 ### Explicit Casting: `json` to Struct
 
-Going the other direction requires an **explicit cast** using `as`. The runtime performs structural validation during the cast:
+Going the other direction requires an **explicit cast** using `as`. The VM (`CAST_STRUCT` opcode) performs deep structural validation during the cast, checking all primitive fields, nested structs, and typed arrays against a compile-time `TypeDescriptor`:
 
 ```c
 json rawConfig = Http.getJson("/config");
@@ -321,7 +321,7 @@ Accessing a property or calling a method on a `null` reference throws a `NullAcc
 
 ```c
 string name = null;
-int len = name.length;       // NullAccessError: Cannot access 'length' on null
+int len = name.length();       // NullAccessError: Cannot access 'length()' on null
 ```
 
 This is a runtime exception and can be caught with `try-catch`.

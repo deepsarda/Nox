@@ -35,6 +35,15 @@ class Program(
 
     /** All global variable declarations, in order. */
     val globals: MutableList<GlobalVarDecl> = mutableListOf()
+
+    /** All function definitions, in declaration order (convenience view of [functionsByName]). */
+    val functions: Collection<FuncDef> get() = functionsByName.values
+
+    /**
+     * Original source lines of this file, populated by the parser for use by the disassembler.
+     * Empty if the source was not provided.
+     */
+    val sourceLines: MutableList<String> = mutableListOf()
 }
 
 /**

@@ -97,7 +97,7 @@ main(int a = 1, int b = 2) {
   ; adder.nox:11  return `Result: ${result}`;
   0007:  LDC       r0, #0                   ; r0 = "Result: "
   0008:  I2S       r1, p2                   ; r1 = toString(result)
-  0009:  HINV      STR_CONCAT, r0, r0, r1   ; r0 = "Result: " + result
+  0009:  SCONCAT   r0, r0, r1               ; r0 = "Result: " + result
   0010:  RET       r0                       ; return r0
 
 
@@ -149,8 +149,14 @@ Types:
 | `str` | String constant | `"hello world"` (escaped) |
 | `dbl` | Double constant | `3.14159` |
 | `lng` | Long constant (> 16 bits) | `100000` |
-| `path` | Cached accessor path | `"server.db.host"` |
-| `type` | Struct type ID | `ApiConfig` |
+| `type` | Struct type descriptor | `ApiConfig { count: int, url: string }` |
+
+Example:
+```
+.constants
+  #0   str   "version"
+  #1   type  ApiConfig { endpoint: string, timeout_seconds: int }
+```
 
 ### Module Init Block
 
@@ -235,7 +241,55 @@ Multiple instructions from the same source line share the annotation. The annota
 - **PC:** 4-digit zero-padded program counter
 - **OPCODE:** mnemonic, left-padded to 10 characters for alignment
 - **Operands:** comma-separated, using register names and constant pool references
-- **Comment:** after `;`, explains the operation in pseudocode
+- **Comment:** after `;`, explains the operation in human-readable pseudocode
+
+#### Comment Style
+
+When a register holds a named variable, the comment uses `name:pN` / `name:rN` format:
+
+```
+  ; a:p0 = 10            <- named variable in pMem
+  ; url:r0 = "http..."   <- named variable in rMem
+  ; p3 = 42              <- unnamed temporary, register only
+```
+
+Binary operators are shown with their **source-level symbol** rather than the opcode mnemonic:
+
+| Opcodes | Symbol |
+|---|---|
+| `IADD`, `DADD` | `+` |
+| `ISUB`, `DSUB` | `-` |
+| `IMUL`, `DMUL` | `*` |
+| `IDIV`, `DDIV` | `/` |
+| `IMOD`, `DMOD` | `%` |
+| `IEQ`, `DEQ` | `==` |
+| `INE`, `DNE` | `!=` |
+| `ILT`, `DLT` | `<` |
+| `ILE`, `DLE` | `<=` |
+| `IGT`, `DGT` | `>` |
+| `IGE`, `DGE` | `>=` |
+| `AND` | `&&` |
+| `OR` | `\|\|` |
+| `BAND` | `&` |
+| `BOR` | `\|` |
+| `BXOR` | `^` |
+| `SHL` | `<<` |
+| `SHR` | `>>` |
+| `USHR` | `>>>` |
+| `SEQ`, `SNE` | `==`, `!=` |
+
+Example:
+```
+  0002:  IADD      p1, p0, p1               ; b:p1 = a:p0 + b:p1
+  0005:  ILT       p2, p1, p0               ; p2 = i:p1 < count:p0
+  0010:  SEQ       p2, r3, r4               ; p2 = name:r3 == r4
+```
+
+For structural casts, the comment clarifies the target type name using `as` (where `#2` is a `TypeDescriptor` in the constant pool):
+```
+  0007:  CAST_STRUCT  r1, r0, #2            ; config:r1 = r0 as ApiConfig
+  0008:  CAST_STRUCT  r1, r0, #3            ; configs:r1 = r0 as ApiConfig[]
+```
 
 #### Operand Formatting
 
@@ -335,85 +389,89 @@ main(string url) {
   0001:  YIELD     r1                       ; yield r1
   ;
   ; processor.nox:5  json data = Http.getJson(url);
-  0002:  SCALL     r1, Http.getJson, r0     ; r1 = Http.getJson(url)
+  0002:  SCALL     r1, Http.getJson, r0     ; data:r1 = Http.getJson(url:r0)
   ;
   ; processor.nox:6  int count = data.size();
-  0003:  HINV      JSON_SIZE, p0, r1        ; p0 = data.size()
+  0003:  MOVR      r2, r1                   ; arg0 = data:r1
+  0004:  SCALL     p0, __json_size, r2      ; count:p0 = data.size()
   ;
   ; processor.nox:8  for (int i = 0; i < count; i++) {
-  0004:  LDI       p1, 0                    ; p1 = 0  (i)
+  0004:  LDI       p1, 0                    ; i:p1 = 0
   .loop_start:
-  0005:  ILT       p2, p1, p0               ; p2 = (i < count)
-  0006:  JIF       p2, @0020                ; if false go to loop_exit
+  0005:  ILT       p2, p1, p0               ; p2 = i:p1 < count:p0
+  0006:  JIF       p2, @0020                ; if p2==0 -> loop_exit
   ;
   ; processor.nox:9  json item = data[i];
-  0007:  AGET_IDX  r2, r1, p1               ; r2 = data[i]
+  0007:  AGET_IDX  r2, r1, p1               ; item:r2 = data:r1[i:p1]
   ;
   ; processor.nox:10  string name = item.getString("name", "unknown");
-  0008:  HACC      GET_STR, r3, r2, #1      ; r3 = item.getString("name")
+  0008:  HACC      GET_STR, r3, r2, #1      ; name:r3 = item:r2.name
   ;  (default "unknown" handled by GET_STR sub-op with fallback)
   ;
   ; processor.nox:12  if (name == "skip") {
   0009:  LDC       r4, #3                   ; r4 = "skip"
-  0010:  SEQ       p2, r3, r4               ; p2 = (name == "skip")
-  0011:  JIF       p2, @0013                ; if false go to skip_continue
+  0010:  SEQ       p2, r3, r4               ; p2 = name:r3 == r4
+  0011:  JIF       p2, @0013                ; if p2==0 -> skip_continue
   ;
   ; processor.nox:13  continue;
-  0012:  JMP       @0017                    ; go to loop_update
+  0012:  JMP       @0017                    ; -> loop_update
   ;
   ; processor.nox:16  yield `Processing: ${name}`;
   .skip_continue:
   0013:  LDC       r4, #4                   ; r4 = "Processing: "
-  0014:  HINV      STR_CONCAT, r4, r4, r3   ; r4 = "Processing: " + name
+  0014:  SCONCAT   r4, r4, r3               ; r4 = r4 + name:r3
   0015:  YIELD     r4                       ; yield r4
   ;
   ; processor.nox:8  i++
   .loop_update:
-  0016:  KILL_REF  r2                       ; item out of scope
-  0017:  KILL_REF  r3                       ; name out of scope
-  0018:  IINC      p1                       ; i++
-  0019:  JMP       @0005                    ; go to loop_start
+  0016:  KILL_REF  r2                       ; item:r2 = null (GC)
+  0017:  KILL_REF  r3                       ; name:r3 = null (GC)
+  0018:  IINC      p1                       ; i:p1 = i:p1 + 1
+  0019:  JMP       @0005                    ; -> loop_start
   ;
   .loop_exit:
-  0020:  KILL_REF  r2                       ; cleanup
-  0021:  KILL_REF  r3                       ;
+  0020:  KILL_REF  r2                       ; item:r2 = null (GC)
+  0021:  KILL_REF  r3                       ; name:r3 = null (GC)
   ;
   ; processor.nox:19  return `Done. Processed ${count} items.`;
   0022:  LDC       r2, #5                   ; r2 = "Done. Processed "
-  0023:  I2S       r3, p0                   ; r3 = toString(count)
-  0024:  HINV      STR_CONCAT, r2, r2, r3   ; r2 += count
+  0023:  I2S       r3, p0                   ; r3 = toString(count:p0)
+  0024:  SCONCAT   r2, r2, r3               ; r2 = r2 + r3
   0025:  LDC       r3, #6                   ; r3 = " items."
-  0026:  HINV      STR_CONCAT, r2, r2, r3   ; r2 += " items."
-  0027:  RET       r2                       ; return r2
-  0028:  JMP       @0034                    ; skip catch block
+  0026:  SCONCAT   r2, r2, r3               ; r2 = r2 + r3
+  0027:  KILL_REF  r1                       ; data:r1 = null (GC)
+  0028:  KILL_REF  r2                       ; r2 = null (GC)
+  0029:  KILL_REF  r3                       ; r3 = null (GC)
+  0030:  RET       r2                       ; return r2
+  0031:  JMP       @0037                    ; skip catch block
   ;
   ; processor.nox:20  catch (NetworkError e) {
   .catch_NetworkError:
-  0029:  ; r5 = exception message (populated by VM)
+  0032:  ; r5 = exception message (populated by VM)
   ;
   ; processor.nox:21  return `Network failed: ${e}`;
-  0030:  LDC       r2, #7                   ; r2 = "Network failed: "
-  0031:  HINV      STR_CONCAT, r2, r2, r5   ; r2 += e
-  0032:  RET       r2                       ; return r2
-  0033:  KILL_REF  r5                       ; e out of scope
+  0033:  LDC       r2, #7                   ; r2 = "Network failed: "
+  0034:  SCONCAT   r2, r2, r5               ; r2 = r2 + r5
+  0035:  KILL_REF  r5                       ; r5 = null (GC)
+  0036:  RET       r2                       ; return r2
   ;
   .end:
-  0034:
+  0037:
 
 
 .exceptions
-  [0002..0028] NetworkError -> @0029  msg=r5
+  [0002..0031] NetworkError -> @0032  msg=r5
 
 
 .summary
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 35
+  instructions: 38
   constants:    8
   exceptions:   1
   globals:      0p + 0r
-  bytecode:     280 bytes
+  bytecode:     304 bytes
 ```
  
 ## Labels
@@ -504,11 +562,11 @@ main(int r = 5) {
   ;
   ; constants.nox:1  double PI = 3.14159;
   0000:  LDC       p0, #0                   ; p0 = 3.14159
-  0001:  GSTORE    g0, p0                   ; g0 = PI
+  0001:  GSTORE    g0, p0                   ; g0 = p0
   ;
   ; constants.nox:2  int MAX = 100;
   0002:  LDI       p0, 100                  ; p0 = 100
-  0003:  GSTORE    g1, p0                   ; g1 = MAX
+  0003:  GSTORE    g1, p0                   ; g1 = p0
   0004:  RET                                ; return (void)
 
 .init main
@@ -517,14 +575,13 @@ main(int r = 5) {
   ;
   ; main.nox:3  string PREFIX = "item_";
   0005:  LDC       r0, #1                   ; r0 = "item_"
-  0006:  GSTORER   gr0, r0                  ; gr0 = PREFIX
+  0006:  GSTORER   gr0, r0                  ; gr0 = r0
   0007:  RET                                ; return (void)
 
 
 ; Functions
 
 ;  Function: circleArea
-;    Signature:  int circleArea(int radius)
 ;    Entry PC:   8
 ;    Params:     1
 ;    Frame:      pMem=2  rMem=0
@@ -533,14 +590,13 @@ main(int r = 5) {
   ; params: p0=radius
   ;
   ; main.nox:6  return c.PI * radius * radius;
-  0008:  GLOAD     p1, g0                   ; p1 = c.PI
-  0009:  DMUL      p1, p1, p0               ; p1 = PI * radius
-  0010:  DMUL      p1, p1, p0               ; p1 = (PI * radius) * radius
+  0008:  GLOAD     p1, g0                   ; p1 = g0
+  0009:  DMUL      p1, p1, p0               ; p1 = p1 * radius:p0
+  0010:  DMUL      p1, p1, p0               ; p1 = p1 * radius:p0
   0011:  RET       p1                       ; return p1
 
 
 ;  Function: main
-;    Signature:  main(int r = 5)
 ;    Entry PC:   12
 ;    Params:     1
 ;    Frame:      pMem=3  rMem=3
@@ -549,17 +605,19 @@ main(int r = 5) {
   ; params: p0=r
   ;
   ; main.nox:10  double area = circleArea(r);
-  0012:  MOV       p1, p0                   ; arg0 = r
-  0013:  CALL      circleArea, p1           ; call circleArea(r)
-  0014:  MOV       p1, p1                   ; p1 = area (result)
+  0012:  MOV       p1, p0                   ; p1 = r:p0
+  0013:  CALL      circleArea, p1           ; call circleArea(p1...)
+  0014:  MOV       p1, p1                   ; area:p1 = p1
   ;
   ; main.nox:11  return `${PREFIX}area = ${area}`;
-  0015:  GLOADR    r0, gr0                  ; r0 = PREFIX
+  0015:  GLOADR    r0, gr0                  ; r0 = gr0
   0016:  LDC       r1, #2                   ; r1 = "area = "
-  0017:  HINV      STR_CONCAT, r0, r0, r1   ; r0 = PREFIX + "area = "
-  0018:  D2S       r1, p1                   ; r1 = toString(area)
-  0019:  HINV      STR_CONCAT, r0, r0, r1   ; r0 += area
-  0020:  RET       r0                       ; return r0
+  0017:  SCONCAT   r0, r0, r1               ; r0 = r0 + r1
+  0018:  D2S       r1, p1                   ; r1 = toString(area:p1)
+  0019:  SCONCAT   r0, r0, r1               ; r0 = r0 + r1
+  0020:  KILL_REF  r0                       ; r0 = null (GC)
+  0021:  KILL_REF  r1                       ; r1 = null (GC)
+  0022:  RET       r0                       ; return r0
 
 
 ; Exception Table
@@ -574,11 +632,11 @@ main(int r = 5) {
   modules:      2
   init_blocks:  2
   functions:    2
-  instructions: 21
+  instructions: 23
   constants:    3
   exceptions:   0
   globals:      2p + 1r
-  bytecode:     168 bytes
+  bytecode:     184 bytes
 ```
 
 NOTE:
@@ -594,39 +652,33 @@ NOTE:
 ```kotlin
 class NoxcEmitter {
 
-    fun emit(program: CompiledProgram, sourceFile: String, sourceLines: Array<String>): String {
+    fun emit(
+        program: CompiledProgram,
+        sourceFile: String,
+        programName: String = "(unnamed)",
+        sourceLines: List<String> = emptyList(),
+        sourcesByFile: Map<String, List<String>> = emptyMap(),
+        timestamp: OffsetDateTime = OffsetDateTime.now(),
+    ): String {
         val sb = StringBuilder()
-        emitHeader(sb, sourceFile, program)
-        emitConstantPool(sb, program.constantPool)
-        for (func in program.functions) {
-            emitFunction(sb, func, program.bytecode, program.constantPool, sourceLines)
+        // Merge root file lines into the per-file map
+        val allSources = buildMap {
+            putAll(sourcesByFile)
+            if (sourceFile.isNotEmpty() && sourceLines.isNotEmpty()) put(sourceFile, sourceLines)
         }
-        emitExceptionTable(sb, program.exceptionTable)
+        emitHeader(sb, sourceFile, programName, program, timestamp)
+        emitConstantPool(sb, program.constantPool)
+        emitInitBlocks(sb, program, allSources)
+        emitFunctions(sb, program, allSources)
+        emitExceptionTable(sb, program)
         emitSummary(sb, program)
         return sb.toString()
     }
 
-    private fun emitInstruction(
-        sb: StringBuilder, pc: Int, instruction: Long,
-        pool: Array<Any?>, labels: Map<Int, String>
-    ) {
-        val opcode = ((instruction ushr 56) and 0xFF).toInt()
-        val subOp  = ((instruction ushr 48) and 0xFF).toInt()
-        val a      = ((instruction ushr 32) and 0xFFFF).toInt()
-        val b      = ((instruction ushr 16) and 0xFFFF).toInt()
-        val c      = (instruction and 0xFFFF).toInt()
-
-        val mnemonic = opcodeName(opcode)
-        val operands = formatOperands(opcode, subOp, a, b, c, pool)
-        val comment  = generateComment(opcode, subOp, a, b, c, pool)
-
-        // Label (if any)
-        if (pc in labels) {
-            sb.append("  .${labels[pc]}:\n")
-        }
-
-        sb.append("  %04d:  %-10s%-28s; %s\n".format(pc, mnemonic, operands, comment))
-    }
+    // Inside emitFunctionBody:
+    // Rebuilds register→name map from meta.regNameEvents as instructions are emitted.
+    // pn(r) / rn(r) produce "name:pN" when a name is known, else just "pN".
+    // opcodeSymbol(op) maps IADD→"+", ILT→"<", etc.
 }
 ```
 

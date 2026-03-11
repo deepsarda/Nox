@@ -13,7 +13,7 @@ import nox.compiler.types.*
  * has its `.resolvedSymbol` set, and every `MethodCallExpr` knows
  * exactly what it calls.
  *
- * See docs/compiler/semantic-analysis.md § Pass 2.
+ * See docs/compiler/semantic-analysis.md.
  *
  * @property globalScope the root symbol table (populated by Pass 1)
  * @property errors      shared error collector
@@ -89,11 +89,17 @@ class TypeResolver(
 
             // Validate the field type exists and is a valid variable type (not void)
             if (!isKnownType(field.type)) {
-                errors.report(field.loc, "Unknown type '${field.type}' for field '${field.name}' in struct '${typeDef.name}'")
+                errors.report(
+                    field.loc,
+                    "Unknown type '${field.type}' for field '${field.name}' in struct '${typeDef.name}'"
+                )
                 continue
             }
             if (!field.type.isValidAsVariable()) {
-                errors.report(field.loc, "Invalid type '${field.type}' for field '${field.name}' in struct '${typeDef.name}'")
+                errors.report(
+                    field.loc,
+                    "Invalid type '${field.type}' for field '${field.name}' in struct '${typeDef.name}'"
+                )
                 continue
             }
 
@@ -127,7 +133,7 @@ class TypeResolver(
 
     /**
      * Resolve the `main` entry point.
-     * `main` can return any type — the runtime auto-converts to string.
+     * `main` can return any type and the runtime auto-converts to string.
      * We pass VOID as expectedReturn so resolveReturn accepts anything.
      */
     private fun resolveMain(mainDef: MainDef) {
@@ -171,6 +177,8 @@ class TypeResolver(
             val symbol = ParamSymbol(param.name, param.type, param.defaultValue, param.isVarargs)
             if (!scope.define(param.name, symbol)) {
                 errors.report(param.loc, "Duplicate parameter name '${param.name}'")
+            } else {
+                param.resolvedSymbol = symbol  // back-link so codegen can write sym.register
             }
         }
     }

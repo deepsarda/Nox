@@ -14,7 +14,7 @@ import kotlin.io.path.pathString
  * is fully resolved before B, and B before A. This ensures that by the
  * time we process a module, all its transitive dependencies are ready.
  *
- * See docs/compiler/semantic-analysis.md § Phase 0: Import Resolution.
+ * See docs/compiler/semantic-analysis.md.
  *
  * @property basePath                   absolute path of the file being compiled
  * @property errors                     shared error collector

@@ -129,8 +129,11 @@ class StatementResolver(
         }
 
         // Define in scope
-        if (!scope.define(stmt.name, VarSymbol(stmt.name, stmt.type, scope.depth))) {
+        val sym = VarSymbol(stmt.name, stmt.type, scope.depth)
+        if (!scope.define(stmt.name, sym)) {
             errors.report(stmt.loc, "Variable '${stmt.name}' is already declared in this scope")
+        } else {
+            stmt.resolvedSymbol = sym  // back-link so codegen can write to sym.register
         }
     }
 
@@ -269,6 +272,26 @@ class StatementResolver(
 
     private fun resolveReturn(scope: SymbolTable, stmt: ReturnStmt, expectedReturn: TypeRef) {
         if (stmt.value != null) {
+            // Propagate the expected return type into struct/array literals
+            val value = stmt.value
+            if (value is StructLiteralExpr && value.structType == null) {
+                if (expectedReturn.isStructType() || expectedReturn == TypeRef.JSON) {
+                    value.structType = expectedReturn
+                }
+            }
+            // Propagate into struct-literal elements of an array return, e.g.:
+            //   Point[] make() { return [{ x: 1, y: 2 }]; }
+            if (value is ArrayLiteralExpr && expectedReturn.isArray) {
+                val elemType = expectedReturn.elementType()
+                for (elem in value.elements) {
+                    if (elem is StructLiteralExpr && elem.structType == null) {
+                        if (elemType.isStructType() || elemType == TypeRef.JSON) {
+                            elem.structType = elemType
+                        }
+                    }
+                }
+            }
+
             val returnType = exprResolver.resolveExpr(scope, stmt.value)
             // main() can return anything as the runtime auto-converts to string.
             // For all other functions (including void), validate the return type.

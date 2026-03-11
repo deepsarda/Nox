@@ -8,7 +8,7 @@ import nox.compiler.ast.FuncDef
  * Used as the type for [nox.compiler.ast.MethodCallExpr.resolvedTarget] and
  * [nox.compiler.ast.FuncCallExpr.resolvedFunction].
  *
- * @property name       the function/method name
+ * @property name       the function/method name (used as the SCALL key in the constant pool)
  * @property params     parameter names and types, in declaration order
  * @property returnType the declared return type
  * @property astNode    back-reference to the AST node for user-defined functions,

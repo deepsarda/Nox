@@ -1,6 +1,9 @@
 package nox.compiler
 
 import nox.compiler.ast.Program
+import nox.compiler.codegen.CodeGenerator
+import nox.compiler.codegen.CompiledProgram
+import nox.compiler.codegen.NoxcEmitter
 import nox.compiler.parsing.NoxParsing
 import nox.compiler.semantic.ControlFlowValidator
 import nox.compiler.semantic.DeclarationCollector
@@ -19,8 +22,8 @@ import java.nio.file.Path
  * 3. **Declaration Collection:** register types, functions, globals ([DeclarationCollector])
  * 4. **Type Resolution:** resolve expression types, validate statements ([TypeResolver])
  * 5. **Control Flow Validation:** validate return paths, loop context, dead code ([ControlFlowValidator])
- * 6. **Code Generation:** (Not implemented)
- * 7. **Disassembly:** (Not implemented)
+ * 6. **Code Generation:** emit bytecode from the annotated AST ([CodeGenerator])
+ * 7. **Disassembly:** format `.noxc` output for debugging ([NoxcEmitter])
  *
  * See docs/compiler/overview.md for the full pipeline design.
  */
@@ -39,6 +42,8 @@ object NoxCompiler {
         val errors: CompilerErrors,
         val warnings: CompilerWarnings,
         val modules: List<ResolvedModule>,
+        val compiledProgram: CompiledProgram? = null,
+        val disassembly: String? = null,
     )
 
     /**
@@ -82,8 +87,21 @@ object NoxCompiler {
         // Phase 5: Control Flow Validation (Pass 3)
         ControlFlowValidator(errors, warnings).validate(program)
 
-        //TODO: Phase 6: Code Generation
+        // Early exit if semantic analyses produced errors
+        if (errors.hasErrors()) {
+            return CompilationResult(program, errors, warnings, modules)
+        }
 
-        return CompilationResult(program, errors, warnings, modules)
+        // Populate source lines for the disassembler
+        program.sourceLines.addAll(source.lines())
+
+        // Phase 6: Code Generation
+        val compiledProgram = CodeGenerator(modules).generate(program)
+
+        // Phase 7: Disassembly
+        val programName = program.headers.firstOrNull { it.key == "name" }?.value ?: "(unnamed)"
+        val disassembly = NoxcEmitter().emit(compiledProgram, fileName, programName, program.sourceLines)
+
+        return CompilationResult(program, errors, warnings, modules, compiledProgram, disassembly)
     }
 }

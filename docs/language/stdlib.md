@@ -169,7 +169,7 @@ Primitive types and arrays have "methods" available through [UFCS](functions.md#
 
 | Method | Signature | Description |
 |---|---|---|
-| `.length` | `int` (property) | Number of characters in the string |
+| `.length()` | `string` -> `int` | Number of characters in the string |
 | `.upper()` | `string` -> `string` | Convert to uppercase |
 | `.lower()` | `string` -> `string` | Convert to lowercase |
 | `.contains(sub)` | `string` -> `boolean` | Check if substring exists |
@@ -180,18 +180,18 @@ Primitive types and arrays have "methods" available through [UFCS](functions.md#
 ```c
 string text = "Hello, World!";
 
-int len = text.length;              // 13
+int len = text.length();            // 13
 string upper = text.upper();        // "HELLO, WORLD!"
 string lower = text.lower();        // "hello, world!"
 boolean has = text.contains("World"); // true
 string[] parts = text.split(", ");  // ["Hello", "World!"]
 ```
 
-### `array` Methods/Properties
+### `array` Methods
 
 | Method | Signature | Description |
 |---|---|---|
-| `.length` | `int` (property) | Number of elements in the array |
+| `.length()` | `T[]` -> `int` | Number of elements in the array |
 | `.push(item)` | `void` | Append an element to the end |
 | `.pop()` | `T` | Remove and return the last element |
 
@@ -200,9 +200,9 @@ string[] parts = text.split(", ");  // ["Hello", "World!"]
 ```c
 int[] numbers = [1, 2, 3];
 
-int len = numbers.length;  // 3
-numbers.push(4);            // [1, 2, 3, 4]
-int last = numbers.pop();   // last = 4, numbers = [1, 2, 3]
+int len = numbers.length();  // 3
+numbers.push(4);             // [1, 2, 3, 4]
+int last = numbers.pop();    // last = 4, numbers = [1, 2, 3]
 ```
 
 ### `json` Methods

@@ -106,8 +106,8 @@ class ASTBuilderTest :
                     """.trimIndent(),
                 )
             val cont = prog.typesByName["Container"]!!
-            cont.fields[0].type shouldBe TypeRef("int", isArray = true)
-            cont.fields[1].type shouldBe TypeRef("string", isArray = true)
+            cont.fields[0].type shouldBe TypeRef("int", 1)
+            cont.fields[1].type shouldBe TypeRef("string", 1)
         }
 
         // Function definitions
@@ -157,7 +157,7 @@ class ASTBuilderTest :
                 )
             val func = prog.functionsByName["sum"]!!
             func.params[0].isVarargs shouldBe true
-            func.params[0].type shouldBe TypeRef("int", isArray = true)
+            func.params[0].type shouldBe TypeRef("int", 1)
         }
 
         // Main definition

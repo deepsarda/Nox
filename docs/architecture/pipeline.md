@@ -139,7 +139,7 @@ High-level constructs are flattened into jumps:
 | `if/else` | `JIF` (Jump if False) + `JMP` (unconditional jump) |
 | `while` | `JIF` to exit + `JMP` back to condition |
 | `for` | Unrolled into `while` equivalent |
-| `foreach` | Desugared to index-based `while` with `.length` |
+| `foreach` | Desugared to index-based `while` with `.length()` |
 | `break` | `JMP` to loop exit |
 | `continue` | `JMP` to loop start |
 
@@ -199,7 +199,7 @@ All errors — regardless of which stage catches them — are formatted with ful
 **Possible fixes** are suggested wherever applicable, helping developers and code generators self-correct:
 
 ```
-Suggestion: Use `int x = name.length;` to get the string length as an integer,
+Suggestion: Use `int x = name.length();` to get the string length as an integer,
             or change the variable type to `string`.
 ```
  

@@ -22,7 +22,7 @@ Unlike traditional sandboxes that rely on OS-level isolation (containers, VMs), 
 |---|---|
 | [**Memory Model**](vm/memory-model.md) | Dual-bank registers, sliding window frames, and memory lifecycle |
 | [**Instruction Set**](vm/instruction-set.md) | The 64-bit instruction layout and opcode reference |
-| [**Super-Instructions**](vm/super-instructions.md) | Intent-based opcodes: `HMOD`, `HACC`, `HINV` |
+| [**Super-Instructions**](vm/super-instructions.md) | Intent-based opcodes: `HMOD`, `HACC`, `SCONCAT` |
 | [**Error Handling**](vm/error-handling.md) | Table-driven zero-cost exception handling |
 | [**Resource Guards**](vm/resource-guards.md) | Watchdogs, instruction limits, and memory caps |
 

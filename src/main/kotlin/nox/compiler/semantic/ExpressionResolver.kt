@@ -3,6 +3,7 @@ package nox.compiler.semantic
 import nox.compiler.CompilerErrors
 import nox.compiler.ast.*
 import nox.compiler.types.*
+import nox.plugin.TempRegistry
 
 /**
  * Resolves the type of every [Expr] node in the AST.
@@ -13,7 +14,7 @@ import nox.compiler.types.*
  * via [IdentifierExpr.resolvedSymbol], and method calls are classified
  * into their resolution kind ([MethodCallExpr.Resolution]).
  *
- * See docs/compiler/semantic-analysis.md § Pass 2: Type Resolution.
+ * See docs/compiler/semantic-analysis.md.
  *
  * @property globalScope the top-level symbol table (populated by Pass 1)
  * @property errors      shared error collector
@@ -220,13 +221,6 @@ class ExpressionResolver(
                 if (fieldType != null) return fieldType
                 errors.report(expr.loc, "Struct '${targetType.name}' has no field '${expr.fieldName}'")
                 return null
-            }
-        }
-
-        // string.length, array.length are built-in properties
-        if (expr.fieldName == "length") {
-            if (targetType == TypeRef.STRING || targetType.isArray) {
-                return TypeRef.INT
             }
         }
 

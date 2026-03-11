@@ -137,3 +137,9 @@ kover {
         }
     }
 }
+
+tasks.withType<Test> {
+    this.testLogging {
+        this.showStandardStreams = true
+    }
+}

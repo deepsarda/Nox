@@ -15,6 +15,7 @@ Annotated AST
     │   • Opcode selection based on .resolvedType
     │   • Super-instruction selection for json/struct access
     │   • Forward-reference backpatching for jumps
+    │   • RegNameEvent recording (params, locals, loop vars)
     │
     ├── Constant Pool Construction
     │   • Deduplicated strings, doubles, large ints, type IDs
@@ -24,12 +25,12 @@ Annotated AST
     │   • Nested try-catch support
     ▼
 CompiledProgram {
-    long[]       bytecode;       // Packed 64-bit instructions
-    Object[]     constantPool;   // Strings, doubles, type metadata
-    ExEntry[]    exceptionTable; // try-catch PC ranges
-    FuncMeta[]   functions;      // Per-function metadata (frame sizes, entry PCs)
-    ModuleMeta[] modules;        // Per-module metadata (global offsets, exports)
-    int          totalGlobalSlots; // Total global slots across all modules
+    long[]        bytecode;              // Packed 64-bit instructions
+    Object[]      constantPool;          // Strings, doubles, type metadata
+    ExEntry[]     exceptionTable;        // try-catch PC ranges
+    FuncMeta[]    functions;             // Per-function metadata (frame sizes, entry PCs, name events)
+    ModuleMeta[]  modules;               // Per-module metadata (global offsets, exports)
+    int           totalGlobalSlots;      // Total global slots across all modules
 }
 ```
  
@@ -58,9 +59,24 @@ data class FuncMeta(
     val entryPC: Int,                // First instruction of this function
     val paramCount: Int,
     val primitiveFrameSize: Int,     // Number of pMem registers needed
-    val referenceFrameSize: Int      // Number of rMem registers needed
+    val referenceFrameSize: Int,     // Number of rMem registers needed
+    val sourceLines: IntArray,       // Source-line number per instruction (parallel to bytecode slice)
+    val labels: Map<Int, String>,    // localPC → label name (loop_start, loop_exit, catch_*, end)
+    val regNameEvents: List<RegNameEvent>, // Register↔name timeline for the disassembler
+    val sourcePath: String,          // Source file this function was defined in
+    val globalVarNames: List<String> // Init blocks only: "g0=name (type)" entries
+)
+
+/** Records when a register is first assigned to a named variable. */
+data class RegNameEvent(
+    val localPC: Int,    // Instruction index relative to entryPC
+    val isPrim: Boolean, // true = pMem, false = rMem
+    val register: Int,   // Register number within the bank
+    val name: String,    // Source variable name
 )
 ```
+
+The disassembler rebuilds a live `register → name` map by walking `regNameEvents` in `localPC` order. Parameters are recorded at `localPC = 0`; locals are recorded at the instruction where their declaration is emitted.
 
 ### ExEntry
 
@@ -198,11 +214,15 @@ When a reference variable goes out of scope, the compiler emits `KILL_REF` to nu
 {
     string temp = "hello";      // rMem[2] = "hello"
     yield temp;
-}                               // KILL_REF 2  <- emitted here
+}                               // KILL_REF 2  <- emitted here at scope exit
 // rMem[2] is now null, "hello" is eligible for GC
 ```
 
-**Rule:** At every scope exit, emit `KILL_REF` for each `rMem` register first used in that scope.
+**Rules:**
+
+1. **Scope exit:** At the end of a block, emit `KILL_REF` for each `rMem` register first allocated inside that block. Skipped if the block ends with a `return` statement (rule 2 covers it).
+
+2. **Before `return`:** `emitReturn` emits `KILL_REF` for **all** live `rMem` registers before the `RET` instruction.
  
 ## Bytecode Emission
 
@@ -330,6 +350,19 @@ if (expr.left.resolvedType == TypeRef.INT && expr.resolvedType == TypeRef.DOUBLE
     emit(I2D, 0, leftReg, leftReg, 0)  // int-to-double conversion
 }
 ```
+
+### Cast Emission
+
+A `json as StructType` cast requires runtime validation. The compiler builds a `TypeDescriptor` from the target struct's AST `TypeDef`, adding it to the constant pool.
+
+1. **Allocate** slot via `ConstantPool.addPlaceholder()` (to handle recursive/self-referencing structs)
+2. **Build** the descriptor fields (`FieldSpec` objects)
+3. **Commit** the descriptor via `ConstantPool.replace()`
+4. **Emit** `CAST_STRUCT dest, src, poolIdx`
+
+SubOp values:
+- `0`: scalar cast (`json as Config`)
+- `1`: array cast (`json as Config[]`), validates each element
  
 ### Statement Emission
 
@@ -477,7 +510,8 @@ Compiles to an index-based loop:
 
 ```
     LDI  idx_reg, 0                    // int __idx = 0
-    HINV ARR_LEN, len_reg, items_reg   // int __len = items.length
+    MOVR len_arg, items_reg             // pass arr as arg
+    SCALL len_reg, __arr_length, len_arg // int __len = items.length()
 LOOP_START:
     ILT  cond_reg, idx_reg, len_reg    // __idx < __len
     JIF  cond_reg, LOOP_EXIT
@@ -542,10 +576,11 @@ fun emitMethodCall(call: MethodCallExpr, dest: Int) {
             }
         }
         MethodCallExpr.Resolution.TYPE_BOUND -> {
-            // text.upper() -> HINV STR_UPPER
-            val targetReg = allocTemp(call.target.resolvedType!!)
-            emitExpr(call.target, targetReg)
-            emit(HINV, subOpFor(call.methodName), dest, targetReg, 0)
+            // text.upper() -> SCALL (receiver is first arg)
+            val argStart = allocTemp()
+            emitExpr(call.target, argStart)
+            emitArgs(call.args, argStart + 1)
+            emit(SCALL, 0, dest, funcId, argStart)
         }
         MethodCallExpr.Resolution.UFCS -> {
             // point.distance(other) -> CALL distance(point, other)
@@ -561,7 +596,7 @@ fun emitMethodCall(call: MethodCallExpr, dest: Int) {
  
 ## Super-Instruction Selection
 
-### When to Use HMOD / HACC / HINV
+### When to Use HMOD / HACC
 
 The code generator pattern-matches on field access and mutation to select the most efficient instruction:
 
@@ -584,13 +619,6 @@ fun emitFieldAccess(expr: FieldAccessExpr, dest: Int) {
 
         val keyIdx = constantPool.add(expr.fieldName)
         emit(HACC, subOp, dest, targetReg, keyIdx)
-    }
-    else if (expr.fieldName == "length") {
-        // string.length or array.length -> HINV
-        val targetReg = allocTemp(targetType)
-        emitExpr(expr.target, targetReg)
-        val subOp = if (targetType == TypeRef.STRING) STR_LEN else ARR_LEN
-        emit(HINV, subOp, dest, targetReg, 0)
     }
 }
 ```
@@ -643,7 +671,7 @@ class ConstantPool {
 | `Double` | Double literals (can't fit in 16-bit immediate) | `3.14159` |
 | `Long` | Integer literals > 16 bits | `100000` |
 | `String` | Cached access paths | `"server.db.host"` |
-| `TypeId` | Struct type identifiers for `as` casts | `TypeId("ApiConfig")` |
+| `TypeDescriptor` | Struct shape descriptors for `CAST_STRUCT` validation | `TypeDescriptor("ApiConfig", fields)` |
 
 ### Loading Constants: LDC
 
@@ -791,19 +819,19 @@ yield `Hello ${name}, you have ${count} items`;
 Compiles to a sequence of string concatenation operations:
 
 ```
-    LDC   t0, "Hello "                     // Constant pool
-    MOVR  result, t0                        // result = "Hello "
-    HINV  STR_CONCAT, result, result, name_reg  // result += name
-    LDC   t0, ", you have "
-    HINV  STR_CONCAT, result, result, t0    // result += ", you have "
-    I2S   t1, count_reg                     // int tostring conversion
-    HINV  STR_CONCAT, result, result, t1    // result += count
-    LDC   t0, " items"
-    HINV  STR_CONCAT, result, result, t0    // result += " items"
-    YIELD result
+    LDC    t0, "Hello "                      // Constant pool
+    MOVR   result, t0                         // result = "Hello "
+    SCONCAT result, result, name_reg           // result += name
+    LDC    t0, ", you have "
+    SCONCAT result, result, t0                 // result += ", you have "
+    I2S    t1, count_reg                      // int tostring conversion
+    SCONCAT result, result, t1                 // result += count
+    LDC    t0, " items"
+    SCONCAT result, result, t0                 // result += " items"
+    YIELD  result
 ```
 
-**Optimization opportunity:** For templates with many parts, emit a `TEMPLATE` super-instruction that takes a parts array from the constant pool, avoiding N separate `STR_CONCAT` calls.
+**Optimization opportunity:** For templates with many parts, emit a `TEMPLATE` super-instruction that takes a parts array from the constant pool, avoiding N separate `SCONCAT` calls.
  
 ## Global Variables
 
@@ -974,11 +1002,13 @@ main() {
 .func main
   ;
   ; main.nox:8  return `${PREFIX}${counter}`;
-  0008:  GLOADR    r0, gr0                  ; r0 = PREFIX
-  0009:  GLOAD     p0, g2                   ; p0 = counter
-  0010:  I2S       r1, p0                   ; r1 = toString(counter)
-  0011:  HINV      STR_CONCAT, r0, r0, r1   ; r0 = PREFIX + counter
-  0012:  RET       r0                       ; return r0
+  0008:  GLOADR    r0, gr0                  ; r0 = gr0
+  0009:  GLOAD     p0, g2                   ; p0 = g2
+  0010:  I2S       r1, p0                   ; r1 = toString(p0)
+  0011:  SCONCAT   r0, r0, r1               ; r0 = r0 + r1
+  0012:  KILL_REF  r1                       ; r1 = null (GC)
+  0013:  KILL_REF  r0                       ; r0 = null (GC)
+  0014:  RET       r0                       ; return r0
 ```
 
 **Execution sequence:**
@@ -1037,25 +1067,27 @@ Func 2: "main"           entry=6   params=2  pFrame=4  rFrame=2
   ;
   ; adder.nox:7  return x * MULTIPLIER;
   0003:  GLOAD     p1, g0                   ; p1 = MULTIPLIER
-  0004:  IMUL      p1, p0, p1               ; p1 = x * MULTIPLIER
+  0004:  IMUL      p1, p0, p1               ; p1 = x:p0 * p1
   0005:  RET       p1                       ; return p1
 
 .func main
   ; params: p0=a  p1=b
   ;
   ; adder.nox:11  int sum = a + b;
-  0006:  IADD      p2, p0, p1               ; p2 = a + b
+  0006:  IADD      p2, p0, p1               ; sum:p2 = a:p0 + b:p1
   ;
   ; adder.nox:12  int result = double_it(sum);
-  0007:  MOV       p3, p2                   ; arg0 = sum
-  0008:  CALL      double_it, p3            ; call double_it(sum)
-  0009:  MOV       p2, p3                   ; p2 = result
+  0007:  MOV       p3, p2                   ; p3 = sum:p2
+  0008:  CALL      double_it, p3            ; call double_it(p3...)
+  0009:  MOV       p2, p3                   ; result:p2 = p3
   ;
   ; adder.nox:13  return `Result: ${result}`;
   0010:  LDC       r0, #0                   ; r0 = "Result: "
-  0011:  I2S       r1, p2                   ; r1 = toString(result)
-  0012:  HINV      STR_CONCAT, r0, r0, r1   ; r0 = "Result: " + result
-  0013:  RET       r0                       ; return r0
+  0011:  I2S       r1, p2                   ; r1 = toString(result:p2)
+  0012:  SCONCAT   r0, r0, r1               ; r0 = r0 + r1
+  0013:  KILL_REF  r1                       ; r1 = null (GC)
+  0014:  KILL_REF  r0                       ; r0 = null (GC)
+  0015:  RET       r0                       ; return r0
 ```
 
 **Execution sequence:** VM calls `<module_init>` (0–2), then `main` (6–13). `main` calls `double_it` (3–5) which reads the global `MULTIPLIER` via `GLOAD`.

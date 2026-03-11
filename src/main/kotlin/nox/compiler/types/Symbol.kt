@@ -19,24 +19,32 @@ sealed interface Symbol {
  * A local variable declared inside a function body.
  *
  * @property scopeDepth nesting depth of the scope this variable lives in
+ * @property register   pMem or rMem register index assigned by the register allocator (-1 = unassigned)
  */
 data class VarSymbol(
     override val name: String,
     override val type: TypeRef,
     val scopeDepth: Int,
-) : Symbol
+) : Symbol {
+    /** Register assigned by the register allocator. Set during codegen. */
+    var register: Int = -1
+}
 
 /**
  * A function parameter.
  *
  * @property defaultValue the default value expression, or `null` if the parameter is required
+ * @property register     pMem or rMem register index assigned by the register allocator (-1 = unassigned)
  */
 data class ParamSymbol(
     override val name: String,
     override val type: TypeRef,
     val defaultValue: Expr?,
     val isVarargs: Boolean = false,
-) : Symbol
+) : Symbol {
+    /** Register assigned by the register allocator. Set during codegen. */
+    var register: Int = -1
+}
 
 /**
  * A global variable declared at module level.

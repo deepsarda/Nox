@@ -60,9 +60,6 @@ A super-instruction that modifies a property on a host object in a single VM cyc
 **HACC (Host Access)**
 A super-instruction that reads a property from a host object into a register.
 
-**HINV (Host Invoke)**
-A super-instruction that calls a method on a host-managed type (strings, arrays, JSON objects).
-
 ## I
 
 **`import` (keyword)**
@@ -184,7 +181,7 @@ The mechanism for function call frames. Instead of copying data, the base pointe
 The secondary intent field (bits 55–48) in the instruction layout. Used by super-instructions to specify the exact operation (e.g., `ADD_INT`, `SET_STRING`).
 
 **Super-Instruction**
-An instruction that performs a complex, multi-step operation in a single VM cycle. The three super-instructions are `HMOD`, `HACC`, and `HINV`. See [Super-Instructions](../vm/super-instructions.md).
+An instruction that performs a complex, multi-step operation in a single VM cycle. The two super-instructions are `HMOD` and `HACC`. See [Super-Instructions](../vm/super-instructions.md).
 
 ## T
 

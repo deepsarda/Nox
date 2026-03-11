@@ -15,7 +15,7 @@ class TypeRefTest :
             TypeRef.JSON.isPrimitive() shouldBe false
             TypeRef.VOID.isPrimitive() shouldBe false
             TypeRef("Custom").isPrimitive() shouldBe false
-            TypeRef("int", isArray = true).isPrimitive() shouldBe false
+            TypeRef("int", 1).isPrimitive() shouldBe false
         }
 
         test("isPassByValue correctly identifies pass-by-value types") {
@@ -27,7 +27,7 @@ class TypeRefTest :
             TypeRef.JSON.isPassByValue() shouldBe false
             TypeRef.VOID.isPassByValue() shouldBe false
             TypeRef("Custom").isPassByValue() shouldBe false
-            TypeRef("int", isArray = true).isPassByValue() shouldBe false
+            TypeRef("int", 1).isPassByValue() shouldBe false
         }
 
         test("isNullable correctly identifies nullable types") {
@@ -39,14 +39,14 @@ class TypeRefTest :
             TypeRef.JSON.isNullable() shouldBe true
             TypeRef.VOID.isNullable() shouldBe false
             TypeRef("Custom").isNullable() shouldBe true
-            TypeRef("int", isArray = true).isNullable() shouldBe true
+            TypeRef("int", 1).isNullable() shouldBe true
         }
 
         test("toString formats type name correctly") {
             TypeRef.INT.toString() shouldBe "int"
             TypeRef("Custom").toString() shouldBe "Custom"
-            TypeRef("int", isArray = true).toString() shouldBe "int[]"
-            TypeRef("Point", isArray = true).toString() shouldBe "Point[]"
+            TypeRef("int", 1).toString() shouldBe "int[]"
+            TypeRef("Point", 1).toString() shouldBe "Point[]"
         }
 
         test("data class copy and equality") {
@@ -100,10 +100,6 @@ class TypeRefTest :
             arr2d.isAssignableFrom(arr2d) shouldBe true
         }
 
-        test("backward compat boolean constructor") {
-            TypeRef("int", true) shouldBe TypeRef("int", 1)
-            TypeRef("int", false) shouldBe TypeRef("int", 0)
-        }
 
         // isAssignableFrom
 
@@ -142,8 +138,8 @@ class TypeRefTest :
         }
 
         test("isAssignableFrom struct array to json array") {
-            val structArray = TypeRef("Point", isArray = true)
-            val jsonArray = TypeRef("json", isArray = true)
+            val structArray = TypeRef("Point", 1)
+            val jsonArray = TypeRef("json", 1)
             jsonArray.isAssignableFrom(structArray) shouldBe true
         }
 
@@ -181,7 +177,7 @@ class TypeRefTest :
         }
 
         test("isValidAsVariable accepts string array") {
-            TypeRef("string", isArray = true).isValidAsVariable() shouldBe true
+            TypeRef("string", 1).isValidAsVariable() shouldBe true
         }
 
         test("isValidAsVariable rejects void") {
@@ -189,6 +185,6 @@ class TypeRefTest :
         }
 
         test("isValidAsVariable rejects void array") {
-            TypeRef("void", isArray = true).isValidAsVariable() shouldBe false
+            TypeRef("void", 1).isValidAsVariable() shouldBe false
         }
     })

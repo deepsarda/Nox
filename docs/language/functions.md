@@ -58,7 +58,7 @@ A function can accept a variable number of arguments using the varargs syntax. A
 ```c
 int sum(int ...values[]) {
     int total = 0;
-    for (int i = 0; i < values.length; i++) {
+    for (int i = 0; i < values.length(); i++) {
         total = total + values[i];
     }
     return total;
@@ -200,7 +200,7 @@ foreach (string name in names) {
 }
 ```
 
-> **Under the hood:** The compiler desugars `foreach` into a standard `while` loop with an index counter, `.length` check, and array index access.
+> **Under the hood:** The compiler desugars `foreach` into a standard `while` loop with an index counter, `.length()` check, and array index access.
 
 ### `break` and `continue`
 

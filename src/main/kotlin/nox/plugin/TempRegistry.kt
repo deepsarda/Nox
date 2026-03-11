@@ -1,17 +1,17 @@
-package nox.compiler.semantic
+package nox.plugin
 
 import nox.compiler.types.TypeRef
 import nox.compiler.types.CallTarget
 
 /**
- * Temporary compile-time registry for Tier 0 (built-in) and Tier 1 (external plugin)
+ * Compile-time registry for Tier 0 (built-in) and Tier 1 (external plugin)
  * namespace functions and type-bound methods.
  *
- * This hard-codes the signatures from `docs/language/stdlib.md` so the compiler
- * can validate calls during Pass 2 (Type Resolution) without a runtime.
+ * All type-bound methods resolve to [CallTarget] entries whose [CallTarget.name]
+ * is used as the SCALL function key. The VM looks up the native handler by name.
  *
  * **Tier 2 (import) namespaces are NOT registered here.** They are resolved
- * through the [nox.compiler.types.SymbolTable] by the [ImportResolver].
+ * through the [nox.compiler.types.SymbolTable] by the ImportResolver.
  *
  * This registry will eventually be replaced by a proper `LibraryRegistry`
  * populated from plugin annotations (`@NoxModule`, `@NoxTypeMethod`).
@@ -40,7 +40,7 @@ object TempRegistry {
             "append" to target("append", listOf("path" to TypeRef.STRING, "content" to TypeRef.STRING), TypeRef.VOID),
             "delete" to target("delete", listOf("path" to TypeRef.STRING), TypeRef.VOID),
             "exists" to target("exists", listOf("path" to TypeRef.STRING), TypeRef.BOOLEAN),
-            "list" to target("list", listOf("dir" to TypeRef.STRING), TypeRef("string", isArray = true)),
+            "list" to target("list", listOf("dir" to TypeRef.STRING), TypeRef("string", 1)),
             "metadata" to target("metadata", listOf("path" to TypeRef.STRING), TypeRef.JSON),
             "createDir" to target("createDir", listOf("path" to TypeRef.STRING), TypeRef.VOID),
         ),
@@ -60,32 +60,32 @@ object TempRegistry {
         ),
     )
 
-    // Built-in type methods
+    // Built-in type methods (all use SCALL — identified by CallTarget.name)
 
     /**
-     * Methods available on built-in types (e.g. `string.upper()`).
+     * Methods available on built-in types (e.g. `string.upper()`, `string.length()`).
      * Key = base type name, value = methods by name.
      */
     private val builtinMethods: Map<String, Map<String, CallTarget>> = mapOf(
         "string" to mapOf(
-            "upper" to target("upper", emptyList(), TypeRef.STRING),
-            "lower" to target("lower", emptyList(), TypeRef.STRING),
-            "contains" to target("contains", listOf("sub" to TypeRef.STRING), TypeRef.BOOLEAN),
-            "split" to target("split", listOf("delim" to TypeRef.STRING), TypeRef("string", isArray = true)),
+            "upper" to target("__str_upper", emptyList(), TypeRef.STRING),
+            "lower" to target("__str_lower", emptyList(), TypeRef.STRING),
+            "contains" to target("__str_contains", listOf("sub" to TypeRef.STRING), TypeRef.BOOLEAN),
+            "split" to target("__str_split", listOf("delim" to TypeRef.STRING), TypeRef("string", 1)),
+            "length" to target("__str_length", emptyList(), TypeRef.INT),
         ),
-        // json methods: safe accessors
         "json" to mapOf(
-            "getString" to target("getString", listOf("key" to TypeRef.STRING, "default" to TypeRef.STRING), TypeRef.STRING),
-            "getInt" to target("getInt", listOf("key" to TypeRef.STRING, "default" to TypeRef.INT), TypeRef.INT),
-            "getBool" to target("getBool", listOf("key" to TypeRef.STRING, "default" to TypeRef.BOOLEAN), TypeRef.BOOLEAN),
-            "getDouble" to target("getDouble", listOf("key" to TypeRef.STRING, "default" to TypeRef.DOUBLE), TypeRef.DOUBLE),
-            "getJSON" to target("getJSON", listOf("key" to TypeRef.STRING, "default" to TypeRef.JSON), TypeRef.JSON),
-            "has" to target("has", listOf("key" to TypeRef.STRING), TypeRef.BOOLEAN),
-            "keys" to target("keys", emptyList(), TypeRef("string", isArray = true)),
-            "size" to target("size", emptyList(), TypeRef.INT),
-            "getIntArray" to target("getIntArray", listOf("key" to TypeRef.STRING, "default" to TypeRef("int", isArray = true)), TypeRef("int", isArray = true)),
-            "getStringArray" to target("getStringArray", listOf("key" to TypeRef.STRING, "default" to TypeRef("string", isArray = true)), TypeRef("string", isArray = true)),
-            "getDoubleArray" to target("getDoubleArray", listOf("key" to TypeRef.STRING, "default" to TypeRef("double", isArray = true)), TypeRef("double", isArray = true)),
+            "getString" to target("__json_getString", listOf("key" to TypeRef.STRING, "default" to TypeRef.STRING), TypeRef.STRING),
+            "getInt" to target("__json_getInt", listOf("key" to TypeRef.STRING, "default" to TypeRef.INT), TypeRef.INT),
+            "getBool" to target("__json_getBool", listOf("key" to TypeRef.STRING, "default" to TypeRef.BOOLEAN), TypeRef.BOOLEAN),
+            "getDouble" to target("__json_getDouble", listOf("key" to TypeRef.STRING, "default" to TypeRef.DOUBLE), TypeRef.DOUBLE),
+            "getJSON" to target("__json_getJSON", listOf("key" to TypeRef.STRING, "default" to TypeRef.JSON), TypeRef.JSON),
+            "has" to target("__json_has", listOf("key" to TypeRef.STRING), TypeRef.BOOLEAN),
+            "keys" to target("__json_keys", emptyList(), TypeRef("string", 1)),
+            "size" to target("__json_size", emptyList(), TypeRef.INT),
+            "getIntArray" to target("__json_getIntArray", listOf("key" to TypeRef.STRING, "default" to TypeRef("int", 1)), TypeRef("int", 1)),
+            "getStringArray" to target("__json_getStringArray", listOf("key" to TypeRef.STRING, "default" to TypeRef("string", 1)), TypeRef("string", 1)),
+            "getDoubleArray" to target("__json_getDoubleArray", listOf("key" to TypeRef.STRING, "default" to TypeRef("double", 1)), TypeRef("double", 1)),
         ),
     )
 
@@ -93,28 +93,29 @@ object TempRegistry {
      * Array methods are handled specially because they work on any `T[]`.
      * `push` accepts a single element whose type matches the array element type.
      * `pop` returns the array element type.
+     * `length` returns the array length.
      */
-    private val arrayMethods = setOf("push", "pop")
+    private val arrayMethods = setOf("push", "pop", "length")
 
     /**
      * Type-bound conversion methods (e.g. `int.toDouble()`).
-     * Registered via `@NoxTypeMethod` in the plugin system; hard-coded here.
+     * All use SCALL — identified by [CallTarget.name].
      */
     private val typeMethods: Map<String, Map<String, CallTarget>> = mapOf(
         "int" to mapOf(
-            "toDouble" to target("toDouble", emptyList(), TypeRef.DOUBLE),
-            "toString" to target("toString", emptyList(), TypeRef.STRING),
+            "toDouble" to target("__int_toDouble", emptyList(), TypeRef.DOUBLE),
+            "toString" to target("__int_toString", emptyList(), TypeRef.STRING),
         ),
         "double" to mapOf(
-            "toInt" to target("toInt", emptyList(), TypeRef.INT),
-            "toString" to target("toString", emptyList(), TypeRef.STRING),
+            "toInt" to target("__dbl_toInt", emptyList(), TypeRef.INT),
+            "toString" to target("__dbl_toString", emptyList(), TypeRef.STRING),
         ),
         "boolean" to mapOf(
-            "toString" to target("toString", emptyList(), TypeRef.STRING),
+            "toString" to target("__bool_toString", emptyList(), TypeRef.STRING),
         ),
         "string" to mapOf(
-            "toInt" to target("toInt", listOf("default" to TypeRef.INT), TypeRef.INT),
-            "toDouble" to target("toDouble", listOf("default" to TypeRef.DOUBLE), TypeRef.DOUBLE),
+            "toInt" to target("__str_toInt", listOf("default" to TypeRef.INT), TypeRef.INT),
+            "toDouble" to target("__str_toDouble", listOf("default" to TypeRef.DOUBLE), TypeRef.DOUBLE),
         ),
     )
 
@@ -134,9 +135,9 @@ object TempRegistry {
         namespaceFunctions[namespace]?.get(funcName)
 
     /**
-     * Look up a built-in method on the given [targetType] (e.g. `string.upper()`).
+     * Look up a built-in method on the given [targetType] (e.g. `string.upper()`, `arr.length()`).
      *
-     * For array types, recognizes `push` and `pop`.
+     * For array types, recognizes `push`, `pop`, and `length`.
      * For scalar types, checks the built-in method table.
      *
      * @return the call target, or `null` if not found
@@ -145,8 +146,9 @@ object TempRegistry {
         // Array methods
         if (targetType.isArray && methodName in arrayMethods) {
             return when (methodName) {
-                "push" -> target("push", listOf("item" to targetType.elementType()), TypeRef.VOID)
-                "pop" -> target("pop", emptyList(), targetType.elementType())
+                "push" -> target("__arr_push", listOf("item" to targetType.elementType()), TypeRef.VOID)
+                "pop" -> target("__arr_pop", emptyList(), targetType.elementType())
+                "length" -> target("__arr_length", emptyList(), TypeRef.INT)
                 else -> null
             }
         }

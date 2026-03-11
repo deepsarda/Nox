@@ -14,11 +14,6 @@ data class TypeRef(
     val name: String,
     val arrayDepth: Int = 0,
 ) {
-    /**
-     * Backward-compatible constructor: `TypeRef("int", isArray = true)` → `TypeRef("int", 1)`.
-     */
-    constructor(name: String, isArray: Boolean) : this(name, if (isArray) 1 else 0)
-
     companion object {
         val INT = TypeRef("int")
         val DOUBLE = TypeRef("double")
@@ -33,7 +28,7 @@ data class TypeRef(
 
     /**
      * Returns the element type by peeling one array dimension.
-     * e.g. `int[][]` → `int[]`, `int[]` → `int`.
+     * e.g. `int[][]` to `int[]`, `int[]` to `int`.
      * Returns `this` if not an array.
      */
     fun elementType(): TypeRef =
@@ -41,7 +36,7 @@ data class TypeRef(
 
     /**
      * Returns a new TypeRef with one additional array dimension.
-     * e.g. `int` → `int[]`, `int[]` → `int[][]`.
+     * e.g. `int` to `int[]`, `int[]` to `int[][]`.
      */
     fun arrayOf(): TypeRef = TypeRef(name, arrayDepth + 1)
 

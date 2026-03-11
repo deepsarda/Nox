@@ -28,6 +28,9 @@ class VarDeclStmt(
 ) : Stmt(loc) {
     /** Register assigned to this local variable. Set by register allocator. */
     var register: Int = -1
+
+    /** Back-link to the VarSymbol created in the type resolver. Set during semantic analysis. */
+    var resolvedSymbol: Symbol? = null
 }
 
 // Assignment & Mutation

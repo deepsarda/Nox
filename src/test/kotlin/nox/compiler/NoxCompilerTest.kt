@@ -19,7 +19,10 @@ class NoxCompilerTest :
             val result = NoxCompiler.compile(
                 source = """
                     int add(int a, int b) { return a + b; }
-                    main() { int x = add(1, 2); return "ok"; }
+                    main() { 
+                        int x = add(1, 2);
+                        return "ok"; 
+                    }
                 """.trimIndent(),
                 fileName = "test.nox",
             )
@@ -33,7 +36,10 @@ class NoxCompilerTest :
         test("compileWithTypeErrors") {
             val result = NoxCompiler.compile(
                 source = """
-                    main() { int x = "hello"; return "ok"; }
+                    main() { 
+                        int x = "hello"; 
+                        return "ok"; 
+                    }
                 """.trimIndent(),
                 fileName = "test.nox",
             )
@@ -44,7 +50,10 @@ class NoxCompilerTest :
         test("compileWithSyntaxErrors") {
             val result = NoxCompiler.compile(
                 source = """
-                    main() { int x = ; return "ok"; }
+                    main() { 
+                        int x = ; 
+                        return "ok"; 
+                    }
                 """.trimIndent(),
                 fileName = "test.nox",
             )
@@ -54,7 +63,10 @@ class NoxCompilerTest :
         test("compileSetsResolvedTypes") {
             val result = NoxCompiler.compile(
                 source = """
-                    main() { int x = 42; return "ok"; }
+                    main() { 
+                        int x = 42; 
+                        return "ok"; 
+                    }
                 """.trimIndent(),
                 fileName = "test.nox",
             )

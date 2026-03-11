@@ -126,7 +126,10 @@ data class Param(
     val defaultValue: Expr?,
     val isVarargs: Boolean,
     val loc: SourceLocation,
-)
+) {
+    /** ParamSymbol created by the type resolver. Set during semantic analysis. */
+    var resolvedSymbol: Symbol? = null
+}
 
 /** Placeholder for invalid or un-parseable declarations. */
 class ErrorDecl(
