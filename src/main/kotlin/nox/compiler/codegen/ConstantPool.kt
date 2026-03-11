@@ -1,5 +1,7 @@
 package nox.compiler.codegen
 
+import nox.compiler.types.TypeDescriptor
+
 /**
  * A deduplicated constant pool for compiled Nox programs.
  *

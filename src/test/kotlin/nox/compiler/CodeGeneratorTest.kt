@@ -9,8 +9,8 @@ import io.kotest.matchers.string.shouldContain
 import nox.compiler.NoxCompiler
 import nox.compiler.codegen.Instruction
 import nox.compiler.codegen.Opcode
-import nox.compiler.codegen.TypeDescriptor
-import nox.compiler.codegen.FieldSpec
+import nox.compiler.types.TypeDescriptor
+import nox.compiler.types.FieldSpec
 import java.nio.file.Path
 
 /**

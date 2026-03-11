@@ -1,5 +1,7 @@
 package nox.compiler.codegen
 
+import nox.compiler.types.FieldSpec
+import nox.compiler.types.TypeDescriptor
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 

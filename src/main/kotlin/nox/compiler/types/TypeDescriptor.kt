@@ -1,11 +1,9 @@
-package nox.compiler.codegen
-
-import nox.compiler.types.TypeRef
+package nox.compiler.types
 
 /**
  * Describes the shape of a struct type for runtime validation by `CAST_STRUCT`.
  *
- * Stored in the [ConstantPool] and referenced by pool index from the
+ * Stored in the constant pool and referenced by pool index from the
  * `CAST_STRUCT` instruction's C operand.
  *
  * @property name   the struct type name (e.g. "ApiConfig", "TreeNode")
