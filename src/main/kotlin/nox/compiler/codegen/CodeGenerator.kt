@@ -159,69 +159,73 @@ class CodeGenerator(
     }
 
     private fun emitFunction(program: Program, func: FuncDef, sourcePath: String = ""): Int {
-        val entryPc = bytecode.size
-        val allocator = RegisterAllocator(func.params)
-        allocator.setParamSymbols(func.params)
+        val liveness = LivenessAnalyzer().also { it.analyze(func) }
+        return emitFunctionBody(
+            name = func.name,
+            params = func.params,
+            body = func.body,
+            program = program,
+            sourcePath = sourcePath,
+            liveness = liveness,
+            implicitVoidReturn = func.returnType == TypeRef.VOID,
+        ).also { _ ->
+            func.maxPrimitiveRegisters = funcMetas.last().primitiveFrameSize
+            func.maxReferenceRegisters = funcMetas.last().referenceFrameSize
+        }
+    }
 
-        val liveness = LivenessAnalyzer()
-        liveness.analyze(func)
+    private fun emitMain(program: Program, main: MainDef, sourcePath: String = ""): Int {
+        val liveness = LivenessAnalyzer().also { it.analyze(main) }
+        return emitFunctionBody(
+            name = "main",
+            params = main.params,
+            body = main.body,
+            program = program,
+            sourcePath = sourcePath,
+            liveness = liveness,
+            implicitVoidReturn = false,
+        ).also { _ ->
+            main.maxPrimitiveRegisters = funcMetas.last().primitiveFrameSize
+            main.maxReferenceRegisters = funcMetas.last().referenceFrameSize
+        }
+    }
+
+    /**
+     * Shared implementation for [emitFunction] and [emitMain].
+     *
+     * Handles liveness-driven register allocation, bytecode emission, and [FuncMeta] recording.
+     * The only differences between a named function and `main` are the [name] string, whether
+     * an [implicitVoidReturn] is appended, and who reads back [maxPrimitiveRegisters].
+     */
+    private fun emitFunctionBody(
+        name: String,
+        params: List<Param>,
+        body: Block,
+        program: Program,
+        sourcePath: String,
+        liveness: LivenessAnalyzer,
+        implicitVoidReturn: Boolean,
+    ): Int {
+        val entryPc = bytecode.size
+        val allocator = RegisterAllocator(params)
+        allocator.setParamSymbols(params)
 
         val emitter = BytecodeEmitter(allocator, pool, program, modules, liveness.freeAtNode)
-        emitter.recordParamNames(func.params)
+        emitter.recordParamNames(params)
+        emitter.emitBlock(body)
 
-        emitter.emitBlock(func.body)
-
-        // Implicit void return
-        if (func.returnType == TypeRef.VOID) {
+        if (implicitVoidReturn) {
             emitter.emit(Opcode.RET, 0, 0, 0, 0)
         }
 
         appendEmitter(entryPc, emitter)
 
-        func.maxPrimitiveRegisters = allocator.maxPrim
-        func.maxReferenceRegisters = allocator.maxRef
-
         val metaIdx = funcMetas.size
         funcMetas.add(
             FuncMeta(
-                name = func.name,
+                name = name,
                 entryPC = entryPc,
-                paramCount = func.params.size,
-                primitiveFrameSize = allocator.maxPrim,
-                referenceFrameSize = allocator.maxRef,
-                sourceLines = emitter.sourceLines.toIntArray(),
-                labels = emitter.labels.toMap(),
-                regNameEvents = emitter.regNameEvents.toList(),
-                sourcePath = sourcePath,
-            ),
-        )
-        return metaIdx
-    }
-
-    private fun emitMain(program: Program, main: MainDef, sourcePath: String = ""): Int {
-        val entryPc = bytecode.size
-        val allocator = RegisterAllocator(main.params)
-        allocator.setParamSymbols(main.params)
-
-        val liveness = LivenessAnalyzer()
-        liveness.analyze(main)
-
-        val emitter = BytecodeEmitter(allocator, pool, program, modules, liveness.freeAtNode)
-        emitter.recordParamNames(main.params)
-
-        emitter.emitBlock(main.body)
-
-        appendEmitter(entryPc, emitter)
-
-        main.maxPrimitiveRegisters = allocator.maxPrim
-        main.maxReferenceRegisters = allocator.maxRef
-
-        val metaIdx = funcMetas.size
-        funcMetas.add(
-            FuncMeta(
-                name = "main",
-                entryPC = entryPc,
-                paramCount = main.params.size,
+                paramCount = params.size,
                 primitiveFrameSize = allocator.maxPrim,
                 referenceFrameSize = allocator.maxRef,
                 sourceLines = emitter.sourceLines.toIntArray(),

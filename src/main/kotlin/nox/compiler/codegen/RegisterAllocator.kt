@@ -114,17 +114,22 @@ class RegisterAllocator(params: List<Param>) {
 
     /** Free a named symbol (local variable or parameter) so its register can be reused. */
     fun freeVar(sym: Symbol) {
-        val reg = if (sym is VarSymbol) sym.register else if (sym is ParamSymbol) sym.register else -1
+        val (reg, type) = when (sym) {
+            is VarSymbol -> sym.register to sym.type
+            is ParamSymbol -> sym.register to sym.type
+            else -> return
+        }
         if (reg == -1) return
-
-        val type = if (sym is VarSymbol) sym.type else if (sym is ParamSymbol) sym.type else return
 
         if (type.isPrimitive()) freePrim.addFirst(reg)
         else freeRef.addFirst(reg)
 
         // Prevent double-freeing
-        if (sym is VarSymbol) sym.register = -1
-        else if (sym is ParamSymbol) sym.register = -1
+        when (sym) {
+            is VarSymbol -> sym.register = -1
+            is ParamSymbol -> sym.register = -1
+            else -> {}
+        }
     }
 
     /** Allocate a temp register for [type] (dispatches to pMem or rMem). */

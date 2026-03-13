@@ -20,6 +20,9 @@ class ConstantPool {
     private val entries = mutableListOf<Any?>()
     private val dedup = mutableMapOf<Any?, Int>()
 
+    /** O(1) index from type-descriptor name to pool index. */
+    private val typeDescriptorIndex = mutableMapOf<String, Int>()
+
     /**
      * Intern [value] into the pool and return its index.
      *
@@ -34,8 +37,10 @@ class ConstantPool {
      * - `null`   represents the null constant (rarely used)
      */
     fun add(value: Any?): Int = dedup.getOrPut(value) {
+        val idx = entries.size
         entries.add(value)
-        entries.size - 1
+        if (value is TypeDescriptor) typeDescriptorIndex[value.name] = idx
+        idx
     }
 
     /**
@@ -47,13 +52,8 @@ class ConstantPool {
         return entries.size - 1
     }
 
-    /** Finds the pool index of an existing TypeDescriptor by its name, if any. */
-    fun getTypeDescriptorId(typeName: String): Int? {
-        for ((i, entry) in entries.withIndex()) {
-            if (entry is TypeDescriptor && entry.name == typeName) return i
-        }
-        return null
-    }
+    /** Finds the pool index of an existing [TypeDescriptor] by its type name, if any. O(1). */
+    fun getTypeDescriptorId(typeName: String): Int? = typeDescriptorIndex[typeName]
 
     /**
      * Replace the entry at [index] in-place, keeping the index stable.
@@ -66,8 +66,14 @@ class ConstantPool {
     fun replace(index: Int, value: Any?) {
         val old = entries[index]
         entries[index] = value
-        if (old != null) dedup.remove(old)
-        if (value != null) dedup[value] = index
+        if (old != null) {
+            dedup.remove(old)
+            if (old is TypeDescriptor) typeDescriptorIndex.remove(old.name)
+        }
+        if (value != null) {
+            dedup[value] = index
+            if (value is TypeDescriptor) typeDescriptorIndex[value.name] = index
+        }
     }
 
     /** Number of entries currently in the pool. */

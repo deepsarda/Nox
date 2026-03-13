@@ -22,15 +22,3 @@ data class ResolvedModule(
     val globalCount: Int,
 )
 
-/**
- * Cache entry for an already-resolved file.
- *
- * When the same `.nox` file is imported from multiple locations, we reuse
- * the parsed [Program] and its global memory allocation rather than
- * re-parsing and re-resolving the file.
- */
-data class ResolvedFile(
-    val program: Program,
-    val globalBaseOffset: Int,
-    val globalCount: Int,
-)

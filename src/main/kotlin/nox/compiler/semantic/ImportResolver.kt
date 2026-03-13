@@ -4,6 +4,7 @@ import nox.compiler.CompilerErrors
 import nox.compiler.parsing.NoxParsing
 import nox.compiler.ast.ImportDecl
 import nox.compiler.ast.Program
+import nox.plugin.TempRegistry
 import java.nio.file.Path
 import kotlin.io.path.pathString
 
@@ -24,11 +25,11 @@ import kotlin.io.path.pathString
  * @property processingSet              paths currently being resolved (cycle detection)
  * @property resolvedFiles              cache of already-resolved files (deduplication across the import tree)
  */
-class ImportResolver(
+internal class ImportResolver(
     private val basePath: Path,
     private val errors: CompilerErrors,
     private val fileReader: (Path) -> String = { it.toFile().readText() },
-    private val builtinNamespaces: Set<String> = DEFAULT_BUILTIN_NAMESPACES,
+    private val builtinNamespaces: Set<String> = TempRegistry.builtinNamespaceNames,
     private val externalPluginNamespaces: Set<String> = emptySet(),
     private val processingSet: MutableSet<Path> = mutableSetOf(),
     private val resolvedFiles: MutableMap<Path, ResolvedFile> = mutableMapOf(),
@@ -102,7 +103,7 @@ class ImportResolver(
         try {
             val importedProgram = NoxParsing.parse(source, resolved.pathString, errors)
 
-            // 6. Recursively resolve imports in the imported file
+            // 5b. Recursively resolve imports in the imported file
             val childResolver = ImportResolver(
                 basePath = resolved,
                 errors = errors,
@@ -119,7 +120,7 @@ class ImportResolver(
             modules.addAll(childResolver.modules)
             nextGlobalOffset = childResolver.nextGlobalOffset
 
-            // 7. Register this module
+            // 6. Register this module
             val moduleGlobals = importedProgram.globals.size
             val globalBaseOffset = nextGlobalOffset
             modules.add(
@@ -171,11 +172,18 @@ class ImportResolver(
         }
     }
 
-    companion object {
-        /**
-         * Tier 0 built-in namespace names that are always reserved.
-         * TODO: Replace with a proper LibraryRegistry lookup.
-         */
-        val DEFAULT_BUILTIN_NAMESPACES = setOf("Math", "File", "Http", "Date", "Json", "Env")
-    }
 }
+
+/**
+ * Cache entry for an already-resolved file, private to [ImportResolver].
+ *
+ * When the same `.nox` file is imported from multiple locations, we reuse
+ * the parsed [Program] and its global memory allocation rather than
+ * re-parsing and re-resolving the file.
+ */
+internal data class ResolvedFile(
+    val program: nox.compiler.ast.Program,
+    val globalBaseOffset: Int,
+    val globalCount: Int,
+)
+

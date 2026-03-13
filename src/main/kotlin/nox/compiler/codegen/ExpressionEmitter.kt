@@ -239,8 +239,6 @@ class ExpressionEmitter(
         if (opReg != opResolved) ctx.free(srcType, opReg)
     }
 
-    // ──────────────────────── Loads & Access ────────────────────────
-
     private fun emitLoad(expr: IdentifierExpr, dest: Int) {
         val line = expr.loc.line
         when (val sym = expr.resolvedSymbol) {
@@ -366,8 +364,6 @@ class ExpressionEmitter(
         if (iReg != iResolved) ctx.free(idxType, iReg)
         if (tReg != tResolved) ctx.free(targetType, tReg)
     }
-
-    // ──────────────────────── Calls ────────────────────────
 
     private fun emitFuncCall(expr: FuncCallExpr, dest: Int) {
         val line = expr.loc.line

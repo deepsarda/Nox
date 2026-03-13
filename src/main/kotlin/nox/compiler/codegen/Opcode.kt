@@ -177,4 +177,34 @@ object Opcode {
 
     /** Returns the mnemonic string for [opcode], or `"OP_0x%02X".format(opcode)` if unknown. */
     fun name(opcode: Int): String = names[opcode] ?: "OP_0x%02X".format(opcode)
+
+    /**
+     * Returns the source-level operator symbol for binary and comparison opcodes
+     * (e.g. `"+"` for [IADD], `"&&"` for [AND], `"<="` for [ILE]).
+     *
+     * Returns `null` for opcodes that don't map to a simple infix operator.
+     * Used by [nox.compiler.codegen.NoxcEmitter] to produce readable disassembly comments.
+     */
+    fun symbol(opcode: Int): String? = when (opcode) {
+        IADD, DADD -> "+"
+        ISUB, DSUB -> "-"
+        IMUL, DMUL -> "*"
+        IDIV, DDIV -> "/"
+        IMOD, DMOD -> "%"
+        IEQ, DEQ, SEQ -> "=="
+        INE, DNE, SNE -> "!="
+        ILT, DLT -> "<"
+        ILE, DLE -> "<="
+        IGT, DGT -> ">"
+        IGE, DGE -> ">="
+        AND -> "&&"
+        OR -> "||"
+        BAND -> "&"
+        BOR -> "|"
+        BXOR -> "^"
+        SHL -> "<<"
+        SHR -> ">>"
+        USHR -> ">>>"
+        else -> null
+    }
 }

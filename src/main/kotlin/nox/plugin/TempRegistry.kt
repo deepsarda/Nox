@@ -60,8 +60,6 @@ object TempRegistry {
         ),
     )
 
-    // Built-in type methods (all use SCALL — identified by CallTarget.name)
-
     /**
      * Methods available on built-in types (e.g. `string.upper()`, `string.length()`).
      * Key = base type name, value = methods by name.
@@ -98,8 +96,7 @@ object TempRegistry {
     private val arrayMethods = setOf("push", "pop", "length")
 
     /**
-     * Type-bound conversion methods (e.g. `int.toDouble()`).
-     * All use SCALL — identified by [CallTarget.name].
+     * Type-bound conversion methods (e.g. `int.toDouble()`),
      */
     private val typeMethods: Map<String, Map<String, CallTarget>> = mapOf(
         "int" to mapOf(
@@ -118,6 +115,15 @@ object TempRegistry {
             "toDouble" to target("__str_toDouble", listOf("default" to TypeRef.DOUBLE), TypeRef.DOUBLE),
         ),
     )
+
+    /**
+     * The set of all built-in (Tier 0) namespace names.
+     *
+     * Used by [nox.compiler.semantic.ImportResolver] to validate that import aliases
+     * don't shadow reserved namespaces. This is the single source of truth, callers
+     * should not maintain their own copy of this list.
+     */
+    val builtinNamespaceNames: Set<String> get() = namespaceFunctions.keys
 
     /**
      * Whether [name] is a built-in (Tier 0) or external plugin (Tier 1) namespace.

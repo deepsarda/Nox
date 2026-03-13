@@ -289,28 +289,7 @@ class NoxcEmitter {
         }
 
         /** Maps a binary opcode to its source-level operator symbol. */
-        fun opcodeSymbol(op: Int) = when (op) {
-            Opcode.IADD, Opcode.DADD -> "+"
-            Opcode.ISUB, Opcode.DSUB -> "-"
-            Opcode.IMUL, Opcode.DMUL -> "*"
-            Opcode.IDIV, Opcode.DDIV -> "/"
-            Opcode.IMOD, Opcode.DMOD -> "%"
-            Opcode.IEQ, Opcode.DEQ -> "=="
-            Opcode.INE, Opcode.DNE -> "!="
-            Opcode.ILT, Opcode.DLT -> "<"
-            Opcode.ILE, Opcode.DLE -> "<="
-            Opcode.IGT, Opcode.DGT -> ">"
-            Opcode.IGE, Opcode.DGE -> ">="
-            Opcode.AND -> "&&"
-            Opcode.OR -> "||"
-            Opcode.BAND -> "&"
-            Opcode.BOR -> "|"
-            Opcode.BXOR -> "^"
-            Opcode.SHL -> "<<"
-            Opcode.SHR -> ">>"
-            Opcode.USHR -> ">>>"
-            else -> Opcode.name(op)
-        }
+        fun opcodeSymbol(op: Int) = Opcode.symbol(op) ?: Opcode.name(op)
 
         return when (opcode) {
             // Arithmetic & comparison (pMem only)
