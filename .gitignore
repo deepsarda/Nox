@@ -1,8 +1,6 @@
 # Gradle
 .gradle/
 gradle-app.setting
-!gradle/wrapper/gradle-wrapper.jar
-!gradle/wrapper/gradle-wrapper.properties
 
 # Build output
 build/
@@ -18,6 +16,10 @@ out/
 *.class
 *.jar
 *.war
+
+# Gradle wrapper (must be after *.jar so the negation wins)
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
 
 # macOS
 .DS_Store
