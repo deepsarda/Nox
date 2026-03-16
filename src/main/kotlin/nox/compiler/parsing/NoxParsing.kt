@@ -1,8 +1,8 @@
 package nox.compiler.parsing
 
+import nox.compiler.CompilerErrors
 import nox.compiler.ast.Program
 import nox.compiler.types.SourceLocation
-import nox.compiler.CompilerErrors
 import nox.parser.NoxLexer
 import nox.parser.NoxParser
 import org.antlr.v4.runtime.BaseErrorListener

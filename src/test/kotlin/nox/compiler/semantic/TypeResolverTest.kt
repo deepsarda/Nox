@@ -2,17 +2,15 @@ package nox.compiler.semantic
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import nox.compiler.CompilerErrors
-import nox.compiler.parsing.NoxParsing
 import nox.compiler.ast.*
+import nox.compiler.parsing.NoxParsing
 import nox.compiler.types.*
 
 /**
  * Tests for Pass 2: Type Resolution.
- * 
+ *
  * TODO: There is a desperate need to refactor the tests to be more organized and split across more files. In fact for the whole test suite this probably should be done.
  *
  * Each test parses a Nox source snippet, runs Pass 1 (declaration collection)
@@ -35,14 +33,16 @@ class TypeResolverTest :
 
         /** Shorthand: resolve and expect no errors. */
         fun resolveOk(source: String): Triple<SymbolTable, CompilerErrors, Program> {
-
             val result = resolve(source)
             result.second.hasErrors() shouldBe false
             return result
         }
 
         /** Shorthand: resolve and expect at least one error containing [msg]. */
-        fun resolveError(source: String, msg: String) {
+        fun resolveError(
+            source: String,
+            msg: String,
+        ) {
             val (_, errors) = resolve(source)
             errors.hasErrors() shouldBe true
             errors.all().any { it.message.contains(msg) } shouldBe true
@@ -51,14 +51,15 @@ class TypeResolverTest :
         // Literal types
 
         test("intLiteralResolvesToInt") {
-            val (_, _, program) = resolveOk(
-                """
-                main() { 
-                    int x = 42; 
-                    return "ok"; 
-                }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    main() { 
+                        int x = 42; 
+                        return "ok"; 
+                    }
+                    """.trimIndent(),
+                )
             val mainBody = program.main!!.body
             val varDecl = mainBody.statements[0] as VarDeclStmt
             val init = varDecl.initializer
@@ -66,70 +67,74 @@ class TypeResolverTest :
         }
 
         test("doubleLiteralResolvesToDouble") {
-            val (_, _, program) = resolveOk(
-                """
-                main() { 
-                    double x = 3.14; 
-                    return "ok"; 
-                }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    main() { 
+                        double x = 3.14; 
+                        return "ok"; 
+                    }
+                    """.trimIndent(),
+                )
             val mainBody = program.main!!.body
             val varDecl = mainBody.statements[0] as VarDeclStmt
             varDecl.initializer.resolvedType shouldBe TypeRef.DOUBLE
         }
 
-
         test("boolLiteralResolvesToBoolean") {
-            val (_, _, program) = resolveOk(
-                """
-                main() { 
-                    boolean x = true; 
-                    return "ok"; 
-                }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    main() { 
+                        boolean x = true; 
+                        return "ok"; 
+                    }
+                    """.trimIndent(),
+                )
             val varDecl = program.main!!.body.statements[0] as VarDeclStmt
             varDecl.initializer.resolvedType shouldBe TypeRef.BOOLEAN
         }
 
         test("stringLiteralResolvesToString") {
-            val (_, _, program) = resolveOk(
-                """
-                main() { 
-                    string x = "hello"; 
-                    return "ok"; 
-                }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    main() { 
+                        string x = "hello"; 
+                        return "ok"; 
+                    }
+                    """.trimIndent(),
+                )
             val varDecl = program.main!!.body.statements[0] as VarDeclStmt
             varDecl.initializer.resolvedType shouldBe TypeRef.STRING
         }
 
         test("nullLiteralInferredFromContext") {
-            val (_, _, program) = resolveOk(
-                """
-                main() { 
-                    string x = null; 
-                    return "ok"; 
-                }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    main() { 
+                        string x = null; 
+                        return "ok"; 
+                    }
+                    """.trimIndent(),
+                )
             val varDecl = program.main!!.body.statements[0] as VarDeclStmt
             varDecl.initializer.resolvedType.shouldBeNull()
         }
 
         test("templateResolvesToString") {
             val dollar = '$'
-            val (_, _, program) = resolveOk(
-                """
-                main() { 
-                    int x = 42; 
-                    string s = `value is ${dollar}{x}`;
-                    return "ok"; 
-                }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    main() { 
+                        int x = 42; 
+                        string s = `value is $dollar{x}`;
+                        return "ok"; 
+                    }
+                    """.trimIndent(),
+                )
             val varDecl = program.main!!.body.statements[1] as VarDeclStmt
             varDecl.initializer.resolvedType shouldBe TypeRef.STRING
         }
@@ -137,36 +142,39 @@ class TypeResolverTest :
         // Binary operator types
 
         test("intPlusInt") {
-            val (_, _, program) = resolveOk(
-                """
-                int add(int a, int b) { return a + b; }
-                main() { return "ok"; }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    int add(int a, int b) { return a + b; }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
             val func = program.functionsByName["add"]!!
             val retStmt = func.body.statements[0] as ReturnStmt
             retStmt.value!!.resolvedType shouldBe TypeRef.INT
         }
 
         test("intPlusDouble") {
-            val (_, _, program) = resolveOk(
-                """
-                double widen(int a, double b) { return a + b; }
-                main() { return "ok"; }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    double widen(int a, double b) { return a + b; }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
             val func = program.functionsByName["widen"]!!
             val retStmt = func.body.statements[0] as ReturnStmt
             retStmt.value!!.resolvedType shouldBe TypeRef.DOUBLE
         }
 
         test("doublePlusDouble") {
-            val (_, _, program) = resolveOk(
-                """
-                double add(double a, double b) { return a + b; }
-                main() { return "ok"; }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    double add(double a, double b) { return a + b; }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
             val func = program.functionsByName["add"]!!
             val retStmt = func.body.statements[0] as ReturnStmt
             retStmt.value!!.resolvedType shouldBe TypeRef.DOUBLE
@@ -181,12 +189,13 @@ class TypeResolverTest :
         }
 
         test("intCompareInt") {
-            val (_, _, program) = resolveOk(
-                """
-                boolean cmp(int a, int b) { return a < b; }
-                main() { return "ok"; }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    boolean cmp(int a, int b) { return a < b; }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
             val func = program.functionsByName["cmp"]!!
             val retStmt = func.body.statements[0] as ReturnStmt
             retStmt.value!!.resolvedType shouldBe TypeRef.BOOLEAN
@@ -202,12 +211,13 @@ class TypeResolverTest :
         }
 
         test("boolAndBool") {
-            val (_, _, program) = resolveOk(
-                """
-                boolean both(boolean a, boolean b) { return a && b; }
-                main() { return "ok"; }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    boolean both(boolean a, boolean b) { return a && b; }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
             val func = program.functionsByName["both"]!!
             val retStmt = func.body.statements[0] as ReturnStmt
             retStmt.value!!.resolvedType shouldBe TypeRef.BOOLEAN
@@ -506,61 +516,65 @@ class TypeResolverTest :
         // Method/call resolution
 
         test("namespaceCallResolved") {
-            val (_, _, program) = resolveOk(
-                """
-                main() { 
-                    double x = Math.sqrt(4.0); 
-                    return "ok"; 
-                }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    main() { 
+                        double x = Math.sqrt(4.0); 
+                        return "ok"; 
+                    }
+                    """.trimIndent(),
+                )
             val varDecl = program.main!!.body.statements[0] as VarDeclStmt
             val call = varDecl.initializer as MethodCallExpr
             call.resolution shouldBe MethodCallExpr.Resolution.NAMESPACE
         }
 
         test("builtinMethodResolved") {
-            val (_, _, program) = resolveOk(
-                """
-                main() { 
-                    string s = "hello"; 
-                    string u = s.upper(); 
-                    return "ok"; 
-                }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    main() { 
+                        string s = "hello"; 
+                        string u = s.upper(); 
+                        return "ok"; 
+                    }
+                    """.trimIndent(),
+                )
             val varDecl = program.main!!.body.statements[1] as VarDeclStmt
             val call = varDecl.initializer as MethodCallExpr
             call.resolution shouldBe MethodCallExpr.Resolution.TYPE_BOUND
         }
 
         test("pluginTypeMethodResolved") {
-            val (_, _, program) = resolveOk(
-                """
-                main() { 
-                    int x = 42; 
-                    double d = x.toDouble(); 
-                    return "ok"; 
-                }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    main() { 
+                        int x = 42; 
+                        double d = x.toDouble(); 
+                        return "ok"; 
+                    }
+                    """.trimIndent(),
+                )
             val varDecl = program.main!!.body.statements[1] as VarDeclStmt
             val call = varDecl.initializer as MethodCallExpr
             call.resolution shouldBe MethodCallExpr.Resolution.TYPE_BOUND
         }
 
         test("ufcsGlobalFuncResolved") {
-            val (_, _, program) = resolveOk(
-                """
-                type Point { int x; int y; }
-                int getX(Point p) { return p.x; }
-                main() { 
-                    Point p = { x: 1, y: 2 }; 
-                    int x = p.getX(); 
-                    return "ok"; 
-                }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    type Point { int x; int y; }
+                    int getX(Point p) { return p.x; }
+                    main() { 
+                        Point p = { x: 1, y: 2 }; 
+                        int x = p.getX(); 
+                        return "ok"; 
+                    }
+                    """.trimIndent(),
+                )
             val varDecl = program.main!!.body.statements[1] as VarDeclStmt
             val call = varDecl.initializer as MethodCallExpr
             call.resolution shouldBe MethodCallExpr.Resolution.UFCS
@@ -735,12 +749,13 @@ class TypeResolverTest :
 
         // Struct field resolution
         test("structFieldsResolved") {
-            val (scope) = resolveOk(
-                """
-                type Point { int x; int y; }
-                main() { return "ok"; }
-                """.trimIndent(),
-            )
+            val (scope) =
+                resolveOk(
+                    """
+                    type Point { int x; int y; }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
             val typeSym = scope.lookup("Point") as TypeSymbol
             typeSym.fields.size shouldBe 2
             typeSym.fields["x"] shouldBe TypeRef.INT
@@ -1005,17 +1020,18 @@ class TypeResolverTest :
         // UFCS (Unified Function Call Syntax)
 
         test("ufcsWithExtraArgs") {
-            val (_, _, program) = resolveOk(
-                """
-                type Point { int x; int y; }
-                int distance(Point p, int dx, int dy) { return dx + dy; }
-                main() { 
-                    Point p = { x: 1, y: 2 }; 
-                    int d = p.distance(3, 4); 
-                    return "ok"; 
-                }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    type Point { int x; int y; }
+                    int distance(Point p, int dx, int dy) { return dx + dy; }
+                    main() { 
+                        Point p = { x: 1, y: 2 }; 
+                        int d = p.distance(3, 4); 
+                        return "ok"; 
+                    }
+                    """.trimIndent(),
+                )
             val varDecl = program.main!!.body.statements[1] as VarDeclStmt
             val call = varDecl.initializer as MethodCallExpr
             call.resolution shouldBe MethodCallExpr.Resolution.UFCS
@@ -1032,16 +1048,17 @@ class TypeResolverTest :
         }
 
         test("ufcsPriorityTypeBoundBeatsGlobal") {
-            val (_, _, program) = resolveOk(
-                """
-                string upper(string s) { return s; }
-                main() { 
-                    string s = "hello"; 
-                    string u = s.upper(); 
-                    return "ok"; 
-                }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    string upper(string s) { return s; }
+                    main() { 
+                        string s = "hello"; 
+                        string u = s.upper(); 
+                        return "ok"; 
+                    }
+                    """.trimIndent(),
+                )
             val varDecl = program.main!!.body.statements[1] as VarDeclStmt
             val call = varDecl.initializer as MethodCallExpr
             // Built-in type method (TempRegistry) should win over UFCS
@@ -1067,26 +1084,29 @@ class TypeResolverTest :
 
         test("importNamespaceCallResolved") {
             // Construct a fake imported module with a function
-            val helperSource = """
+            val helperSource =
+                """
                 int twice(int x) { return x + x; }
-            """.trimIndent()
+                """.trimIndent()
             val helperErrors = CompilerErrors()
             val helperProgram = NoxParsing.parse(helperSource, "helpers.nox", helperErrors)
 
-            val module = ResolvedModule(
-                namespace = "helpers",
-                sourcePath = "/fake/helpers.nox",
-                program = helperProgram,
-                globalBaseOffset = 0,
-                globalCount = 0,
-            )
+            val module =
+                ResolvedModule(
+                    namespace = "helpers",
+                    sourcePath = "/fake/helpers.nox",
+                    program = helperProgram,
+                    globalBaseOffset = 0,
+                    globalCount = 0,
+                )
 
-            val mainSource = """
+            val mainSource =
+                """
                 main() {
                  int x = helpers.twice(5); 
                  return "ok"; 
                  }
-            """.trimIndent()
+                """.trimIndent()
             val errors = CompilerErrors()
             val program = NoxParsing.parse(mainSource, "test.nox", errors)
             val globalScope = SymbolTable()
@@ -1100,26 +1120,29 @@ class TypeResolverTest :
         }
 
         test("importNamespaceUnknownFuncFails") {
-            val helperSource = """
+            val helperSource =
+                """
                 int twice(int x) { return x + x; }
-            """.trimIndent()
+                """.trimIndent()
             val helperErrors = CompilerErrors()
             val helperProgram = NoxParsing.parse(helperSource, "helpers.nox", helperErrors)
 
-            val module = ResolvedModule(
-                namespace = "helpers",
-                sourcePath = "/fake/helpers.nox",
-                program = helperProgram,
-                globalBaseOffset = 0,
-                globalCount = 0,
-            )
+            val module =
+                ResolvedModule(
+                    namespace = "helpers",
+                    sourcePath = "/fake/helpers.nox",
+                    program = helperProgram,
+                    globalBaseOffset = 0,
+                    globalCount = 0,
+                )
 
-            val mainSource = """
+            val mainSource =
+                """
                 main() { 
                     helpers.nonexistent(); 
                     return "ok"; 
                 }
-            """.trimIndent()
+                """.trimIndent()
             val errors = CompilerErrors()
             val program = NoxParsing.parse(mainSource, "test.nox", errors)
             val globalScope = SymbolTable()
@@ -1159,15 +1182,16 @@ class TypeResolverTest :
         // Built-in methods on types
 
         test("stringSplitReturnsArray") {
-            val (_, _, program) = resolveOk(
-                """
-                main() {
-                    string s = "a,b,c"; 
-                    string[] parts = s.split(","); 
-                    return "ok"; 
-                }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    main() {
+                        string s = "a,b,c"; 
+                        string[] parts = s.split(","); 
+                        return "ok"; 
+                    }
+                    """.trimIndent(),
+                )
             val varDecl = program.main!!.body.statements[1] as VarDeclStmt
             val call = varDecl.initializer as MethodCallExpr
             call.resolution shouldBe MethodCallExpr.Resolution.TYPE_BOUND
@@ -1211,14 +1235,15 @@ class TypeResolverTest :
         // JSON literal support
 
         test("jsonLiteralOk") {
-            val (_, _, program) = resolveOk(
-                """
-                main() { 
-                    json a = {ok: true, msg: "hello"}; 
-                    return "ok"; 
-                }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    main() { 
+                        json a = {ok: true, msg: "hello"}; 
+                        return "ok"; 
+                    }
+                    """.trimIndent(),
+                )
             val varDecl = program.main!!.body.statements[0] as VarDeclStmt
             varDecl.initializer.resolvedType shouldBe TypeRef.JSON
         }
@@ -1316,17 +1341,18 @@ class TypeResolverTest :
         }
 
         test("ufcsStructToJsonFirstParamOk") {
-            val (_, _, program) = resolveOk(
-                """
-                type Point { int x; int y; }
-                string serialize(json data) { return "{}"; }
-                main() { 
-                    Point p = { x: 1, y: 2 }; 
-                    string s = p.serialize(); 
-                    return "ok"; 
-                }
-                """.trimIndent(),
-            )
+            val (_, _, program) =
+                resolveOk(
+                    """
+                    type Point { int x; int y; }
+                    string serialize(json data) { return "{}"; }
+                    main() { 
+                        Point p = { x: 1, y: 2 }; 
+                        string s = p.serialize(); 
+                        return "ok"; 
+                    }
+                    """.trimIndent(),
+                )
             val varDecl = program.main!!.body.statements[1] as VarDeclStmt
             val call = varDecl.initializer as MethodCallExpr
             call.resolution shouldBe MethodCallExpr.Resolution.UFCS
@@ -1348,7 +1374,8 @@ class TypeResolverTest :
         }
 
         test("validates varargs calls") {
-            val source = """
+            val source =
+                """
                 int sum(int ...vals[]) { return 0; }
                 main() {
                     int s1 = sum();
@@ -1356,7 +1383,7 @@ class TypeResolverTest :
                     int s3 = sum(1, 2, 3);
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent()
             val (_, errors) = resolve(source)
             errors.hasErrors() shouldBe false
         }
@@ -1370,7 +1397,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "Argument 2 ('vals') of 'foo': expected 'int', got 'string'"
+                "Argument 2 ('vals') of 'foo': expected 'int', got 'string'",
             )
         }
 
@@ -1380,7 +1407,7 @@ class TypeResolverTest :
                 type Bad { void x; }
                 main() { return "ok"; }
                 """.trimIndent(),
-                "'void' is not allowed for struct fields"
+                "'void' is not allowed for struct fields",
             )
         }
 
@@ -1390,7 +1417,7 @@ class TypeResolverTest :
                 void foo(void x) { }
                 main() { return "ok"; }
                 """.trimIndent(),
-                "cannot have type 'void'"
+                "cannot have type 'void'",
             )
         }
 
@@ -1400,7 +1427,7 @@ class TypeResolverTest :
                 void g = null;
                 main() { return "ok"; }
                 """.trimIndent(),
-                "cannot have type 'void'"
+                "cannot have type 'void'",
             )
         }
 
@@ -1412,7 +1439,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "'void' is not a valid variable type"
+                "'void' is not a valid variable type",
             )
         }
 
@@ -1425,7 +1452,7 @@ class TypeResolverTest :
                     return "ok";
                 }
                 """.trimIndent(),
-                "Invalid type 'void' for foreach element 'v'"
+                "Invalid type 'void' for foreach element 'v'",
             )
         }
 
@@ -1435,15 +1462,16 @@ class TypeResolverTest :
                 void foo(int x = "bad") { }
                 main() { return "ok"; }
                 """.trimIndent(),
-                "Default value for 'x' has type 'string', but the parameter expects 'int'"
+                "Default value for 'x' has type 'string', but the parameter expects 'int'",
             )
         }
 
         test("allows compatible default value types (int to double)") {
-            val source = """
+            val source =
+                """
                 void foo(double x = 42) { }
                 main() { return "ok"; }
-            """.trimIndent()
+                """.trimIndent()
             val (_, errors) = resolve(source)
             errors.hasErrors() shouldBe false
         }
@@ -1458,7 +1486,7 @@ class TypeResolverTest :
                     x += 2; 
                     return "ok"; 
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1470,7 +1498,7 @@ class TypeResolverTest :
                     d += 2; 
                     return "ok"; 
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1482,7 +1510,7 @@ class TypeResolverTest :
                     d += 2.5; 
                     return "ok"; 
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1494,7 +1522,8 @@ class TypeResolverTest :
                     x += 2.5; 
                     return "ok"; 
                 }
-            """.trimIndent(), "narrow"
+                """.trimIndent(),
+                "narrow",
             )
         }
 
@@ -1506,7 +1535,8 @@ class TypeResolverTest :
                     x -= 1.5; 
                     return "ok"; 
                 }
-            """.trimIndent(), "narrow"
+                """.trimIndent(),
+                "narrow",
             )
         }
 
@@ -1518,7 +1548,8 @@ class TypeResolverTest :
                     x *= 2.0; 
                     return "ok"; 
                 }
-            """.trimIndent(), "narrow"
+                """.trimIndent(),
+                "narrow",
             )
         }
 
@@ -1530,7 +1561,7 @@ class TypeResolverTest :
                     s += "b"; 
                     return "ok"; 
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1542,7 +1573,8 @@ class TypeResolverTest :
                     s -= "b"; 
                     return "ok"; 
                 }
-            """.trimIndent(), "requires numeric"
+                """.trimIndent(),
+                "requires numeric",
             )
         }
 
@@ -1554,7 +1586,8 @@ class TypeResolverTest :
                     x += "a"; 
                     return "ok"; 
                 }
-            """.trimIndent(), "requires numeric or string"
+                """.trimIndent(),
+                "requires numeric or string",
             )
         }
 
@@ -1569,7 +1602,7 @@ class TypeResolverTest :
                     json j = p;
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1582,7 +1615,7 @@ class TypeResolverTest :
                     return p;
                 }
                 main() { return "ok"; }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1596,7 +1629,7 @@ class TypeResolverTest :
                     boolean eq = p == j;
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1610,7 +1643,7 @@ class TypeResolverTest :
                     boolean neq = j != p;
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1623,7 +1656,7 @@ class TypeResolverTest :
                     int sz = p.size();
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1636,7 +1669,7 @@ class TypeResolverTest :
                     string s = p.getString("x", "def");
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1649,7 +1682,7 @@ class TypeResolverTest :
                     boolean h = p.has("x");
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1662,7 +1695,7 @@ class TypeResolverTest :
                     string[] k = p.keys();
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1676,7 +1709,7 @@ class TypeResolverTest :
                     process(p);
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1687,7 +1720,7 @@ class TypeResolverTest :
                 """
                 void greet(string prefix, string ...names[]) { }
                 main() { greet("Hi", "Alice", "Bob"); return "ok"; }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1700,7 +1733,7 @@ class TypeResolverTest :
                     process(arr);
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1713,7 +1746,7 @@ class TypeResolverTest :
                     greet("Hi", n);
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1725,7 +1758,7 @@ class TypeResolverTest :
                     int x = sum([1, 0, 10]);
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1735,7 +1768,7 @@ class TypeResolverTest :
             resolveOk(
                 """
                 main() { return "ok"; }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1743,7 +1776,7 @@ class TypeResolverTest :
             resolveOk(
                 """
                 main() { return 42; }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1751,7 +1784,7 @@ class TypeResolverTest :
             resolveOk(
                 """
                 main() { return 3.14; }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1759,7 +1792,7 @@ class TypeResolverTest :
             resolveOk(
                 """
                 main() { return true; }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1767,7 +1800,7 @@ class TypeResolverTest :
             resolveOk(
                 """
                 main() { return null; }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1778,7 +1811,7 @@ class TypeResolverTest :
                     json j = { k: "v" };
                     return j;
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1790,7 +1823,7 @@ class TypeResolverTest :
                     Pt p = { x: 1, y: 2 };
                     return p;
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1800,7 +1833,7 @@ class TypeResolverTest :
             resolveOk(
                 """
                 main() { double d = 42; return "ok"; }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1809,7 +1842,7 @@ class TypeResolverTest :
                 """
                 double foo() { return 1; }
                 main() { return "ok"; }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1818,7 +1851,7 @@ class TypeResolverTest :
                 """
                 void foo(double d) { }
                 main() { foo(1); return "ok"; }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1826,7 +1859,8 @@ class TypeResolverTest :
             resolveError(
                 """
                 main() { int x = 3.14; return "ok"; }
-            """.trimIndent(), "Type mismatch"
+                """.trimIndent(),
+                "Type mismatch",
             )
         }
 
@@ -1835,7 +1869,8 @@ class TypeResolverTest :
                 """
                 int foo() { return 3.14; }
                 main() { return "ok"; }
-            """.trimIndent(), "Return type mismatch"
+                """.trimIndent(),
+                "Return type mismatch",
             )
         }
 
@@ -1848,7 +1883,7 @@ class TypeResolverTest :
                     json j = { a: 1, b: 2 };
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1859,7 +1894,8 @@ class TypeResolverTest :
                     json j = { a: 1, a: 2 };
                     return "ok";
                 }
-            """.trimIndent(), "appears more than once in this json literal"
+                """.trimIndent(),
+                "appears more than once in this json literal",
             )
         }
 
@@ -1869,7 +1905,8 @@ class TypeResolverTest :
             resolveError(
                 """
                 main() { int x = null; return "ok"; }
-            """.trimIndent(), "not nullable"
+                """.trimIndent(),
+                "not nullable",
             )
         }
 
@@ -1877,7 +1914,7 @@ class TypeResolverTest :
             resolveOk(
                 """
                 main() { string s = null; return "ok"; }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1885,7 +1922,7 @@ class TypeResolverTest :
             resolveOk(
                 """
                 main() { int[] a = []; return "ok"; }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1894,7 +1931,8 @@ class TypeResolverTest :
                 """
                 void foo(int a) { }
                 main() { foo(1, 2, 3); return "ok"; }
-            """.trimIndent(), "Too many arguments: 'foo' accepts at most 1"
+                """.trimIndent(),
+                "Too many arguments: 'foo' accepts at most 1",
             )
         }
 
@@ -1906,7 +1944,8 @@ class TypeResolverTest :
                     int x = arr[1.5];
                     return "ok";
                 }
-            """.trimIndent(), "Array index must be 'int'"
+                """.trimIndent(),
+                "Array index must be 'int'",
             )
         }
 
@@ -1917,7 +1956,8 @@ class TypeResolverTest :
                     string s = "hello" + 1;
                     return "ok";
                 }
-            """.trimIndent(), "cannot be applied to 'string' and 'int'"
+                """.trimIndent(),
+                "cannot be applied to 'string' and 'int'",
             )
         }
 
@@ -1928,7 +1968,8 @@ class TypeResolverTest :
                     int x = true + 1;
                     return "ok";
                 }
-            """.trimIndent(), "cannot be applied to 'boolean' and 'int'"
+                """.trimIndent(),
+                "cannot be applied to 'boolean' and 'int'",
             )
         }
 
@@ -1936,7 +1977,8 @@ class TypeResolverTest :
             resolveError(
                 """
                 main() { if (42) { } return "ok"; }
-            """.trimIndent(), "condition must be 'boolean'"
+                """.trimIndent(),
+                "condition must be 'boolean'",
             )
         }
 
@@ -1944,7 +1986,8 @@ class TypeResolverTest :
             resolveError(
                 """
                 main() { foreach (int x in 42) { } return "ok"; }
-            """.trimIndent(), "'foreach' requires an array type"
+                """.trimIndent(),
+                "'foreach' requires an array type",
             )
         }
 
@@ -1952,7 +1995,8 @@ class TypeResolverTest :
             resolveError(
                 """
                 main() { throw 42; return "ok"; }
-            """.trimIndent(), "'throw' requires a string message"
+                """.trimIndent(),
+                "'throw' requires a string message",
             )
         }
 
@@ -1965,7 +2009,8 @@ class TypeResolverTest :
                     Pt p = s as Pt;
                     return "ok";
                 }
-            """.trimIndent(), "Cannot cast from 'string'"
+                """.trimIndent(),
+                "Cannot cast from 'string'",
             )
         }
 
@@ -1979,7 +2024,7 @@ class TypeResolverTest :
                     }
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -1992,7 +2037,7 @@ class TypeResolverTest :
                     Outer o = { i: { x: 42 } };
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2005,7 +2050,7 @@ class TypeResolverTest :
                     int[][] matrix = [[1, 2], [3, 4]];
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2017,7 +2062,7 @@ class TypeResolverTest :
                     int[] row = matrix[0];
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2029,7 +2074,7 @@ class TypeResolverTest :
                     int cell = matrix[0][1];
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2041,7 +2086,8 @@ class TypeResolverTest :
                     int[] row = matrix;
                     return "ok";
                 }
-            """.trimIndent(), "Type mismatch"
+                """.trimIndent(),
+                "Type mismatch",
             )
         }
 
@@ -2053,7 +2099,7 @@ class TypeResolverTest :
                     foreach (int[] row in matrix) { }
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2065,7 +2111,8 @@ class TypeResolverTest :
                     foreach (int x in matrix) { }
                     return "ok";
                 }
-            """.trimIndent(), "Element type mismatch: declared 'int' but the array contains 'int[]'"
+                """.trimIndent(),
+                "Element type mismatch: declared 'int' but the array contains 'int[]'",
             )
         }
 
@@ -2076,7 +2123,7 @@ class TypeResolverTest :
                     int[][][] cube = [[[1]]];
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2089,7 +2136,7 @@ class TypeResolverTest :
                     process(m);
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2101,7 +2148,7 @@ class TypeResolverTest :
                     return m;
                 }
                 main() { return "ok"; }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2113,7 +2160,8 @@ class TypeResolverTest :
                     return m;
                 }
                 main() { return "ok"; }
-            """.trimIndent(), "Return type mismatch"
+                """.trimIndent(),
+                "Return type mismatch",
             )
         }
 
@@ -2122,7 +2170,7 @@ class TypeResolverTest :
                 """
                 void sum(int ...vals[]) { }
                 main() { sum(1, 2, 3); return "ok"; }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2136,7 +2184,7 @@ class TypeResolverTest :
                     processRows(r1, r2);
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2149,7 +2197,7 @@ class TypeResolverTest :
                     processRows(matrix);
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2161,7 +2209,8 @@ class TypeResolverTest :
                     processRows("bad");
                     return "ok";
                 }
-            """.trimIndent(), "expected 'int[]'"
+                """.trimIndent(),
+                "expected 'int[]'",
             )
         }
 
@@ -2174,7 +2223,7 @@ class TypeResolverTest :
                     matrix.push(newRow);
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2186,7 +2235,8 @@ class TypeResolverTest :
                     matrix.push(5);
                     return "ok";
                 }
-            """.trimIndent(), "expected 'int[]'"
+                """.trimIndent(),
+                "expected 'int[]'",
             )
         }
 
@@ -2199,7 +2249,7 @@ class TypeResolverTest :
                     int[] row = g.cells[0];
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2208,7 +2258,7 @@ class TypeResolverTest :
                 """
                 int[][] MATRIX = [[1, 0], [0, 1]];
                 main() { return "ok"; }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2217,7 +2267,7 @@ class TypeResolverTest :
                 """
                 void foo(int[][] m = [[1]]) { }
                 main() { return "ok"; }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2230,7 +2280,7 @@ class TypeResolverTest :
                     int cols = matrix[0].length();
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2244,7 +2294,7 @@ class TypeResolverTest :
                     int cell = cube[0][0][1];
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2256,7 +2306,7 @@ class TypeResolverTest :
                     foreach (int[][] slice in cube) { }
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2269,7 +2319,7 @@ class TypeResolverTest :
                     cube.push(newSlice);
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2283,7 +2333,7 @@ class TypeResolverTest :
                     int cols = cube[0][0].length();
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2298,7 +2348,7 @@ class TypeResolverTest :
                     int v = hyper[0][0][0][0];
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2312,7 +2362,7 @@ class TypeResolverTest :
                     process(a, b);
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -2324,71 +2374,88 @@ class TypeResolverTest :
                     int n = names.length();
                     return "ok";
                 }
-            """.trimIndent()
+                """.trimIndent(),
             )
         }
 
-    // Struct literal return
-    
-    context("struct literal return") {
-        test("returning struct literal from typed function compiles ok") {
-            resolveOk("""
-                type Point { int x; int y; }
-                Point make(int x, int y) { return { x: x, y: y }; }
-                main() { return "ok"; }
-            """.trimIndent())
-        }
+        // Struct literal return
 
-        test("returning json literal from json-returning function compiles ok") {
-            resolveOk("""
-                json makeJson(string k, int v) { return { key: k, val: v }; }
-                main() { return "ok"; }
-            """.trimIndent())
-        }
+        context("struct literal return") {
+            test("returning struct literal from typed function compiles ok") {
+                resolveOk(
+                    """
+                    type Point { int x; int y; }
+                    Point make(int x, int y) { return { x: x, y: y }; }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
+            }
 
-        test("returning struct literal array from typed function compiles ok") {
-            resolveOk("""
-                type Vec2 { int x; int y; }
-                Vec2[] makePair(int ax, int ay, int bx, int by) {
-                    return [{ x: ax, y: ay }, { x: bx, y: by }];
-                }
-                main() { return "ok"; }
-            """.trimIndent())
-        }
+            test("returning json literal from json-returning function compiles ok") {
+                resolveOk(
+                    """
+                    json makeJson(string k, int v) { return { key: k, val: v }; }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
+            }
 
-        test("returning struct literal from if-else branches compiles ok") {
-            resolveOk("""
-                type Color { int r; int g; int b; }
-                Color other(boolean flag) {
-                    if (flag) { return { r: 0, g: 255, b: 0 }; }
-                    else      { return { r: 0, g: 0,   b: 255 }; }
-                }
-                main() { return "ok"; }
-            """.trimIndent())
-        }
+            test("returning struct literal array from typed function compiles ok") {
+                resolveOk(
+                    """
+                    type Vec2 { int x; int y; }
+                    Vec2[] makePair(int ax, int ay, int bx, int by) {
+                        return [{ x: ax, y: ay }, { x: bx, y: by }];
+                    }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
+            }
 
-        test("wrong field type in returned struct reports error") {
-            resolveError("""
-                type Point { int x; int y; }
-                Point bad() { return { x: "oops", y: 1 }; }
-                main() { return "ok"; }
-            """.trimIndent(), "Field 'x' expects 'int'")
-        }
+            test("returning struct literal from if-else branches compiles ok") {
+                resolveOk(
+                    """
+                    type Color { int r; int g; int b; }
+                    Color other(boolean flag) {
+                        if (flag) { return { r: 0, g: 255, b: 0 }; }
+                        else      { return { r: 0, g: 0,   b: 255 }; }
+                    }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
+            }
 
-        test("missing field in returned struct reports error") {
-            resolveError("""
-                type Point { int x; int y; }
-                Point bad() { return { x: 1 }; }
-                main() { return "ok"; }
-            """.trimIndent(), "requires field 'y'")
-        }
+            test("wrong field type in returned struct reports error") {
+                resolveError(
+                    """
+                    type Point { int x; int y; }
+                    Point bad() { return { x: "oops", y: 1 }; }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                    "Field 'x' expects 'int'",
+                )
+            }
 
-        test("unknown field in returned struct reports error") {
-            resolveError("""
-                type Foo { int a; }
-                Foo bad() { return { b: 1 }; }
-                main() { return "ok"; }
-            """.trimIndent(), "has no field 'b'")
+            test("missing field in returned struct reports error") {
+                resolveError(
+                    """
+                    type Point { int x; int y; }
+                    Point bad() { return { x: 1 }; }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                    "requires field 'y'",
+                )
+            }
+
+            test("unknown field in returned struct reports error") {
+                resolveError(
+                    """
+                    type Foo { int a; }
+                    Foo bad() { return { b: 1 }; }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                    "has no field 'b'",
+                )
+            }
         }
-    }
     })

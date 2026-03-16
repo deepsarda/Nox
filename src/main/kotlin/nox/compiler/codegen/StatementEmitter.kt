@@ -18,11 +18,10 @@ import nox.plugin.TempRegistry
 class StatementEmitter(
     private val ctx: BytecodeEmitter,
 ) {
-
     // Loop context stack (break/continue backpatching)
     private data class LoopContext(
         val loopStart: Int,
-        val continueTarget: Int,           // for-loops: update PC; while/foreach: loopStart
+        val continueTarget: Int, // for-loops: update PC; while/foreach: loopStart
         val breakPatches: MutableList<Int> = mutableListOf(),
         val continuePatches: MutableList<Int> = mutableListOf(),
     )
@@ -52,7 +51,7 @@ class StatementEmitter(
             }
 
             is Block -> ctx.emitBlock(stmt)
-            is ErrorStmt -> { /* skip */
+            is ErrorStmt -> { // skip
             }
         }
         ctx.freeNodeRegisters(stmt)
@@ -75,27 +74,35 @@ class StatementEmitter(
             AssignOp.SUB_ASSIGN,
             AssignOp.MUL_ASSIGN,
             AssignOp.DIV_ASSIGN,
-            AssignOp.MOD_ASSIGN -> emitCompoundAssign(stmt, line)
+            AssignOp.MOD_ASSIGN,
+            -> emitCompoundAssign(stmt, line)
         }
     }
 
-    private fun emitSimpleAssign(stmt: AssignStmt, line: Int) {
+    private fun emitSimpleAssign(
+        stmt: AssignStmt,
+        line: Int,
+    ) {
         val targetType = stmt.value.resolvedType ?: TypeRef.INT
         when (val target = stmt.target) {
             is IdentifierExpr -> {
                 when (val sym = target.resolvedSymbol) {
                     is GlobalSymbol -> {
                         val valResolved = ctx.resolveRegister(stmt.value)
-                        val valReg = if (valResolved != null) {
-                            ctx.freeNodeRegisters(stmt.value)
-                            valResolved
+                        val valReg =
+                            if (valResolved != null) {
+                                ctx.freeNodeRegisters(stmt.value)
+                                valResolved
+                            } else {
+                                val r = ctx.alloc(targetType)
+                                ctx.emitExpr(stmt.value, r, line)
+                                r
+                            }
+                        if (sym.type.isPrimitive()) {
+                            ctx.emit(Opcode.GSTORE, 0, sym.globalSlot, valReg, 0, line)
                         } else {
-                            val r = ctx.alloc(targetType)
-                            ctx.emitExpr(stmt.value, r, line)
-                            r
+                            ctx.emit(Opcode.GSTORER, 0, sym.globalSlot, valReg, 0, line)
                         }
-                        if (sym.type.isPrimitive()) ctx.emit(Opcode.GSTORE, 0, sym.globalSlot, valReg, 0, line)
-                        else ctx.emit(Opcode.GSTORER, 0, sym.globalSlot, valReg, 0, line)
                         if (valReg != valResolved) ctx.free(targetType, valReg)
                     }
 
@@ -113,14 +120,15 @@ class StatementEmitter(
 
                 val valType = stmt.value.resolvedType ?: TypeRef.JSON
                 val valResolved = ctx.resolveRegister(stmt.value)
-                val valReg = if (valResolved != null) {
-                    ctx.freeNodeRegisters(stmt.value)
-                    valResolved
-                } else {
-                    val r = ctx.alloc(valType)
-                    ctx.emitExpr(stmt.value, r, line)
-                    r
-                }
+                val valReg =
+                    if (valResolved != null) {
+                        ctx.freeNodeRegisters(stmt.value)
+                        valResolved
+                    } else {
+                        val r = ctx.alloc(valType)
+                        ctx.emitExpr(stmt.value, r, line)
+                        r
+                    }
 
                 val keyIdx = ctx.pool.add(target.fieldName)
                 val subOp = OpcodeSelector.subOpForSet(valType)
@@ -139,14 +147,15 @@ class StatementEmitter(
 
                 val valType = stmt.value.resolvedType ?: TypeRef.JSON
                 val valResolved = ctx.resolveRegister(stmt.value)
-                val valReg = if (valResolved != null) {
-                    ctx.freeNodeRegisters(stmt.value)
-                    valResolved
-                } else {
-                    val r = ctx.alloc(valType)
-                    ctx.emitExpr(stmt.value, r, line)
-                    r
-                }
+                val valReg =
+                    if (valResolved != null) {
+                        ctx.freeNodeRegisters(stmt.value)
+                        valResolved
+                    } else {
+                        val r = ctx.alloc(valType)
+                        ctx.emitExpr(stmt.value, r, line)
+                        r
+                    }
 
                 ctx.emit(Opcode.ASET_IDX, 0, tReg, iReg, valReg, line)
                 if (valReg != valResolved) ctx.free(valType, valReg)
@@ -154,25 +163,29 @@ class StatementEmitter(
                 ctx.free(targetType2, tReg)
             }
 
-            else -> { /* unsupported lvalue */
+            else -> { // unsupported lvalue
             }
         }
     }
 
-    private fun emitCompoundAssign(stmt: AssignStmt, line: Int) {
+    private fun emitCompoundAssign(
+        stmt: AssignStmt,
+        line: Int,
+    ) {
         val targetType = stmt.target.resolvedType ?: TypeRef.INT
         val reg = ctx.resolveRegister(stmt.target) ?: return
         val valType = stmt.value.resolvedType ?: TypeRef.INT
 
         val valResolved = ctx.resolveRegister(stmt.value)
-        val valReg = if (valResolved != null) {
-            ctx.freeNodeRegisters(stmt.value)
-            valResolved
-        } else {
-            val r = ctx.alloc(valType)
-            ctx.emitExpr(stmt.value, r, line)
-            r
-        }
+        val valReg =
+            if (valResolved != null) {
+                ctx.freeNodeRegisters(stmt.value)
+                valResolved
+            } else {
+                val r = ctx.alloc(valType)
+                ctx.emitExpr(stmt.value, r, line)
+                r
+            }
 
         // Optimization: += to IINCN, -= to IDECN
         if (stmt.op == AssignOp.ADD_ASSIGN && targetType == TypeRef.INT) {
@@ -194,10 +207,11 @@ class StatementEmitter(
         val line = stmt.loc.line
         val reg = ctx.resolveRegister(stmt.target) ?: return
         val type = stmt.target.resolvedType ?: TypeRef.INT
-        val opcode = when (stmt.op) {
-            PostfixOp.INCREMENT -> if (type == TypeRef.DOUBLE) Opcode.DINC else Opcode.IINC
-            PostfixOp.DECREMENT -> if (type == TypeRef.DOUBLE) Opcode.DDEC else Opcode.IDEC
-        }
+        val opcode =
+            when (stmt.op) {
+                PostfixOp.INCREMENT -> if (type == TypeRef.DOUBLE) Opcode.DINC else Opcode.IINC
+                PostfixOp.DECREMENT -> if (type == TypeRef.DOUBLE) Opcode.DDEC else Opcode.IDEC
+            }
         ctx.emit(opcode, 0, reg, 0, 0, line)
     }
 
@@ -207,40 +221,46 @@ class StatementEmitter(
         val line = stmt.loc.line
 
         val condResolved = ctx.resolveRegister(stmt.condition)
-        val condReg = if (condResolved != null) {
-            ctx.freeNodeRegisters(stmt.condition)
-            condResolved
-        } else {
-            val r = ctx.allocp()
-            ctx.emitExpr(stmt.condition, r, line)
-            r
-        }
-        val jumpToElse = ctx.emit(Opcode.JIF, 0, condReg, 0 /*patch*/, 0, line)
+        val condReg =
+            if (condResolved != null) {
+                ctx.freeNodeRegisters(stmt.condition)
+                condResolved
+            } else {
+                val r = ctx.allocp()
+                ctx.emitExpr(stmt.condition, r, line)
+                r
+            }
+        // patch: jumpToElse target filled in later
+        val jumpToElse = ctx.emit(Opcode.JIF, 0, condReg, 0, 0, line)
         if (condReg != condResolved) ctx.freep(condReg)
 
         ctx.emitBlock(stmt.thenBlock)
 
         val jumpsToEnd = mutableListOf<Int>()
-        var jumpToEnd = ctx.emit(Opcode.JMP, 0, 0 /*patch*/, 0, 0)
+        // patch: jumpToEnd target filled in later
+        var jumpToEnd = ctx.emit(Opcode.JMP, 0, 0, 0, 0)
         jumpsToEnd.add(jumpToEnd)
 
         ctx.patch(jumpToElse, ctx.pc)
 
         for (elseIf in stmt.elseIfs) {
             val eiCondResolved = ctx.resolveRegister(elseIf.condition)
-            val eiCondReg = if (eiCondResolved != null) {
-                ctx.freeNodeRegisters(elseIf.condition)
-                eiCondResolved
-            } else {
-                val r = ctx.allocp()
-                ctx.emitExpr(elseIf.condition, r, elseIf.loc.line)
-                r
-            }
-            val jumpNext = ctx.emit(Opcode.JIF, 0, eiCondReg, 0 /*patch*/, 0, elseIf.loc.line)
+            val eiCondReg =
+                if (eiCondResolved != null) {
+                    ctx.freeNodeRegisters(elseIf.condition)
+                    eiCondResolved
+                } else {
+                    val r = ctx.allocp()
+                    ctx.emitExpr(elseIf.condition, r, elseIf.loc.line)
+                    r
+                }
+            // patch: jumpNext target filled in later
+            val jumpNext = ctx.emit(Opcode.JIF, 0, eiCondReg, 0, 0, elseIf.loc.line)
             if (eiCondReg != eiCondResolved) ctx.freep(eiCondReg)
 
             ctx.emitBlock(elseIf.body)
-            val jEnd = ctx.emit(Opcode.JMP, 0, 0 /*patch*/, 0, 0)
+            // patch: jEnd target filled in later
+            val jEnd = ctx.emit(Opcode.JMP, 0, 0, 0, 0)
             jumpsToEnd.add(jEnd)
             ctx.patch(jumpNext, ctx.pc)
         }
@@ -261,15 +281,17 @@ class StatementEmitter(
         loopStack.addLast(loopCtx)
 
         val condResolved = ctx.resolveRegister(stmt.condition)
-        val condReg = if (condResolved != null) {
-            ctx.freeNodeRegisters(stmt.condition)
-            condResolved
-        } else {
-            val r = ctx.allocp()
-            ctx.emitExpr(stmt.condition, r, line)
-            r
-        }
-        val jumpToExit = ctx.emit(Opcode.JIF, 0, condReg, 0 /*patch*/, 0, line)
+        val condReg =
+            if (condResolved != null) {
+                ctx.freeNodeRegisters(stmt.condition)
+                condResolved
+            } else {
+                val r = ctx.allocp()
+                ctx.emitExpr(stmt.condition, r, line)
+                r
+            }
+        // patch: jumpToExit target filled in later
+        val jumpToExit = ctx.emit(Opcode.JIF, 0, condReg, 0, 0, line)
         if (condReg != condResolved) ctx.freep(condReg)
 
         ctx.emitBlock(stmt.body)
@@ -297,19 +319,21 @@ class StatementEmitter(
         var jumpToExit: Int? = null
         if (stmt.condition != null) {
             val condResolved = ctx.resolveRegister(stmt.condition)
-            val condReg = if (condResolved != null) {
-                ctx.freeNodeRegisters(stmt.condition)
-                condResolved
-            } else {
-                val r = ctx.allocp()
-                ctx.emitExpr(stmt.condition, r, line)
-                r
-            }
-            jumpToExit = ctx.emit(Opcode.JIF, 0, condReg, 0 /*patch*/, 0, line)
+            val condReg =
+                if (condResolved != null) {
+                    ctx.freeNodeRegisters(stmt.condition)
+                    condResolved
+                } else {
+                    val r = ctx.allocp()
+                    ctx.emitExpr(stmt.condition, r, line)
+                    r
+                }
+            // patch: jumpToExit target filled in later
+            jumpToExit = ctx.emit(Opcode.JIF, 0, condReg, 0, 0, line)
             if (condReg != condResolved) ctx.freep(condReg)
         }
 
-        val loopCtx = LoopContext(loopStart, -1 /* set after body */)
+        val loopCtx = LoopContext(loopStart, -1) // set after body
         loopStack.addLast(loopCtx)
 
         ctx.emitBlock(stmt.body)
@@ -341,9 +365,10 @@ class StatementEmitter(
         val condReg = ctx.allocp()
         val elemReg = ctx.allocator.allocElement(stmt)
         ctx.regNameEvents.add(RegNameEvent(ctx.pc, stmt.elementType.isPrimitive(), elemReg, stmt.elementName))
-        ctx.emit(Opcode.LDI, 0, idxReg, 0, 0, line)     // idx = 0
-        val lenTarget = TempRegistry.lookupBuiltinMethod(iterType, "length")
-            ?: error("No 'length' method found on type '$iterType'")
+        ctx.emit(Opcode.LDI, 0, idxReg, 0, 0, line) // idx = 0
+        val lenTarget =
+            TempRegistry.lookupBuiltinMethod(iterType, "length")
+                ?: error("No 'length' method found on type '$iterType'")
         val lenArgStart = ctx.allocator.allocTempPrim()
         ctx.emit(Opcode.MOVR, 0, lenArgStart, arrReg, 0, line)
         val lenFuncIdx = ctx.pool.add(lenTarget.name)
@@ -355,7 +380,8 @@ class StatementEmitter(
         val loopStart = ctx.pc
 
         ctx.emit(Opcode.ILT, 0, condReg, idxReg, lenReg, line) // cond = idx < len
-        val jumpToExit = ctx.emit(Opcode.JIF, 0, condReg, 0 /*patch*/, 0, line)
+        // patch: jumpToExit target filled in later
+        val jumpToExit = ctx.emit(Opcode.JIF, 0, condReg, 0, 0, line)
 
         ctx.emit(Opcode.AGET_IDX, 0, elemReg, arrReg, idxReg, line) // elem = arr[idx]
 
@@ -378,13 +404,16 @@ class StatementEmitter(
         loopCtx.breakPatches.forEach { ctx.patch(it, exitPc) }
         loopStack.removeLast()
 
-        ctx.freep(condReg); ctx.freep(lenReg); ctx.freep(idxReg)
+        ctx.freep(condReg)
+        ctx.freep(lenReg)
+        ctx.freep(idxReg)
         ctx.free(iterType, arrReg)
     }
 
     private fun emitBreak() {
         val loopCtx = loopStack.lastOrNull() ?: return
-        val jmp = ctx.emit(Opcode.JMP, 0, 0 /*patch*/, 0, 0)
+        // patch: jmp target filled in later
+        val jmp = ctx.emit(Opcode.JMP, 0, 0, 0, 0)
         loopCtx.breakPatches.add(jmp)
     }
 
@@ -393,7 +422,8 @@ class StatementEmitter(
         if (loopCtx.continueTarget >= 0) {
             ctx.emit(Opcode.JMP, 0, loopCtx.continueTarget, 0, 0)
         } else {
-            val jmp = ctx.emit(Opcode.JMP, 0, 0 /*patch*/, 0, 0)
+            // patch: jmp target filled in later
+            val jmp = ctx.emit(Opcode.JMP, 0, 0, 0, 0)
             loopCtx.continuePatches.add(jmp)
         }
     }
@@ -460,7 +490,8 @@ class StatementEmitter(
         ctx.emitBlock(stmt.tryBlock)
         val tryEnd = ctx.pc
 
-        val jumpPastCatches = ctx.emit(Opcode.JMP, 0, 0 /*patch*/, 0, 0)
+        // patch: jumpPastCatches target filled in later
+        val jumpPastCatches = ctx.emit(Opcode.JMP, 0, 0, 0, 0)
 
         val catchEndJumps = mutableListOf<Int>()
         for (clause in stmt.catchClauses) {
@@ -470,7 +501,8 @@ class StatementEmitter(
             ctx.exceptionEntries.add(ExEntry(tryStart, tryEnd, clause.exceptionType, handlerPc, msgReg))
 
             ctx.emitBlock(clause.body)
-            val jEnd = ctx.emit(Opcode.JMP, 0, 0 /*patch*/, 0, 0)
+            // patch: jEnd target filled in later
+            val jEnd = ctx.emit(Opcode.JMP, 0, 0, 0, 0)
             catchEndJumps.add(jEnd)
             ctx.freer(msgReg)
         }

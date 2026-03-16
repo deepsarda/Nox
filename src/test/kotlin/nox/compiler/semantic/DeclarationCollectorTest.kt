@@ -8,8 +8,9 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import nox.compiler.CompilerErrors
 import nox.compiler.parsing.NoxParsing
-import nox.compiler.types.TypeRef
 import nox.compiler.types.*
+import nox.compiler.types.TypeRef
+
 /**
  * Tests for [DeclarationCollector] (Pass 1).
  *
@@ -28,20 +29,23 @@ class DeclarationCollectorTest :
             return Triple(globalScope, errors, program)
         }
 
-        fun collectError(source: String, msg: String) {
+        fun collectError(
+            source: String,
+            msg: String,
+        ) {
             val (_, errors) = collect(source)
             errors.hasErrors() shouldBe true
             errors.all().any { it.message.contains(msg) } shouldBe true
         }
 
-
         test("registers type definitions as TypeSymbol with empty fields") {
-            val (scope, errors) = collect(
-                """
-                type Point { int x; int y; }
-                main() { return "ok"; }
-                """.trimIndent()
-            )
+            val (scope, errors) =
+                collect(
+                    """
+                    type Point { int x; int y; }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
 
             errors.hasErrors() shouldBe false
             val sym = scope.lookup("Point")
@@ -53,12 +57,13 @@ class DeclarationCollectorTest :
         }
 
         test("registers function definitions as FuncSymbol") {
-            val (scope, errors) = collect(
-                """
-                int add(int a, int b) { return a + b; }
-                main() { return "ok"; }
-                """.trimIndent()
-            )
+            val (scope, errors) =
+                collect(
+                    """
+                    int add(int a, int b) { return a + b; }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
 
             errors.hasErrors() shouldBe false
             val sym = scope.lookup("add")
@@ -74,12 +79,13 @@ class DeclarationCollectorTest :
         }
 
         test("registers function with default parameters") {
-            val (scope, errors) = collect(
-                """
-                int greet(string name = "world") { return 0; }
-                main() { return "ok"; }
-                """.trimIndent()
-            )
+            val (scope, errors) =
+                collect(
+                    """
+                    int greet(string name = "world") { return 0; }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
 
             errors.hasErrors() shouldBe false
             val sym = scope.lookup("greet") as FuncSymbol
@@ -87,13 +93,14 @@ class DeclarationCollectorTest :
         }
 
         test("registers global variables as GlobalSymbol with sequential slots") {
-            val (scope, errors) = collect(
-                """
-                int counter = 0;
-                string label = "test";
-                main() { return "ok"; }
-                """.trimIndent()
-            )
+            val (scope, errors) =
+                collect(
+                    """
+                    int counter = 0;
+                    string label = "test";
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
 
             errors.hasErrors() shouldBe false
 
@@ -109,11 +116,12 @@ class DeclarationCollectorTest :
         }
 
         test("sets program.main for MainDef") {
-            val (_, errors, program) = collect(
-                """
-                main(string url) { return url; }
-                """.trimIndent()
-            )
+            val (_, errors, program) =
+                collect(
+                    """
+                    main(string url) { return url; }
+                    """.trimIndent(),
+                )
 
             errors.hasErrors() shouldBe false
             program.main.shouldNotBeNull()
@@ -121,51 +129,55 @@ class DeclarationCollectorTest :
         }
 
         test("reports error on duplicate type name") {
-            val (_, errors) = collect(
-                """
-                type Point { int x; }
-                type Point { int y; }
-                main() { return "ok"; }
-                """.trimIndent()
-            )
+            val (_, errors) =
+                collect(
+                    """
+                    type Point { int x; }
+                    type Point { int y; }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
 
             errors.hasErrors() shouldBe true
             errors.all().any { it.message.contains("Duplicate") && it.message.contains("Point") } shouldBe true
         }
 
         test("reports error on duplicate function name") {
-            val (_, errors) = collect(
-                """
-                int foo() { return 1; }
-                int foo() { return 2; }
-                main() { return "ok"; }
-                """.trimIndent()
-            )
+            val (_, errors) =
+                collect(
+                    """
+                    int foo() { return 1; }
+                    int foo() { return 2; }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
 
             errors.hasErrors() shouldBe true
             errors.all().any { it.message.contains("Duplicate") && it.message.contains("foo") } shouldBe true
         }
 
         test("reports error on duplicate global variable name") {
-            val (_, errors) = collect(
-                """
-                int x = 1;
-                int x = 2;
-                main() { return "ok"; }
-                """.trimIndent()
-            )
+            val (_, errors) =
+                collect(
+                    """
+                    int x = 1;
+                    int x = 2;
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
 
             errors.hasErrors() shouldBe true
             errors.all()[0].message shouldContain "already declared"
         }
 
         test("reports error on multiple main definitions") {
-            val (_, errors) = collect(
-                """
-                main() { return "first"; }
-                main() { return "second"; }
-                """.trimIndent()
-            )
+            val (_, errors) =
+                collect(
+                    """
+                    main() { return "first"; }
+                    main() { return "second"; }
+                    """.trimIndent(),
+                )
 
             errors.hasErrors() shouldBe true
             errors.all()[0].message shouldContain "Only one 'main()' block is allowed"
@@ -174,12 +186,13 @@ class DeclarationCollectorTest :
         test("rejects empty struct from ANTLR recovery") {
             // ANTLR recovery produces a TypeDef with zero fields on `type Empty { }`.
             // DeclarationCollector must reject it.
-            val (scope, errors) = collect(
-                """
-                type Empty { }
-                main() { return "ok"; }
-                """.trimIndent()
-            )
+            val (scope, errors) =
+                collect(
+                    """
+                    type Empty { }
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
 
             errors.hasErrors() shouldBe true
             errors.all().any { it.message.contains("has no fields") } shouldBe true
@@ -189,11 +202,12 @@ class DeclarationCollectorTest :
         test("skips ErrorDecl without crashing") {
             // Force a parse error that produces an ErrorDecl
             val errors = CompilerErrors()
-            val program = NoxParsing.parse(
-                "int ??? = bad;\nmain() { return \"ok\"; }",
-                "test.nox",
-                errors,
-            )
+            val program =
+                NoxParsing.parse(
+                    "int ??? = bad;\nmain() { return \"ok\"; }",
+                    "test.nox",
+                    errors,
+                )
 
             // Parse errors exist, but collection should not throw
             val globalScope = SymbolTable()
@@ -204,13 +218,14 @@ class DeclarationCollectorTest :
         }
 
         test("assigns globalSlot on the GlobalVarDecl AST node") {
-            val (_, errors, program) = collect(
-                """
-                int a = 1;
-                int b = 2;
-                main() { return "ok"; }
-                """.trimIndent()
-            )
+            val (_, errors, program) =
+                collect(
+                    """
+                    int a = 1;
+                    int b = 2;
+                    main() { return "ok"; }
+                    """.trimIndent(),
+                )
 
             errors.hasErrors() shouldBe false
             program.globals[0].globalSlot shouldBe 0
@@ -234,7 +249,7 @@ class DeclarationCollectorTest :
                 void foo(int ...a[], string ...b[]) { }
                 main() { return "ok"; }
                 """.trimIndent(),
-                "only have one varargs parameter"
+                "only have one varargs parameter",
             )
         }
 
@@ -244,7 +259,7 @@ class DeclarationCollectorTest :
                 void foo(int ...a[], int b) { }
                 main() { return "ok"; }
                 """.trimIndent(),
-                "Varargs parameter 'a' must be the last parameter"
+                "Varargs parameter 'a' must be the last parameter",
             )
         }
 
@@ -254,7 +269,7 @@ class DeclarationCollectorTest :
                 void foo(int ...a[] = [1]) { }
                 main() { return "ok"; }
                 """.trimIndent(),
-                "Varargs parameter 'a' cannot have a default value"
+                "Varargs parameter 'a' cannot have a default value",
             )
         }
 
@@ -264,7 +279,7 @@ class DeclarationCollectorTest :
                 void foo(int a = 1, int b) { }
                 main() { return "ok"; }
                 """.trimIndent(),
-                "Required parameter 'b' must come before optional parameters"
+                "Required parameter 'b' must come before optional parameters",
             )
         }
     })

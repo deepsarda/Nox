@@ -51,7 +51,7 @@ class DeclarationCollector(
 
     /**
      * Collects a type definition.
-     * 
+     *
      * @param decl the type definition to collect
      */
     private fun collectType(decl: TypeDef) {
@@ -79,53 +79,54 @@ class DeclarationCollector(
 
     /**
      * Collects a function definition.
-     * 
+     *
      * @param decl the function definition to collect
      */
     private fun collectFunction(decl: FuncDef) {
         var optionalSeen = false
         var varargsSeen = false
 
-        val params = decl.params.mapIndexed { index, p ->
-            // Validate Optional Param Ordering
-            if (p.defaultValue != null) {
-                optionalSeen = true
-            } else if (!p.isVarargs && optionalSeen) {
-                errors.report(
-                    p.loc,
-                    "Required parameter '${p.name}' must come before optional parameters",
-                    suggestion = "Reorder parameters: put all required params before any with default values",
-                )
-            }
-
-            // Validate Varargs Constraints
-            if (p.isVarargs) {
-                if (varargsSeen) {
-                    errors.report(
-                        p.loc,
-                        "A function can only have one varargs parameter ('...')",
-                        suggestion = "Remove extra '...' markers",
-                    )
-                }
-                if (index != decl.params.size - 1) {
-                    errors.report(
-                        p.loc,
-                        "Varargs parameter '${p.name}' must be the last parameter in the function signature",
-                        suggestion = "Move '${p.name}' to the end of the parameter list",
-                    )
-                }
+        val params =
+            decl.params.mapIndexed { index, p ->
+                // Validate Optional Param Ordering
                 if (p.defaultValue != null) {
+                    optionalSeen = true
+                } else if (!p.isVarargs && optionalSeen) {
                     errors.report(
                         p.loc,
-                        "Varargs parameter '${p.name}' cannot have a default value",
-                        suggestion = "Remove the '= ...' default from '${p.name}'",
+                        "Required parameter '${p.name}' must come before optional parameters",
+                        suggestion = "Reorder parameters: put all required params before any with default values",
                     )
                 }
-                varargsSeen = true
-            }
 
-            ParamSymbol(p.name, p.type, p.defaultValue, p.isVarargs)
-        }
+                // Validate Varargs Constraints
+                if (p.isVarargs) {
+                    if (varargsSeen) {
+                        errors.report(
+                            p.loc,
+                            "A function can only have one varargs parameter ('...')",
+                            suggestion = "Remove extra '...' markers",
+                        )
+                    }
+                    if (index != decl.params.size - 1) {
+                        errors.report(
+                            p.loc,
+                            "Varargs parameter '${p.name}' must be the last parameter in the function signature",
+                            suggestion = "Move '${p.name}' to the end of the parameter list",
+                        )
+                    }
+                    if (p.defaultValue != null) {
+                        errors.report(
+                            p.loc,
+                            "Varargs parameter '${p.name}' cannot have a default value",
+                            suggestion = "Remove the '= ...' default from '${p.name}'",
+                        )
+                    }
+                    varargsSeen = true
+                }
+
+                ParamSymbol(p.name, p.type, p.defaultValue, p.isVarargs)
+            }
 
         val symbol = FuncSymbol(decl.name, decl.returnType, params, decl)
         if (!globalScope.define(decl.name, symbol)) {
@@ -139,11 +140,14 @@ class DeclarationCollector(
 
     /**
      * Collects the main function definition.
-     * 
+     *
      * @param decl the main function definition to collect
      * @param program the program to update
      */
-    private fun collectMain(decl: MainDef, program: Program) {
+    private fun collectMain(
+        decl: MainDef,
+        program: Program,
+    ) {
         if (mainSeen) {
             errors.report(
                 decl.loc,
@@ -158,11 +162,10 @@ class DeclarationCollector(
 
     /**
      * Collects a global variable definition.
-     * 
+     *
      * @param decl the global variable definition to collect
      */
     private fun collectGlobal(decl: GlobalVarDecl) {
-
         val symbol = GlobalSymbol(decl.name, decl.type, globalSlotCounter)
         if (!globalScope.define(decl.name, symbol)) {
             errors.report(
@@ -172,7 +175,7 @@ class DeclarationCollector(
             )
             return
         }
-        
+
         decl.globalSlot = globalSlotCounter++
     }
 }

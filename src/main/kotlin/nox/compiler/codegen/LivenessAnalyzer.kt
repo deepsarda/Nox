@@ -8,7 +8,6 @@ import nox.compiler.types.*
  * variable liveness intervals for optimal register reuse.
  */
 class LivenessAnalyzer {
-
     // Maps an AST node to the list of symbols whose registers can be freed AFTER executing the node.
     val freeAtNode = mutableMapOf<Any, MutableList<Symbol>>()
 
@@ -159,7 +158,7 @@ class LivenessAnalyzer {
 
             is ReturnStmt -> stmt.value?.let { analyzeExpr(it, stmt) }
             is YieldStmt -> analyzeExpr(stmt.value, stmt)
-            is BreakStmt, is ContinueStmt -> { /* Control flow skip */
+            is BreakStmt, is ContinueStmt -> { // Control flow skip
             }
 
             is ThrowStmt -> analyzeExpr(stmt.value, stmt)
@@ -186,7 +185,10 @@ class LivenessAnalyzer {
         }
     }
 
-    private fun analyzeExpr(expr: Expr, @Suppress("UNUSED_PARAMETER") parentNode: Any) {
+    private fun analyzeExpr(
+        expr: Expr,
+        @Suppress("UNUSED_PARAMETER") parentNode: Any,
+    ) {
         when (expr) {
             is IdentifierExpr -> {
                 val sym = expr.resolvedSymbol
@@ -239,7 +241,8 @@ class LivenessAnalyzer {
             }
 
             is IntLiteralExpr, is DoubleLiteralExpr, is StringLiteralExpr,
-            is BoolLiteralExpr, is NullLiteralExpr, is ErrorExpr -> {
+            is BoolLiteralExpr, is NullLiteralExpr, is ErrorExpr,
+            -> {
                 // Literals don't depend on any other variables
             }
         }

@@ -19,7 +19,6 @@ import java.time.format.DateTimeFormatter
  * See docs/compiler/disassembly.md for the full specification.
  */
 class NoxcEmitter {
-
     /**
      * Generates the full `.noxc` disassembly string from a compiled program.
      *
@@ -43,10 +42,11 @@ class NoxcEmitter {
 
         // Merge supplied sourceLines under the sourceFile key so that functions from
         // the root module also resolve correctly via meta.sourcePath.
-        val allSources: Map<String, List<String>> = buildMap {
-            putAll(sourcesByFile)
-            if (sourceFile.isNotEmpty() && sourceLines.isNotEmpty()) put(sourceFile, sourceLines)
-        }
+        val allSources: Map<String, List<String>> =
+            buildMap {
+                putAll(sourcesByFile)
+                if (sourceFile.isNotEmpty() && sourceLines.isNotEmpty()) put(sourceFile, sourceLines)
+            }
 
         emitHeader(sb, sourceFile, programName, program, timestamp)
         emitConstantPool(sb, program.constantPool)
@@ -77,7 +77,10 @@ class NoxcEmitter {
         sb.appendLine()
     }
 
-    private fun emitConstantPool(sb: StringBuilder, pool: Array<Any?>) {
+    private fun emitConstantPool(
+        sb: StringBuilder,
+        pool: Array<Any?>,
+    ) {
         sb.appendLine()
         sb.appendLine("; Constant Pool")
         sb.appendLine()
@@ -92,29 +95,35 @@ class NoxcEmitter {
         }
     }
 
-    private fun formatPoolEntry(entry: Any?): Pair<String, String> = when (entry) {
-        is String -> "str" to "\"${entry.escape()}\""
-        is Double -> "dbl" to entry.toBigDecimal().stripTrailingZeros().toPlainString()
-        is Long -> "lng" to entry.toString()
-        is TypeDescriptor -> "type" to "${entry.name} { ${entry.fields.entries.joinToString(", ") { "${it.key}: ${formatFieldSpec(it.value)}" }} }"
-        null -> "null" to "null"
-        else -> "???" to entry.toString()
-    }
+    private fun formatPoolEntry(entry: Any?): Pair<String, String> =
+        when (entry) {
+            is String -> "str" to "\"${entry.escape()}\""
+            is Double -> "dbl" to entry.toBigDecimal().stripTrailingZeros().toPlainString()
+            is Long -> "lng" to entry.toString()
+            is TypeDescriptor ->
+                "type" to
+                    "${entry.name} { ${entry.fields.entries.joinToString(
+                        ", ",
+                    ) { "${it.key}: ${formatFieldSpec(it.value)}" }} }"
+            null -> "null" to "null"
+            else -> "???" to entry.toString()
+        }
 
-    private fun formatFieldSpec(spec: FieldSpec): String = when (spec) {
-        is FieldSpec.INT -> "int"
-        is FieldSpec.DOUBLE -> "double"
-        is FieldSpec.BOOLEAN -> "boolean"
-        is FieldSpec.STRING -> "string"
-        is FieldSpec.JSON -> "json"
-        is FieldSpec.Struct -> "Struct(#${spec.descriptorIdx})"
-        is FieldSpec.TypedArray -> "${formatFieldSpec(spec.element)}[]"
-    }
+    private fun formatFieldSpec(spec: FieldSpec): String =
+        when (spec) {
+            is FieldSpec.INT -> "int"
+            is FieldSpec.DOUBLE -> "double"
+            is FieldSpec.BOOLEAN -> "boolean"
+            is FieldSpec.STRING -> "string"
+            is FieldSpec.JSON -> "json"
+            is FieldSpec.Struct -> "Struct(#${spec.descriptorIdx})"
+            is FieldSpec.TypedArray -> "${formatFieldSpec(spec.element)}[]"
+        }
 
     private fun emitInitBlocks(
         sb: StringBuilder,
         program: CompiledProgram,
-        sources: Map<String, List<String>> = emptyMap()
+        sources: Map<String, List<String>> = emptyMap(),
     ) {
         val initFuncs = program.functions.filter { it.name.startsWith("<module_init") }
         if (initFuncs.isEmpty()) return
@@ -143,20 +152,29 @@ class NoxcEmitter {
         }
     }
 
-    private fun emitGlobalsComment(sb: StringBuilder, mod: ModuleMeta) {
+    private fun emitGlobalsComment(
+        sb: StringBuilder,
+        mod: ModuleMeta,
+    ) {
         if (mod.globalPrimitiveCount == 0 && mod.globalReferenceCount == 0) return
         val parts = mutableListOf<String>()
         var p = mod.globalBaseOffset
         var r = mod.globalBaseOffset
-        repeat(mod.globalPrimitiveCount) { parts.add("g$p (int)"); p++ }
-        repeat(mod.globalReferenceCount) { parts.add("gr$r (ref)"); r++ }
+        repeat(mod.globalPrimitiveCount) {
+            parts.add("g$p (int)")
+            p++
+        }
+        repeat(mod.globalReferenceCount) {
+            parts.add("gr$r (ref)")
+            r++
+        }
         if (parts.isNotEmpty()) sb.appendLine(";  globals: ${parts.joinToString("  ")}")
     }
 
     private fun emitFunctions(
         sb: StringBuilder,
         program: CompiledProgram,
-        sources: Map<String, List<String>> = emptyMap()
+        sources: Map<String, List<String>> = emptyMap(),
     ) {
         val userFuncs = program.functions.filter { !it.name.startsWith("<module_init") }
         if (userFuncs.isEmpty()) return
@@ -199,21 +217,24 @@ class NoxcEmitter {
 
         // Emit params comment
         if (meta.paramCount > 0 && (primNames.isNotEmpty() || refNames.isNotEmpty())) {
-            val paramEntries = events.filter { it.localPC == 0 }
-                .sortedWith(compareBy({ it.register }, { !it.isPrim }))
-                .take(meta.paramCount)
-                .map { ev ->
-                    if (ev.isPrim) "p${ev.register}=${ev.name}" else "r${ev.register}=${ev.name}"
-                }
+            val paramEntries =
+                events
+                    .filter { it.localPC == 0 }
+                    .sortedWith(compareBy({ it.register }, { !it.isPrim }))
+                    .take(meta.paramCount)
+                    .map { ev ->
+                        if (ev.isPrim) "p${ev.register}=${ev.name}" else "r${ev.register}=${ev.name}"
+                    }
             if (paramEntries.isNotEmpty()) {
                 sb.appendLine("  ; params: ${paramEntries.joinToString("  ")}")
             }
         }
 
         var lastLine = -1
-        val numInstructions = meta.sourceLines.size.coerceAtMost(
-            (bytecode.size - meta.entryPC).coerceAtLeast(0)
-        )
+        val numInstructions =
+            meta.sourceLines.size.coerceAtMost(
+                (bytecode.size - meta.entryPC).coerceAtLeast(0),
+            )
 
         for (i in 0 until numInstructions) {
             val absolutePc = meta.entryPC + i
@@ -232,8 +253,11 @@ class NoxcEmitter {
             if (srcLine >= 0 && srcLine != lastLine) {
                 val lineText = srcLines.getOrElse(srcLine - 1) { "" }.trim()
                 sb.appendLine("  ;")
-                if (lineText.isNotEmpty()) sb.appendLine("  ; line $srcLine  $lineText")
-                else sb.appendLine("  ; line $srcLine")
+                if (lineText.isNotEmpty()) {
+                    sb.appendLine("  ; line $srcLine  $lineText")
+                } else {
+                    sb.appendLine("  ; line $srcLine")
+                }
                 lastLine = srcLine
             }
 
@@ -268,21 +292,31 @@ class NoxcEmitter {
     }
 
     private fun formatInstruction(
-        opcode: Int, subOp: Int, a: Int, b: Int, c: Int,
+        opcode: Int,
+        subOp: Int,
+        a: Int,
+        b: Int,
+        c: Int,
         pool: Array<Any?>,
         labels: Map<Int, String>,
         primNames: Map<Int, String> = emptyMap(),
         refNames: Map<Int, String> = emptyMap(),
     ): Pair<String, String> {
         fun pr(r: Int) = "p$r"
+
         fun rr(r: Int) = "r$r"
 
         // Named variants for comments, shows "name:pN" when known, else just "pN"
         fun pn(r: Int) = primNames[r]?.let { "$it:p$r" } ?: "p$r"
+
         fun rn(r: Int) = refNames[r]?.let { "$it:r$r" } ?: "r$r"
+
         fun gr(r: Int) = "g$r"
+
         fun grr(r: Int) = "gr$r"
+
         fun pool(idx: Int) = "#$idx"
+
         fun jump(target: Int): String {
             val lbl = labels[target]
             return "@%04d".format(target) + (if (lbl != null) "  ; -> $lbl" else "")
@@ -299,22 +333,22 @@ class NoxcEmitter {
             Opcode.IEQ, Opcode.INE, Opcode.ILT, Opcode.ILE, Opcode.IGT, Opcode.IGE,
             Opcode.DEQ, Opcode.DNE, Opcode.DLT, Opcode.DLE, Opcode.DGT, Opcode.DGE,
             Opcode.BAND, Opcode.BOR, Opcode.BXOR, Opcode.SHL, Opcode.SHR, Opcode.USHR,
-                -> "${pr(a)}, ${pr(b)}, ${pr(c)}" to "${pn(a)} = ${pn(b)} ${opcodeSymbol(opcode)} ${pn(c)}"
+            -> "${pr(a)}, ${pr(b)}, ${pr(c)}" to "${pn(a)} = ${pn(b)} ${opcodeSymbol(opcode)} ${pn(c)}"
 
-            Opcode.SEQ, Opcode.SNE
-                -> "${pr(a)}, ${rr(b)}, ${rr(c)}" to "${pn(a)} = ${rn(b)} ${opcodeSymbol(opcode)} ${rn(c)}"
+            Opcode.SEQ, Opcode.SNE,
+            -> "${pr(a)}, ${rr(b)}, ${rr(c)}" to "${pn(a)} = ${rn(b)} ${opcodeSymbol(opcode)} ${rn(c)}"
 
-            Opcode.INEG, Opcode.DNEG, Opcode.NOT, Opcode.BNOT
-                -> "${pr(a)}, ${pr(b)}" to "${pn(a)} = -${pn(b)}"
+            Opcode.INEG, Opcode.DNEG, Opcode.NOT, Opcode.BNOT,
+            -> "${pr(a)}, ${pr(b)}" to "${pn(a)} = -${pn(b)}"
 
-            Opcode.MOV
-                -> "${pr(a)}, ${pr(b)}" to "${pn(a)} = ${pn(b)}"
+            Opcode.MOV,
+            -> "${pr(a)}, ${pr(b)}" to "${pn(a)} = ${pn(b)}"
 
-            Opcode.MOVR
-                -> "${rr(a)}, ${rr(b)}" to "${rn(a)} = ${rn(b)}"
+            Opcode.MOVR,
+            -> "${rr(a)}, ${rr(b)}" to "${rn(a)} = ${rn(b)}"
 
-            Opcode.LDI
-                -> "${pr(a)}, $b" to "${pn(a)} = $b"
+            Opcode.LDI,
+            -> "${pr(a)}, $b" to "${pn(a)} = $b"
 
             Opcode.LDC -> {
                 val value = pool.getOrNull(b)
@@ -326,8 +360,8 @@ class NoxcEmitter {
                 }
             }
 
-            Opcode.KILL_REF
-                -> "${rr(a)}" to "${rn(a)} = null (GC)"
+            Opcode.KILL_REF,
+            -> "${rr(a)}" to "${rn(a)} = null (GC)"
 
             Opcode.I2D -> "${pr(a)}, ${pr(b)}" to "${pn(a)} = (double)${pn(b)}"
             Opcode.I2S -> "${rr(a)}, ${pr(b)}" to "${rn(a)} = toString(${pn(b)})"
@@ -336,7 +370,7 @@ class NoxcEmitter {
             Opcode.D2I -> "${pr(a)}, ${pr(b)}" to "${pn(a)} = (int)${pn(b)}"
 
             Opcode.JMP -> {
-                val lbl = labels[b - /*base*/0]
+                val lbl = labels[b]
                 "@%04d".format(b) to "-> ${lbl ?: "@%04d".format(b)}"
             }
 
@@ -356,8 +390,11 @@ class NoxcEmitter {
             }
 
             Opcode.RET -> {
-                if (a == 0) "" to "return (void)"
-                else pr(a) to "return ${pn(a)}"
+                if (a == 0) {
+                    "" to "return (void)"
+                } else {
+                    pr(a) to "return ${pn(a)}"
+                }
             }
 
             Opcode.SCALL -> {
@@ -428,7 +465,10 @@ class NoxcEmitter {
 
     // Exception Table
 
-    private fun emitExceptionTable(sb: StringBuilder, program: CompiledProgram) {
+    private fun emitExceptionTable(
+        sb: StringBuilder,
+        program: CompiledProgram,
+    ) {
         sb.appendLine()
         sb.appendLine()
         sb.appendLine("; Exception Table")
@@ -441,7 +481,11 @@ class NoxcEmitter {
                 val type = ex.exceptionType ?: "ANY"
                 sb.appendLine(
                     "  [%04d..%04d] %-20s -> @%04d  msg=r%d".format(
-                        ex.startPC, ex.endPC, type, ex.handlerPC, ex.messageRegister,
+                        ex.startPC,
+                        ex.endPC,
+                        type,
+                        ex.handlerPC,
+                        ex.messageRegister,
                     ),
                 )
             }
@@ -450,7 +494,10 @@ class NoxcEmitter {
 
     // Summary
 
-    private fun emitSummary(sb: StringBuilder, program: CompiledProgram) {
+    private fun emitSummary(
+        sb: StringBuilder,
+        program: CompiledProgram,
+    ) {
         val initCount = program.functions.count { it.name.startsWith("<module_init") }
         val funcCount = program.functions.count { !it.name.startsWith("<module_init") }
         val bytesTotal = program.bytecode.size * 8
@@ -472,7 +519,8 @@ class NoxcEmitter {
     // Helpers
 
     private fun String.escape(): String =
-        this.replace("\\", "\\\\")
+        this
+            .replace("\\", "\\\\")
             .replace("\"", "\\\"")
             .replace("\n", "\\n")
             .replace("\r", "\\r")

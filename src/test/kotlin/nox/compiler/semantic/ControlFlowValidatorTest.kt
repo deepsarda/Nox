@@ -2,7 +2,6 @@ package nox.compiler.semantic
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import nox.compiler.CompilerErrors
 import nox.compiler.CompilerWarnings
 import nox.compiler.ast.*
@@ -43,14 +42,20 @@ class ControlFlowValidatorTest :
         }
 
         /** Shorthand: validate and expect at least one error containing [msg]. */
-        fun validateError(source: String, msg: String) {
+        fun validateError(
+            source: String,
+            msg: String,
+        ) {
             val result = validate(source)
             result.errors.hasErrors() shouldBe true
             result.errors.all().any { it.message.contains(msg) } shouldBe true
         }
 
         /** Shorthand: validate and expect at least one warning containing [msg]. */
-        fun validateWarning(source: String, msg: String) {
+        fun validateWarning(
+            source: String,
+            msg: String,
+        ) {
             val result = validate(source)
             result.errors.hasErrors() shouldBe false
             result.warnings.hasWarnings() shouldBe true

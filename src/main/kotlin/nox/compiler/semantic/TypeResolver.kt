@@ -95,8 +95,10 @@ class TypeResolver(
             // Validate the field type exists and is a valid variable type (not void)
             if (!isKnownType(field.type)) {
                 val candidates = globalScope.allNamesInScope { it is TypeSymbol }
-                val suggestion = DiagnosticHelpers.didYouMeanMsg(field.type.name, candidates)
-                    ?: "Declare the type first with 'type ${field.type.name} { ... }' or use a built-in type (int, double, boolean, string, json)"
+                val suggestion =
+                    DiagnosticHelpers.didYouMeanMsg(field.type.name, candidates)
+                        ?: "Declare the type first with 'type ${field.type.name} { ... }' " +
+                        "or use a built-in type (int, double, boolean, string, json)"
                 errors.report(
                     field.loc,
                     "Unknown type '${field.type}' for field '${field.name}' in struct '${typeDef.name}'",
@@ -159,12 +161,16 @@ class TypeResolver(
      * Validates that no two parameters share the same name, and that
      * each parameter's type is known.
      */
-    private fun registerParams(scope: SymbolTable, params: List<Param>) {
+    private fun registerParams(
+        scope: SymbolTable,
+        params: List<Param>,
+    ) {
         for (param in params) {
             if (!isKnownType(param.type)) {
                 val candidates = globalScope.allNamesInScope { it is TypeSymbol }
-                val suggestion = DiagnosticHelpers.didYouMeanMsg(param.type.name, candidates)
-                    ?: "Supported types: int, double, boolean, string, json, or a declared struct type"
+                val suggestion =
+                    DiagnosticHelpers.didYouMeanMsg(param.type.name, candidates)
+                        ?: "Supported types: int, double, boolean, string, json, or a declared struct type"
                 errors.report(
                     param.loc,
                     "Parameter '${param.name}' has unknown type '${param.type}'",
@@ -203,7 +209,7 @@ class TypeResolver(
                     suggestion = "Rename one of the parameters",
                 )
             } else {
-                param.resolvedSymbol = symbol  // back-link so codegen can write sym.register
+                param.resolvedSymbol = symbol // back-link so codegen can write sym.register
             }
         }
     }

@@ -35,8 +35,7 @@ class SymbolTable(
      *
      * @return the first matching [Symbol], or `null` if unresolved
      */
-    fun lookup(name: String): Symbol? =
-        symbols[name] ?: parent?.lookup(name)
+    fun lookup(name: String): Symbol? = symbols[name] ?: parent?.lookup(name)
 
     /**
      * Look up a name in the current scope only (aka no chain walk).
@@ -51,7 +50,10 @@ class SymbolTable(
      * @return `true` if the symbol was successfully added,
      *         `false` if a symbol with the same name already exists in this scope
      */
-    fun define(name: String, symbol: Symbol): Boolean {
+    fun define(
+        name: String,
+        symbol: Symbol,
+    ): Boolean {
         if (name in symbols) return false
         symbols[name] = symbol
         return true

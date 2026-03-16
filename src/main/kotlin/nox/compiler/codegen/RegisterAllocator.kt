@@ -15,8 +15,9 @@ import nox.compiler.types.*
  *
  * See docs/compiler/codegen.md.
  */
-class RegisterAllocator(params: List<Param>) {
-
+class RegisterAllocator(
+    params: List<Param>,
+) {
     // Bank pools
 
     private var nextPrim = 0
@@ -114,15 +115,19 @@ class RegisterAllocator(params: List<Param>) {
 
     /** Free a named symbol (local variable or parameter) so its register can be reused. */
     fun freeVar(sym: Symbol) {
-        val (reg, type) = when (sym) {
-            is VarSymbol -> sym.register to sym.type
-            is ParamSymbol -> sym.register to sym.type
-            else -> return
-        }
+        val (reg, type) =
+            when (sym) {
+                is VarSymbol -> sym.register to sym.type
+                is ParamSymbol -> sym.register to sym.type
+                else -> return
+            }
         if (reg == -1) return
 
-        if (type.isPrimitive()) freePrim.addFirst(reg)
-        else freeRef.addFirst(reg)
+        if (type.isPrimitive()) {
+            freePrim.addFirst(reg)
+        } else {
+            freeRef.addFirst(reg)
+        }
 
         // Prevent double-freeing
         when (sym) {
@@ -133,21 +138,29 @@ class RegisterAllocator(params: List<Param>) {
     }
 
     /** Allocate a temp register for [type] (dispatches to pMem or rMem). */
-    fun allocTemp(type: TypeRef): Int =
-        if (type.isPrimitive()) allocTempPrim() else allocTempRef()
+    fun allocTemp(type: TypeRef): Int = if (type.isPrimitive()) allocTempPrim() else allocTempRef()
 
     /** Free a temp register for [type]. */
-    fun freeTemp(type: TypeRef, reg: Int) {
+    fun freeTemp(
+        type: TypeRef,
+        reg: Int,
+    ) {
         if (type.isPrimitive()) freeTempPrim(reg) else freeTempRef(reg)
     }
 
     private fun allocPrim(): Int =
-        if (freePrim.isNotEmpty()) freePrim.removeFirst()
-        else newPrimReg()
+        if (freePrim.isNotEmpty()) {
+            freePrim.removeFirst()
+        } else {
+            newPrimReg()
+        }
 
     private fun allocRef(): Int =
-        if (freeRef.isNotEmpty()) freeRef.removeFirst()
-        else newRefReg()
+        if (freeRef.isNotEmpty()) {
+            freeRef.removeFirst()
+        } else {
+            newRefReg()
+        }
 
     private fun newPrimReg(): Int {
         val r = nextPrim++

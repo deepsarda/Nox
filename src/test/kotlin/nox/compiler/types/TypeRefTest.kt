@@ -76,7 +76,7 @@ class TypeRefTest :
 
             arr2d.elementType() shouldBe arr1d
             arr1d.elementType() shouldBe scalar
-            scalar.elementType() shouldBe scalar  // no-op on non-array
+            scalar.elementType() shouldBe scalar // no-op on non-array
         }
 
         test("arrayOf adds dimension") {
@@ -99,7 +99,6 @@ class TypeRefTest :
             arr2d.isAssignableFrom(arr1d) shouldBe false
             arr2d.isAssignableFrom(arr2d) shouldBe true
         }
-
 
         // isAssignableFrom
 

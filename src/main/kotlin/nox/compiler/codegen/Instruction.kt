@@ -21,7 +21,6 @@ package nox.compiler.codegen
  * See docs/vm/instruction-set.md for the full reference.
  */
 object Instruction {
-
     /**
      * Pack five fields into a single 64-bit instruction.
      *
@@ -32,12 +31,18 @@ object Instruction {
      * @param c       operand C (0–65535)
      * @return the packed instruction word
      */
-    fun encode(opcode: Int, subOp: Int, a: Int, b: Int, c: Int): Long =
+    fun encode(
+        opcode: Int,
+        subOp: Int,
+        a: Int,
+        b: Int,
+        c: Int,
+    ): Long =
         ((opcode.toLong() and 0xFF) shl 56) or
-                ((subOp.toLong() and 0xFF) shl 48) or
-                ((a.toLong() and 0xFFFF) shl 32) or
-                ((b.toLong() and 0xFFFF) shl 16) or
-                (c.toLong() and 0xFFFF)
+            ((subOp.toLong() and 0xFF) shl 48) or
+            ((a.toLong() and 0xFFFF) shl 32) or
+            ((b.toLong() and 0xFFFF) shl 16) or
+            (c.toLong() and 0xFFFF)
 
     /** Decode the opcode field from an encoded instruction. */
     fun opcode(inst: Long): Int = ((inst ushr 56) and 0xFF).toInt()
@@ -61,6 +66,8 @@ object Instruction {
      * `JIF/JMP` with a placeholder B, then after the jump target PC is
      * known, `patchB` updates it in-place.
      */
-    fun patchB(inst: Long, newB: Int): Long =
-        (inst and -0x10000L) or (newB.toLong() and 0xFFFF)
+    fun patchB(
+        inst: Long,
+        newB: Int,
+    ): Long = (inst and -0x10000L) or (newB.toLong() and 0xFFFF)
 }

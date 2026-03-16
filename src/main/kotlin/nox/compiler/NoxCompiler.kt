@@ -28,7 +28,6 @@ import java.nio.file.Path
  * See docs/compiler/overview.md for the full pipeline design.
  */
 object NoxCompiler {
-
     /**
      * The result of a full compilation.
      *

@@ -21,7 +21,6 @@ class StatementResolver(
     private val exprResolver: ExpressionResolver,
     private val errors: CompilerErrors,
 ) {
-
     /**
      * When `true`, the current body being resolved is `main()`.
      * `main` can return any type (the runtime auto-converts to string),
@@ -36,7 +35,11 @@ class StatementResolver(
      * @param block         the block to resolve
      * @param expectedReturn the return type expected by the enclosing function
      */
-    fun resolveBlock(parentScope: SymbolTable, block: Block, expectedReturn: TypeRef) {
+    fun resolveBlock(
+        parentScope: SymbolTable,
+        block: Block,
+        expectedReturn: TypeRef,
+    ) {
         val blockScope = parentScope.child()
         block.scopeDepth = blockScope.depth
         for (stmt in block.statements) {
@@ -51,7 +54,11 @@ class StatementResolver(
      * @param stmt           the statement to resolve
      * @param expectedReturn the return type expected by the enclosing function
      */
-    fun resolveStmt(scope: SymbolTable, stmt: Stmt, expectedReturn: TypeRef) {
+    fun resolveStmt(
+        scope: SymbolTable,
+        stmt: Stmt,
+        expectedReturn: TypeRef,
+    ) {
         when (stmt) {
             is VarDeclStmt -> resolveVarDecl(scope, stmt)
             is AssignStmt -> resolveAssign(scope, stmt)
@@ -71,7 +78,10 @@ class StatementResolver(
         }
     }
 
-    private fun resolveVarDecl(scope: SymbolTable, stmt: VarDeclStmt) {
+    private fun resolveVarDecl(
+        scope: SymbolTable,
+        stmt: VarDeclStmt,
+    ) {
         if (!stmt.type.isValidAsVariable()) {
             errors.report(
                 stmt.loc,
@@ -120,10 +130,12 @@ class StatementResolver(
 
         // Null safety check
         if (stmt.initializer is NullLiteralExpr && !stmt.type.isNullable()) {
+            val defaultVal = DiagnosticHelpers.defaultValueHint(stmt.type)
             errors.report(
                 stmt.loc,
-                "Cannot assign 'null' to '${stmt.name}'. '${stmt.type}' is not nullable (only string, json, structs, and arrays can be null)",
-                suggestion = "Use a default value instead: '${stmt.type} ${stmt.name} = ${DiagnosticHelpers.defaultValueHint(stmt.type)};'",
+                "Cannot assign 'null' to '${stmt.name}'. " +
+                    "'${stmt.type}' is not nullable (only string, json, structs, and arrays can be null)",
+                suggestion = "Use a default value instead: '${stmt.type} ${stmt.name} = $defaultVal;'",
             )
         }
 
@@ -133,14 +145,19 @@ class StatementResolver(
             errors.report(
                 stmt.loc,
                 "Variable '${stmt.name}' is already declared in this scope",
-                suggestion = "Rename this variable or use the existing one. Note: shadowing is allowed in nested '{ }' blocks",
+                suggestion =
+                    "Rename this variable or use the existing one. " +
+                        "Note: shadowing is allowed in nested '{ }' blocks",
             )
         } else {
-            stmt.resolvedSymbol = sym  // back-link so codegen can write to sym.register
+            stmt.resolvedSymbol = sym // back-link so codegen can write to sym.register
         }
     }
 
-    private fun resolveAssign(scope: SymbolTable, stmt: AssignStmt) {
+    private fun resolveAssign(
+        scope: SymbolTable,
+        stmt: AssignStmt,
+    ) {
         validateLValue(stmt.target)
 
         val targetType = exprResolver.resolveExpr(scope, stmt.target) ?: return
@@ -186,11 +203,12 @@ class StatementResolver(
                     }
                     return
                 }
-                val suggestion = when {
-                    targetType == TypeRef.STRING || valueType == TypeRef.STRING ->
-                        "Use template literals for mixed-type concatenation: `\${var}\${value}`"
-                    else -> null
-                }
+                val suggestion =
+                    when {
+                        targetType == TypeRef.STRING || valueType == TypeRef.STRING ->
+                            "Use template literals for mixed-type concatenation: `\${var}\${value}`"
+                        else -> null
+                    }
                 errors.report(
                     loc,
                     "'${op.symbol}' requires numeric or string operands, got '$targetType' and '$valueType'",
@@ -217,7 +235,10 @@ class StatementResolver(
         }
     }
 
-    private fun resolveIncrement(scope: SymbolTable, stmt: IncrementStmt) {
+    private fun resolveIncrement(
+        scope: SymbolTable,
+        stmt: IncrementStmt,
+    ) {
         validateLValue(stmt.target)
         val type = exprResolver.resolveExpr(scope, stmt.target) ?: return
         if (!type.isNumeric()) {
@@ -229,7 +250,11 @@ class StatementResolver(
         }
     }
 
-    private fun resolveIf(scope: SymbolTable, stmt: IfStmt, expectedReturn: TypeRef) {
+    private fun resolveIf(
+        scope: SymbolTable,
+        stmt: IfStmt,
+        expectedReturn: TypeRef,
+    ) {
         requireBoolean(scope, stmt.condition, "if")
         resolveBlock(scope, stmt.thenBlock, expectedReturn)
 
@@ -241,12 +266,20 @@ class StatementResolver(
         stmt.elseBlock?.let { resolveBlock(scope, it, expectedReturn) }
     }
 
-    private fun resolveWhile(scope: SymbolTable, stmt: WhileStmt, expectedReturn: TypeRef) {
+    private fun resolveWhile(
+        scope: SymbolTable,
+        stmt: WhileStmt,
+        expectedReturn: TypeRef,
+    ) {
         requireBoolean(scope, stmt.condition, "while")
         resolveBlock(scope, stmt.body, expectedReturn)
     }
 
-    private fun resolveFor(scope: SymbolTable, stmt: ForStmt, expectedReturn: TypeRef) {
+    private fun resolveFor(
+        scope: SymbolTable,
+        stmt: ForStmt,
+        expectedReturn: TypeRef,
+    ) {
         val forScope = scope.child()
         stmt.init?.let { resolveStmt(forScope, it, expectedReturn) }
         stmt.condition?.let { requireBoolean(forScope, it, "for") }
@@ -254,7 +287,11 @@ class StatementResolver(
         resolveBlock(forScope, stmt.body, expectedReturn)
     }
 
-    private fun resolveForEach(scope: SymbolTable, stmt: ForEachStmt, expectedReturn: TypeRef) {
+    private fun resolveForEach(
+        scope: SymbolTable,
+        stmt: ForEachStmt,
+        expectedReturn: TypeRef,
+    ) {
         val iterType = exprResolver.resolveExpr(scope, stmt.iterable) ?: return
 
         if (!iterType.isArray) {
@@ -296,8 +333,11 @@ class StatementResolver(
         resolveBlock(feScope, stmt.body, expectedReturn)
     }
 
-
-    private fun resolveReturn(scope: SymbolTable, stmt: ReturnStmt, expectedReturn: TypeRef) {
+    private fun resolveReturn(
+        scope: SymbolTable,
+        stmt: ReturnStmt,
+        expectedReturn: TypeRef,
+    ) {
         if (stmt.value != null) {
             // Propagate the expected return type into struct/array literals
             val value = stmt.value
@@ -338,12 +378,18 @@ class StatementResolver(
         }
     }
 
-    private fun resolveYield(scope: SymbolTable, stmt: YieldStmt) {
+    private fun resolveYield(
+        scope: SymbolTable,
+        stmt: YieldStmt,
+    ) {
         // Any type can be yielded, the runtime will handle conversion to string
         exprResolver.resolveExpr(scope, stmt.value)
     }
 
-    private fun resolveThrow(scope: SymbolTable, stmt: ThrowStmt) {
+    private fun resolveThrow(
+        scope: SymbolTable,
+        stmt: ThrowStmt,
+    ) {
         val type = exprResolver.resolveExpr(scope, stmt.value)
         if (type != null && type != TypeRef.STRING) {
             errors.report(
@@ -354,7 +400,11 @@ class StatementResolver(
         }
     }
 
-    private fun resolveTryCatch(scope: SymbolTable, stmt: TryCatchStmt, expectedReturn: TypeRef) {
+    private fun resolveTryCatch(
+        scope: SymbolTable,
+        stmt: TryCatchStmt,
+        expectedReturn: TypeRef,
+    ) {
         resolveBlock(scope, stmt.tryBlock, expectedReturn)
 
         for (cc in stmt.catchClauses) {
@@ -367,20 +417,24 @@ class StatementResolver(
         }
     }
 
-
     /**
      * Resolve an expression and require it to be boolean.
      * Reports an error if the expression resolves to a non-boolean type.
      */
-    private fun requireBoolean(scope: SymbolTable, expr: Expr, context: String) {
+    private fun requireBoolean(
+        scope: SymbolTable,
+        expr: Expr,
+        context: String,
+    ) {
         val type = exprResolver.resolveExpr(scope, expr)
         if (type != null && type != TypeRef.BOOLEAN) {
-            val suggestion = when {
-                type.isNumeric() -> "Did you mean a comparison? e.g. 'value != 0'"
-                type == TypeRef.STRING -> "Did you mean a comparison? e.g. 'value != null' or 'value.length() > 0'"
-                type.isNullable() -> "Did you mean a null check? e.g. 'value != null'"
-                else -> null
-            }
+            val suggestion =
+                when {
+                    type.isNumeric() -> "Did you mean a comparison? e.g. 'value != 0'"
+                    type == TypeRef.STRING -> "Did you mean a comparison? e.g. 'value != null' or 'value.length() > 0'"
+                    type.isNullable() -> "Did you mean a null check? e.g. 'value != null'"
+                    else -> null
+                }
             errors.report(
                 expr.loc,
                 "$context condition must be 'boolean', got '$type'",
@@ -399,16 +453,17 @@ class StatementResolver(
             is FieldAccessExpr -> {} // Struct field or json property
             is IndexAccessExpr -> {} // Array element or json index
             else -> {
-                val exprKind = when (target) {
-                    is IntLiteralExpr, is DoubleLiteralExpr -> "a literal value"
-                    is StringLiteralExpr, is TemplateLiteralExpr -> "a string literal"
-                    is BoolLiteralExpr -> "a boolean literal"
-                    is FuncCallExpr -> "a function call result"
-                    is MethodCallExpr -> "a method call result"
-                    is BinaryExpr -> "a binary expression"
-                    is UnaryExpr -> "a unary expression"
-                    else -> "this expression"
-                }
+                val exprKind =
+                    when (target) {
+                        is IntLiteralExpr, is DoubleLiteralExpr -> "a literal value"
+                        is StringLiteralExpr, is TemplateLiteralExpr -> "a string literal"
+                        is BoolLiteralExpr -> "a boolean literal"
+                        is FuncCallExpr -> "a function call result"
+                        is MethodCallExpr -> "a method call result"
+                        is BinaryExpr -> "a binary expression"
+                        is UnaryExpr -> "a unary expression"
+                        else -> "this expression"
+                    }
                 errors.report(
                     target.loc,
                     "$exprKind is not a valid assignment target",
