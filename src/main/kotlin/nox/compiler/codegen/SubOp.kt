@@ -9,8 +9,7 @@ package nox.compiler.codegen
  * See docs/vm/super-instructions.md for the full reference.
  */
 object SubOp {
-
-    // HACC / HMOD field access sub-ops 
+    // HACC / HMOD field access sub-ops
 
     /** Read/write an `int` field from a json/struct object. */
     const val GET_INT = 0x01
@@ -37,15 +36,19 @@ object SubOp {
 
     private val names: Map<Int, String> by lazy {
         buildMap {
-            put(GET_INT, "GET_INT");put(GET_DBL, "GET_DBL");
-            put(GET_STR, "GET_STR");put(GET_BOOL, "GET_BOOL");
-            put(GET_OBJ, "GET_OBJ");put(SET_INT, "SET_INT");
-            put(SET_DBL, "SET_DBL");put(SET_STR, "SET_STR");
-            put(SET_BOOL, "SET_BOOL");put(SET_OBJ, "SET_OBJ")
+            put(GET_INT, "GET_INT")
+            put(GET_DBL, "GET_DBL")
+            put(GET_STR, "GET_STR")
+            put(GET_BOOL, "GET_BOOL")
+            put(GET_OBJ, "GET_OBJ")
+            put(SET_INT, "SET_INT")
+            put(SET_DBL, "SET_DBL")
+            put(SET_STR, "SET_STR")
+            put(SET_BOOL, "SET_BOOL")
+            put(SET_OBJ, "SET_OBJ")
         }
     }
 
     /** Returns the mnemonic string for [subOp], or `"SUB_0x%02X".format(subOp)` if unknown. */
     fun name(subOp: Int): String = names[subOp] ?: "SUB_0x%02X".format(subOp)
 }
-

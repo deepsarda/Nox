@@ -1,9 +1,9 @@
 package nox.compiler.semantic
 
 import nox.compiler.CompilerErrors
-import nox.compiler.parsing.NoxParsing
 import nox.compiler.ast.ImportDecl
 import nox.compiler.ast.Program
+import nox.compiler.parsing.NoxParsing
 import nox.plugin.TempRegistry
 import java.nio.file.Path
 import kotlin.io.path.pathString
@@ -89,22 +89,24 @@ internal class ImportResolver(
                     program = cached.program,
                     globalBaseOffset = cached.globalBaseOffset,
                     globalCount = cached.globalCount,
-                )
+                ),
             )
             return
         }
 
         // 5. Parse the imported file
-        val source = try {
-            fileReader(resolved)
-        } catch (_: Exception) {
-            errors.report(
-                imp.loc,
-                "Cannot read imported file '${imp.path}'",
-                suggestion = "Check that the file exists and the path is relative to the importing file's directory",
-            )
-            return
-        }
+        val source =
+            try {
+                fileReader(resolved)
+            } catch (_: Exception) {
+                errors.report(
+                    imp.loc,
+                    "Cannot read imported file '${imp.path}'",
+                    suggestion =
+                        "Check that the file exists and the path is relative to the importing file's directory",
+                )
+                return
+            }
 
         processingSet.add(resolved)
 
@@ -112,15 +114,16 @@ internal class ImportResolver(
             val importedProgram = NoxParsing.parse(source, resolved.pathString, errors)
 
             // 5b. Recursively resolve imports in the imported file
-            val childResolver = ImportResolver(
-                basePath = resolved,
-                errors = errors,
-                fileReader = fileReader,
-                builtinNamespaces = builtinNamespaces,
-                externalPluginNamespaces = externalPluginNamespaces,
-                processingSet = processingSet,
-                resolvedFiles = resolvedFiles,
-            )
+            val childResolver =
+                ImportResolver(
+                    basePath = resolved,
+                    errors = errors,
+                    fileReader = fileReader,
+                    builtinNamespaces = builtinNamespaces,
+                    externalPluginNamespaces = externalPluginNamespaces,
+                    processingSet = processingSet,
+                    resolvedFiles = resolvedFiles,
+                )
             childResolver.nextGlobalOffset = nextGlobalOffset
             childResolver.resolveImports(importedProgram)
 
@@ -138,16 +141,17 @@ internal class ImportResolver(
                     program = importedProgram,
                     globalBaseOffset = globalBaseOffset,
                     globalCount = moduleGlobals,
-                )
+                ),
             )
             nextGlobalOffset += moduleGlobals
 
             // Cache for deduplication
-            resolvedFiles[resolved] = ResolvedFile(
-                program = importedProgram,
-                globalBaseOffset = globalBaseOffset,
-                globalCount = moduleGlobals,
-            )
+            resolvedFiles[resolved] =
+                ResolvedFile(
+                    program = importedProgram,
+                    globalBaseOffset = globalBaseOffset,
+                    globalCount = moduleGlobals,
+                )
         } finally {
             processingSet.remove(resolved)
         }
@@ -159,8 +163,8 @@ internal class ImportResolver(
      *
      * @return `true` if valid, `false` if an error was reported
      */
-    private fun validateNamespace(imp: ImportDecl): Boolean {
-        return when (val name = imp.namespace) {
+    private fun validateNamespace(imp: ImportDecl): Boolean =
+        when (val name = imp.namespace) {
             in builtinNamespaces -> {
                 errors.report(
                     imp.loc,
@@ -190,8 +194,6 @@ internal class ImportResolver(
                 true
             }
         }
-    }
-
 }
 
 /**
@@ -206,4 +208,3 @@ internal data class ResolvedFile(
     val globalBaseOffset: Int,
     val globalCount: Int,
 )
-

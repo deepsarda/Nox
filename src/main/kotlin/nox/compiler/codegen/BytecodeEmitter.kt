@@ -57,8 +57,12 @@ class BytecodeEmitter(
     fun recordParamNames(params: List<Param>) {
         for (param in params) {
             val isPrim = param.type.isPrimitive()
-            val reg = if (isPrim) allocator.primParamRegister(param.name)
-            else allocator.refParamRegister(param.name)
+            val reg =
+                if (isPrim) {
+                    allocator.primParamRegister(param.name)
+                } else {
+                    allocator.refParamRegister(param.name)
+                }
             if (reg != null) {
                 regNameEvents.add(RegNameEvent(0, isPrim, reg, param.name))
             }
@@ -71,7 +75,10 @@ class BytecodeEmitter(
      * **unless** the block exits via a `return` statement, in which case
      * [StatementEmitter.emitReturn] has already emitted the KILL_REFs before the [Opcode.RET].
      */
-    fun emitBlock(block: Block, srcLine: Int = -1) {
+    fun emitBlock(
+        block: Block,
+        srcLine: Int = -1,
+    ) {
         val refsBeforeBlock = mutableSetOf<Int>()
         // snapshot which ref regs existed before this block
         refsBeforeBlock.addAll(allocator.allRefRegs)
@@ -97,8 +104,11 @@ class BytecodeEmitter(
     fun emitStmt(stmt: Stmt) = statements.emitStmt(stmt)
 
     /** Emit an expression into [dest] register (delegates to [ExpressionEmitter]). */
-    fun emitExpr(expr: Expr, dest: Int, srcLine: Int = expr.loc.line) =
-        expressions.emitExpr(expr, dest, srcLine)
+    fun emitExpr(
+        expr: Expr,
+        dest: Int,
+        srcLine: Int = expr.loc.line,
+    ) = expressions.emitExpr(expr, dest, srcLine)
 
     /** Finalise and return the built instructions. */
     fun build(): List<Long> = instructions.toList()
@@ -109,7 +119,14 @@ class BytecodeEmitter(
     // Instruction emission
 
     /** Emit one instruction; returns its PC (index). */
-    fun emit(opcode: Int, subOp: Int, a: Int, b: Int, c: Int, line: Int = -1): Int {
+    fun emit(
+        opcode: Int,
+        subOp: Int,
+        a: Int,
+        b: Int,
+        c: Int,
+        line: Int = -1,
+    ): Int {
         val instrPc = instructions.size
         instructions.add(Instruction.encode(opcode, subOp, a, b, c))
         sourceLines.add(line)
@@ -117,7 +134,10 @@ class BytecodeEmitter(
     }
 
     /** Patch the B-operand of an already-emitted instruction at [instrPc]. */
-    fun patch(instrPc: Int, newTarget: Int) {
+    fun patch(
+        instrPc: Int,
+        newTarget: Int,
+    ) {
         instructions[instrPc] = Instruction.patchB(instructions[instrPc], newTarget)
     }
 
@@ -129,10 +149,18 @@ class BytecodeEmitter(
     // Register allocation helpers
 
     internal fun alloc(type: TypeRef): Int = allocator.allocTemp(type)
-    internal fun free(type: TypeRef, reg: Int) = allocator.freeTemp(type, reg)
+
+    internal fun free(
+        type: TypeRef,
+        reg: Int,
+    ) = allocator.freeTemp(type, reg)
+
     internal fun allocp(): Int = allocator.allocTempPrim()
+
     internal fun freep(r: Int) = allocator.freeTempPrim(r)
+
     internal fun allocr(): Int = allocator.allocTempRef()
+
     internal fun freer(r: Int) = allocator.freeTempRef(r)
 
     // Resolution helpers
@@ -141,15 +169,17 @@ class BytecodeEmitter(
      * Returns the local/param register backing [expr], or `null` if not a simple reference.
      * This is used for direct-register operations like `IINC`, compound assign, etc.
      */
-    internal fun resolveRegister(expr: Expr): Int? = when (expr) {
-        is IdentifierExpr -> when (val sym = expr.resolvedSymbol) {
-            is VarSymbol -> sym.register.takeIf { it >= 0 }
-            is ParamSymbol -> sym.register.takeIf { it >= 0 }
+    internal fun resolveRegister(expr: Expr): Int? =
+        when (expr) {
+            is IdentifierExpr ->
+                when (val sym = expr.resolvedSymbol) {
+                    is VarSymbol -> sym.register.takeIf { it >= 0 }
+                    is ParamSymbol -> sym.register.takeIf { it >= 0 }
+                    else -> null
+                }
+
             else -> null
         }
-
-        else -> null
-    }
 
     internal fun freeNodeRegisters(node: Any) {
         freeAtNode[node]?.forEach { sym ->
@@ -159,14 +189,18 @@ class BytecodeEmitter(
 
     // Type descriptor building
 
-    internal fun buildDescriptor(typeName: String, visited: MutableMap<String, Int> = mutableMapOf()): Int {
+    internal fun buildDescriptor(
+        typeName: String,
+        visited: MutableMap<String, Int> = mutableMapOf(),
+    ): Int {
         visited[typeName]?.let { return it }
         pool.getTypeDescriptorId(typeName)?.let { return it }
 
         // Find the TypeDef (local or imported)
-        val typeDef = program.typesByName[typeName]
-            ?: modules.firstNotNullOfOrNull { it.program.typesByName[typeName] }
-            ?: throw IllegalStateException("Type not found: $typeName")
+        val typeDef =
+            program.typesByName[typeName]
+                ?: modules.firstNotNullOfOrNull { it.program.typesByName[typeName] }
+                ?: throw IllegalStateException("Type not found: $typeName")
 
         // Reserve slot
         val placeholder = pool.addPlaceholder()

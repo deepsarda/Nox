@@ -13,7 +13,6 @@ import kotlin.math.min
  * - **Default value hints** for "use a default instead of null"
  */
 object DiagnosticHelpers {
-
     /**
      * Maximum edit distance at which we consider a candidate a plausible typo.
      * Candidates with distance > [MAX_EDIT_DISTANCE] are not suggested.
@@ -32,7 +31,10 @@ object DiagnosticHelpers {
      * didYouMean("xyz",   listOf("abc", "def"))              // null
      * ```
      */
-    fun didYouMean(input: String, candidates: Iterable<String>): String? {
+    fun didYouMean(
+        input: String,
+        candidates: Iterable<String>,
+    ): String? {
         var bestCandidate: String? = null
         var bestDistance = Int.MAX_VALUE
 
@@ -52,7 +54,10 @@ object DiagnosticHelpers {
      *
      * Uses the standard dynamic-programming algorithm with O(min(m,n)) space.
      */
-    fun levenshtein(a: String, b: String): Int {
+    fun levenshtein(
+        a: String,
+        b: String,
+    ): Int {
         if (a == b) return 0
         if (a.isEmpty()) return b.length
         if (b.isEmpty()) return a.length
@@ -66,10 +71,11 @@ object DiagnosticHelpers {
             curr[0] = i
             for (j in 1..short.length) {
                 val cost = if (long[i - 1] == short[j - 1]) 0 else 1
-                curr[j] = min(
-                    min(curr[j - 1] + 1, prev[j] + 1),
-                    prev[j - 1] + cost,
-                )
+                curr[j] =
+                    min(
+                        min(curr[j - 1] + 1, prev[j] + 1),
+                        prev[j - 1] + cost,
+                    )
             }
             val tmp = prev
             prev = curr
@@ -84,7 +90,10 @@ object DiagnosticHelpers {
      *
      * Based on the Nox Type Compatibility Matrix (docs/language/type-system.md).
      */
-    fun conversionHint(from: TypeRef?, to: TypeRef): String? {
+    fun conversionHint(
+        from: TypeRef?,
+        to: TypeRef,
+    ): String? {
         if (from == null) return null
         if (from == to) return null
 
@@ -129,28 +138,31 @@ object DiagnosticHelpers {
         }
     }
 
-
     /**
      * Return a sensible default value literal for the given [type].
      *
      * Used in suggestions like: "Use a default value instead of null: `int x = 0;`"
      */
-    fun defaultValueHint(type: TypeRef): String = when {
-        type.isArray -> "[]"
-        type == TypeRef.INT -> "0"
-        type == TypeRef.DOUBLE -> "0.0"
-        type == TypeRef.BOOLEAN -> "false"
-        type == TypeRef.STRING -> "\"\""
-        type == TypeRef.JSON -> "{}"
-        type.isStructType() -> "{ /* ... */ }"
-        else -> "/* default */"
-    }
+    fun defaultValueHint(type: TypeRef): String =
+        when {
+            type.isArray -> "[]"
+            type == TypeRef.INT -> "0"
+            type == TypeRef.DOUBLE -> "0.0"
+            type == TypeRef.BOOLEAN -> "false"
+            type == TypeRef.STRING -> "\"\""
+            type == TypeRef.JSON -> "{}"
+            type.isStructType() -> "{ /* ... */ }"
+            else -> "/* default */"
+        }
 
     /**
      * Format a "did you mean" suggestion string, or return `null` if
      * no close match was found.
      */
-    fun didYouMeanMsg(input: String, candidates: Iterable<String>): String? {
+    fun didYouMeanMsg(
+        input: String,
+        candidates: Iterable<String>,
+    ): String? {
         val suggestion = didYouMean(input, candidates) ?: return null
         return "Did you mean '$suggestion'?"
     }

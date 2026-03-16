@@ -31,8 +31,7 @@ data class TypeRef(
      * e.g. `int[][]` to `int[]`, `int[]` to `int`.
      * Returns `this` if not an array.
      */
-    fun elementType(): TypeRef =
-        if (arrayDepth > 0) TypeRef(name, arrayDepth - 1) else this
+    fun elementType(): TypeRef = if (arrayDepth > 0) TypeRef(name, arrayDepth - 1) else this
 
     /**
      * Returns a new TypeRef with one additional array dimension.
@@ -122,8 +121,7 @@ data class TypeRef(
     override fun toString(): String = name + "[]".repeat(arrayDepth)
 }
 
-
-//TODO: This is really ugly, there should be a better way to do this
+// TODO: This is really ugly, there should be a better way to do this
 
 /** Names of primitive (non-nullable, pMem-stored) types. */
 val PRIMITIVE_NAMES = setOf("int", "double", "boolean")

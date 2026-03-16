@@ -40,7 +40,8 @@ class ControlFlowValidator(
                     errors.report(
                         decl.loc,
                         "Function '${decl.name}' does not return '${decl.returnType}' on all code paths",
-                        suggestion = "Add a 'return' statement at the end, or ensure every if/else branch returns a value",
+                        suggestion =
+                            "Add a 'return' statement at the end, or ensure every if/else branch returns a value",
                     )
                 }
             }
@@ -95,7 +96,7 @@ class ControlFlowValidator(
 
             is TryCatchStmt -> {
                 allPathsReturn(stmt.tryBlock) &&
-                        stmt.catchClauses.all { allPathsReturn(it.body) }
+                    stmt.catchClauses.all { allPathsReturn(it.body) }
             }
 
             is Block -> allPathsReturn(stmt)
@@ -200,7 +201,7 @@ class ControlFlowValidator(
             is VarDeclStmt, is AssignStmt, is IncrementStmt,
             is ReturnStmt, is YieldStmt, is ThrowStmt,
             is ExprStmt, is ErrorStmt,
-                -> {
+            -> {
             }
         }
     }

@@ -41,14 +41,22 @@ class ASTBuilder(
             when (decl) {
                 is TypeDef -> {
                     if (program.typesByName.containsKey(decl.name)) {
-                        errors.report(decl.loc, "Duplicate type declaration: '${decl.name}'", suggestion = "Rename one of the type definitions or remove the duplicate")
+                        errors.report(
+                            decl.loc,
+                            "Duplicate type declaration: '${decl.name}'",
+                            suggestion = "Rename one of the type definitions or remove the duplicate",
+                        )
                     } else {
                         program.typesByName[decl.name] = decl
                     }
                 }
                 is FuncDef -> {
                     if (program.functionsByName.containsKey(decl.name)) {
-                        errors.report(decl.loc, "Duplicate function declaration: '${decl.name}'", suggestion = "Rename one of the functions or remove the duplicate")
+                        errors.report(
+                            decl.loc,
+                            "Duplicate function declaration: '${decl.name}'",
+                            suggestion = "Rename one of the functions or remove the duplicate",
+                        )
                     } else {
                         program.functionsByName[decl.name] = decl
                     }
@@ -142,12 +150,18 @@ class ASTBuilder(
 
     // Type references
     override fun visitTypeRef(ctx: NoxParser.TypeRefContext): TypeRef {
-        val baseName = ctx.primitiveType()?.text
-            ?: ctx.Identifier()?.text
-            ?: run {
-                errors.report(locOf(ctx), "Expected a type name here", suggestion = "Use a built-in type (int, double, boolean, string, json) or a declared struct name")
-                return TypeRef("error", 0)
-            }
+        val baseName =
+            ctx.primitiveType()?.text
+                ?: ctx.Identifier()?.text
+                ?: run {
+                    errors.report(
+                        locOf(ctx),
+                        "Expected a type name here",
+                        suggestion =
+                            "Use a built-in type (int, double, boolean, string, json) or a declared struct name",
+                    )
+                    return TypeRef("error", 0)
+                }
         val arrayDepth = ctx.LBRACK().size
         return TypeRef(baseName, arrayDepth)
     }
@@ -320,7 +334,11 @@ class ASTBuilder(
                 try {
                     IntLiteralExpr(ctx.IntegerLiteral().text.toLong(), locOf(ctx))
                 } catch (_: NumberFormatException) {
-                    errors.report(locOf(ctx), "Integer literal '${ctx.IntegerLiteral().text}' is too large. Nox integers are 64-bit signed (max: 9,223,372,036,854,775,807)", suggestion = "Use a 'double' literal if you need a larger value")
+                    errors.report(
+                        locOf(ctx),
+                        "Integer literal '${ctx.IntegerLiteral().text}' is too large. Nox integers are 64-bit signed (max: 9,223,372,036,854,775,807)",
+                        suggestion = "Use a 'double' literal if you need a larger value",
+                    )
                     ErrorExpr(locOf(ctx))
                 }
             }
@@ -328,7 +346,11 @@ class ASTBuilder(
                 try {
                     DoubleLiteralExpr(ctx.DoubleLiteral().text.toDouble(), locOf(ctx))
                 } catch (_: NumberFormatException) {
-                    errors.report(locOf(ctx), "'${ctx.DoubleLiteral().text}' is not a valid floating-point number", suggestion = "Expected a format like '3.14' or '1.5e10'")
+                    errors.report(
+                        locOf(ctx),
+                        "'${ctx.DoubleLiteral().text}' is not a valid floating-point number",
+                        suggestion = "Expected a format like '3.14' or '1.5e10'",
+                    )
                     ErrorExpr(locOf(ctx))
                 }
             }
@@ -359,7 +381,7 @@ class ASTBuilder(
                         ctx.MINUS() != null -> UnaryOp.NEG
                         ctx.BANG() != null -> UnaryOp.NOT
                         ctx.TILDE() != null -> UnaryOp.BIT_NOT
-                        else -> null //DEFENSIVE: Unreachable defensive guard
+                        else -> null // DEFENSIVE: Unreachable defensive guard
                     }
                 if (op == null) {
                     ErrorExpr(locOf(ctx))
@@ -411,7 +433,7 @@ class ASTBuilder(
                         TemplatePart.Text(resolveTemplateEscapes(part.TEMPLATE_TEXT().text))
                     is NoxParser.TemplateExprPartContext ->
                         TemplatePart.Interpolation(visitExpression(part.expression()))
-                    else -> TemplatePart.ErrorPart //DEFENSIVE: Unreachable defensive guard
+                    else -> TemplatePart.ErrorPart // DEFENSIVE: Unreachable defensive guard
                 }
             }
         return TemplateLiteralExpr(parts, locOf(ctx))
@@ -455,20 +477,20 @@ class ASTBuilder(
                     ctx.STAR() != null -> BinaryOp.MUL
                     ctx.SLASH() != null -> BinaryOp.DIV
                     ctx.PERCENT() != null -> BinaryOp.MOD
-                    else -> null //DEFENSIVE: Unreachable defensive guard
+                    else -> null // DEFENSIVE: Unreachable defensive guard
                 }
             is NoxParser.AddSubExprContext ->
                 when {
                     ctx.PLUS() != null -> BinaryOp.ADD
                     ctx.MINUS() != null -> BinaryOp.SUB
-                    else -> null //DEFENSIVE: Unreachable defensive guard
+                    else -> null // DEFENSIVE: Unreachable defensive guard
                 }
             is NoxParser.ShiftExprContext ->
                 when {
                     ctx.SHL() != null -> BinaryOp.SHL
                     ctx.SHR() != null -> BinaryOp.SHR
                     ctx.USHR() != null -> BinaryOp.USHR
-                    else -> null //DEFENSIVE: Unreachable defensive guard
+                    else -> null // DEFENSIVE: Unreachable defensive guard
                 }
             is NoxParser.CompareExprContext ->
                 when {
@@ -476,20 +498,20 @@ class ASTBuilder(
                     ctx.LE() != null -> BinaryOp.LE
                     ctx.GT() != null -> BinaryOp.GT
                     ctx.GE() != null -> BinaryOp.GE
-                    else -> null //DEFENSIVE: Unreachable defensive guard
+                    else -> null // DEFENSIVE: Unreachable defensive guard
                 }
             is NoxParser.EqualityExprContext ->
                 when {
                     ctx.EQ() != null -> BinaryOp.EQ
                     ctx.NE() != null -> BinaryOp.NE
-                    else -> null //DEFENSIVE: Unreachable defensive guard
+                    else -> null // DEFENSIVE: Unreachable defensive guard
                 }
             is NoxParser.BitAndExprContext -> BinaryOp.BIT_AND
             is NoxParser.BitXorExprContext -> BinaryOp.BIT_XOR
             is NoxParser.BitOrExprContext -> BinaryOp.BIT_OR
             is NoxParser.LogicAndExprContext -> BinaryOp.AND
             is NoxParser.LogicOrExprContext -> BinaryOp.OR
-            else -> null //DEFENSIVE: Unreachable defensive guard
+            else -> null // DEFENSIVE: Unreachable defensive guard
         }
 
     // Map assignment operators
@@ -501,7 +523,7 @@ class ASTBuilder(
             ctx.STAR_ASSIGN() != null -> AssignOp.MUL_ASSIGN
             ctx.SLASH_ASSIGN() != null -> AssignOp.DIV_ASSIGN
             ctx.PERCENT_ASSIGN() != null -> AssignOp.MOD_ASSIGN
-            else -> null //DEFENSIVE: Unreachable defensive guard
+            else -> null // DEFENSIVE: Unreachable defensive guard
         }
 
     // Source location extraction

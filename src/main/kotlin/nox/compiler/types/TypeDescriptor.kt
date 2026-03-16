@@ -23,16 +23,24 @@ data class TypeDescriptor(
  */
 sealed class FieldSpec {
     data object INT : FieldSpec()
+
     data object DOUBLE : FieldSpec()
+
     data object BOOLEAN : FieldSpec()
+
     data object STRING : FieldSpec()
+
     data object JSON : FieldSpec()
 
     /** A nested struct field; [descriptorIdx] is the pool index of its [TypeDescriptor]. */
-    data class Struct(val descriptorIdx: Int) : FieldSpec()
+    data class Struct(
+        val descriptorIdx: Int,
+    ) : FieldSpec()
 
     /** A typed array field; each element must match [element]. */
-    data class TypedArray(val element: FieldSpec) : FieldSpec()
+    data class TypedArray(
+        val element: FieldSpec,
+    ) : FieldSpec()
 
     companion object {
         /** Convert a [TypeRef] to the corresponding [FieldSpec], building descriptors as needed. */

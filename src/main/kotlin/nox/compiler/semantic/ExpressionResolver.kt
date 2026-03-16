@@ -26,51 +26,57 @@ class ExpressionResolver(
     private val errors: CompilerErrors,
     private val modules: List<ResolvedModule>,
 ) {
-
     /**
      * Resolve the type of [expr] within the given [scope].
      *
      * Sets `expr.resolvedType` and returns the resolved type,
      * or `null` for null literals (type inferred from context).
      */
-    fun resolveExpr(scope: SymbolTable, expr: Expr): TypeRef? {
-        val type = when (expr) {
-            // Literals
-            is IntLiteralExpr -> TypeRef.INT
-            is DoubleLiteralExpr -> TypeRef.DOUBLE
-            is BoolLiteralExpr -> TypeRef.BOOLEAN
-            is StringLiteralExpr -> TypeRef.STRING
-            is NullLiteralExpr -> null // Type inferred from context
-            is TemplateLiteralExpr -> resolveTemplate(scope, expr)
+    fun resolveExpr(
+        scope: SymbolTable,
+        expr: Expr,
+    ): TypeRef? {
+        val type =
+            when (expr) {
+                // Literals
+                is IntLiteralExpr -> TypeRef.INT
+                is DoubleLiteralExpr -> TypeRef.DOUBLE
+                is BoolLiteralExpr -> TypeRef.BOOLEAN
+                is StringLiteralExpr -> TypeRef.STRING
+                is NullLiteralExpr -> null // Type inferred from context
+                is TemplateLiteralExpr -> resolveTemplate(scope, expr)
 
-            // Composites
-            is ArrayLiteralExpr -> resolveArrayLiteral(scope, expr)
-            is StructLiteralExpr -> resolveStructLiteral(scope, expr)
+                // Composites
+                is ArrayLiteralExpr -> resolveArrayLiteral(scope, expr)
+                is StructLiteralExpr -> resolveStructLiteral(scope, expr)
 
-            // References
-            is IdentifierExpr -> resolveIdentifier(scope, expr)
-            is FieldAccessExpr -> resolveFieldAccess(scope, expr)
-            is IndexAccessExpr -> resolveIndexAccess(scope, expr)
+                // References
+                is IdentifierExpr -> resolveIdentifier(scope, expr)
+                is FieldAccessExpr -> resolveFieldAccess(scope, expr)
+                is IndexAccessExpr -> resolveIndexAccess(scope, expr)
 
-            // Calls
-            is FuncCallExpr -> resolveFuncCall(scope, expr)
-            is MethodCallExpr -> resolveMethodCall(scope, expr)
+                // Calls
+                is FuncCallExpr -> resolveFuncCall(scope, expr)
+                is MethodCallExpr -> resolveMethodCall(scope, expr)
 
-            // Operators
-            is BinaryExpr -> resolveBinary(scope, expr)
-            is UnaryExpr -> resolveUnary(scope, expr)
-            is PostfixExpr -> resolvePostfix(scope, expr)
-            is CastExpr -> resolveCast(scope, expr)
+                // Operators
+                is BinaryExpr -> resolveBinary(scope, expr)
+                is UnaryExpr -> resolveUnary(scope, expr)
+                is PostfixExpr -> resolvePostfix(scope, expr)
+                is CastExpr -> resolveCast(scope, expr)
 
-            // Error placeholder, it has already reported during parsing
-            is ErrorExpr -> null
-        }
+                // Error placeholder, it has already reported during parsing
+                is ErrorExpr -> null
+            }
 
         expr.resolvedType = type
         return type
     }
 
-    private fun resolveTemplate(scope: SymbolTable, expr: TemplateLiteralExpr): TypeRef {
+    private fun resolveTemplate(
+        scope: SymbolTable,
+        expr: TemplateLiteralExpr,
+    ): TypeRef {
         for (part in expr.parts) {
             if (part is TemplatePart.Interpolation) {
                 resolveExpr(scope, part.expression)
@@ -80,7 +86,10 @@ class ExpressionResolver(
         return TypeRef.STRING
     }
 
-    private fun resolveArrayLiteral(scope: SymbolTable, expr: ArrayLiteralExpr): TypeRef? {
+    private fun resolveArrayLiteral(
+        scope: SymbolTable,
+        expr: ArrayLiteralExpr,
+    ): TypeRef? {
         if (expr.elements.isEmpty()) {
             // Empty array literal, type must be inferred from context
             // The caller (resolveVarDecl or resolveAssign) handles this
@@ -125,7 +134,7 @@ class ExpressionResolver(
 
             errors.report(
                 expr.elements[i].loc,
-                "Array element ${i + 1} has type '$elemType' but the array was inferred as '${elementType}[]' from the first element",
+                "Array element ${i + 1} has type '$elemType' but the array was inferred as '$elementType[]' from the first element",
                 suggestion = "Ensure all elements have the same type, or use 'json[]' for a mixed array",
             )
         }
@@ -140,7 +149,10 @@ class ExpressionResolver(
      * The struct type must be set by the caller (e.g. from a `VarDeclStmt` or
      * `AssignStmt`) via `expr.structType` before calling this method.
      */
-    fun resolveStructLiteral(scope: SymbolTable, expr: StructLiteralExpr): TypeRef? {
+    fun resolveStructLiteral(
+        scope: SymbolTable,
+        expr: StructLiteralExpr,
+    ): TypeRef? {
         if (expr.structType == null) {
             errors.report(
                 expr.loc,
@@ -185,8 +197,9 @@ class ExpressionResolver(
             provided.add(init.name)
             val expectedFieldType = typeSym.fields[init.name]
             if (expectedFieldType == null) {
-                val suggestion = DiagnosticHelpers.didYouMeanMsg(init.name, typeSym.fields.keys)
-                    ?: "Available fields: ${typeSym.fields.keys.joinToString(", ")}"
+                val suggestion =
+                    DiagnosticHelpers.didYouMeanMsg(init.name, typeSym.fields.keys)
+                        ?: "Available fields: ${typeSym.fields.keys.joinToString(", ")}"
                 errors.report(
                     init.loc,
                     "Struct '${typeSym.name}' has no field '${init.name}'",
@@ -196,7 +209,9 @@ class ExpressionResolver(
             }
 
             // Propagate struct type into nested struct literal values
-            if (init.value is StructLiteralExpr && (expectedFieldType.isStructType() || expectedFieldType == TypeRef.JSON)) {
+            if (init.value is StructLiteralExpr &&
+                (expectedFieldType.isStructType() || expectedFieldType == TypeRef.JSON)
+            ) {
                 init.value.structType = expectedFieldType
             }
 
@@ -204,7 +219,7 @@ class ExpressionResolver(
             if (!expectedFieldType.isAssignableFrom(actualType)) {
                 errors.report(
                     init.loc,
-                    "Field '${init.name}' expects '${expectedFieldType}', but '${actualType ?: "null"}' was given",
+                    "Field '${init.name}' expects '$expectedFieldType', but '${actualType ?: "null"}' was given",
                     suggestion = DiagnosticHelpers.conversionHint(actualType, expectedFieldType),
                 )
             }
@@ -217,7 +232,9 @@ class ExpressionResolver(
                 errors.report(
                     expr.loc,
                     "Struct '${typeSym.name}' requires field '$fieldName' (type '$fieldType') but it was not provided",
-                    suggestion = "Add '$fieldName: ${DiagnosticHelpers.defaultValueHint(fieldType!!)}' to the struct literal",
+                    suggestion = "Add '$fieldName: ${DiagnosticHelpers.defaultValueHint(
+                        fieldType!!,
+                    )}' to the struct literal",
                 )
             }
         }
@@ -225,7 +242,10 @@ class ExpressionResolver(
         return expr.structType
     }
 
-    private fun resolveIdentifier(scope: SymbolTable, expr: IdentifierExpr): TypeRef? {
+    private fun resolveIdentifier(
+        scope: SymbolTable,
+        expr: IdentifierExpr,
+    ): TypeRef? {
         val symbol = scope.lookup(expr.name)
         if (symbol == null) {
             val candidates = scope.allNamesInScope { it is VarSymbol || it is ParamSymbol || it is GlobalSymbol }
@@ -241,7 +261,10 @@ class ExpressionResolver(
         return symbol.type
     }
 
-    private fun resolveFieldAccess(scope: SymbolTable, expr: FieldAccessExpr): TypeRef? {
+    private fun resolveFieldAccess(
+        scope: SymbolTable,
+        expr: FieldAccessExpr,
+    ): TypeRef? {
         val targetType = resolveExpr(scope, expr.target) ?: return null
 
         // json.someField is dynamic property access (type is json)
@@ -254,8 +277,9 @@ class ExpressionResolver(
                 val fieldType = structSym.fields[expr.fieldName]
                 if (fieldType != null) return fieldType
 
-                val suggestion = DiagnosticHelpers.didYouMeanMsg(expr.fieldName, structSym.fields.keys)
-                    ?: "Available fields: ${structSym.fields.keys.joinToString(", ")}"
+                val suggestion =
+                    DiagnosticHelpers.didYouMeanMsg(expr.fieldName, structSym.fields.keys)
+                        ?: "Available fields: ${structSym.fields.keys.joinToString(", ")}"
                 errors.report(
                     expr.loc,
                     "Struct '${targetType.name}' has no field '${expr.fieldName}'",
@@ -265,11 +289,12 @@ class ExpressionResolver(
             }
         }
 
-        val suggestion = if (expr.fieldName == "length" && (targetType == TypeRef.STRING || targetType.isArray)) {
-            "Use '.length()' with parentheses, it is a method, not a property"
-        } else {
-            "Field access '.' is only valid on structs and json types"
-        }
+        val suggestion =
+            if (expr.fieldName == "length" && (targetType == TypeRef.STRING || targetType.isArray)) {
+                "Use '.length()' with parentheses, it is a method, not a property"
+            } else {
+                "Field access '.' is only valid on structs and json types"
+            }
         errors.report(
             expr.loc,
             "Cannot access field '${expr.fieldName}' on type '$targetType'",
@@ -278,7 +303,10 @@ class ExpressionResolver(
         return null
     }
 
-    private fun resolveIndexAccess(scope: SymbolTable, expr: IndexAccessExpr): TypeRef? {
+    private fun resolveIndexAccess(
+        scope: SymbolTable,
+        expr: IndexAccessExpr,
+    ): TypeRef? {
         val targetType = resolveExpr(scope, expr.target) ?: return null
         val indexType = resolveExpr(scope, expr.index) ?: return null
 
@@ -304,7 +332,10 @@ class ExpressionResolver(
         return null
     }
 
-    private fun resolveFuncCall(scope: SymbolTable, expr: FuncCallExpr): TypeRef? {
+    private fun resolveFuncCall(
+        scope: SymbolTable,
+        expr: FuncCallExpr,
+    ): TypeRef? {
         val symbol = scope.lookup(expr.name)
         if (symbol == null || symbol !is FuncSymbol) {
             val candidates = scope.allNamesInScope { it is FuncSymbol }
@@ -337,7 +368,10 @@ class ExpressionResolver(
      * 5. **UFCS:** Global function whose first param matches target type
      * 6. **Error**
      */
-    private fun resolveMethodCall(scope: SymbolTable, call: MethodCallExpr): TypeRef? {
+    private fun resolveMethodCall(
+        scope: SymbolTable,
+        call: MethodCallExpr,
+    ): TypeRef? {
         val target = call.target
 
         for (arg in call.args) resolveExpr(scope, arg)
@@ -352,30 +386,32 @@ class ExpressionResolver(
             if (module != null) {
                 val importedFunc = module.program.functionsByName[call.methodName]
                 if (importedFunc != null) {
-                    val callTarget = CallTarget(
-                        name = importedFunc.name,
-                        params = importedFunc.params.map { it.name to it.type },
-                        returnType = importedFunc.returnType,
-                        astNode = importedFunc,
-                    )
+                    val callTarget =
+                        CallTarget(
+                            name = importedFunc.name,
+                            params = importedFunc.params.map { it.name to it.type },
+                            returnType = importedFunc.returnType,
+                            astNode = importedFunc,
+                        )
                     call.resolution = MethodCallExpr.Resolution.NAMESPACE
                     call.resolvedTarget = callTarget
 
                     validateArgs(
                         call.loc,
-                        "${namespaceName}.${call.methodName}",
+                        "$namespaceName.${call.methodName}",
                         builtinSpecs(callTarget.params),
                         call.args,
-                        scope
+                        scope,
                     )
                     return importedFunc.returnType
                 }
                 val available = module.program.functionsByName.keys
-                val suggestion = DiagnosticHelpers.didYouMeanMsg(call.methodName, available)
-                    ?: if (available.isNotEmpty()) "Available functions: ${available.joinToString(", ")}" else null
+                val suggestion =
+                    DiagnosticHelpers.didYouMeanMsg(call.methodName, available)
+                        ?: if (available.isNotEmpty()) "Available functions: ${available.joinToString(", ")}" else null
                 errors.report(
                     call.loc,
-                    "Namespace '${namespaceName}' does not export a function named '${call.methodName}'",
+                    "Namespace '$namespaceName' does not export a function named '${call.methodName}'",
                     suggestion = suggestion,
                 )
                 return null
@@ -390,10 +426,10 @@ class ExpressionResolver(
 
                     validateArgs(
                         call.loc,
-                        "${namespaceName}.${call.methodName}",
+                        "$namespaceName.${call.methodName}",
                         builtinSpecs(builtin.params),
                         call.args,
-                        scope
+                        scope,
                     )
                     return builtin.returnType
                 }
@@ -416,10 +452,10 @@ class ExpressionResolver(
             call.resolvedTarget = builtinMethod
             validateArgs(
                 call.loc,
-                "${targetType}.${call.methodName}",
+                "$targetType.${call.methodName}",
                 builtinSpecs(builtinMethod.params),
                 call.args,
-                scope
+                scope,
             )
             return builtinMethod.returnType
         }
@@ -431,10 +467,10 @@ class ExpressionResolver(
             call.resolvedTarget = typeMethod
             validateArgs(
                 call.loc,
-                "${targetType}.${call.methodName}",
+                "$targetType.${call.methodName}",
                 builtinSpecs(typeMethod.params),
                 call.args,
-                scope
+                scope,
             )
             return typeMethod.returnType
         }
@@ -442,12 +478,13 @@ class ExpressionResolver(
         // Step 5: UFCS, look for global function whose first param type matches
         val ufcsFunc = findUFCSFunction(scope, call.methodName, targetType)
         if (ufcsFunc != null) {
-            val ufcsTarget = CallTarget(
-                name = ufcsFunc.name,
-                params = ufcsFunc.params.map { it.name to it.type },
-                returnType = ufcsFunc.returnType,
-                astNode = ufcsFunc.astNode,
-            )
+            val ufcsTarget =
+                CallTarget(
+                    name = ufcsFunc.name,
+                    params = ufcsFunc.params.map { it.name to it.type },
+                    returnType = ufcsFunc.returnType,
+                    astNode = ufcsFunc.astNode,
+                )
             call.resolution = MethodCallExpr.Resolution.UFCS
             call.resolvedTarget = ufcsTarget
 
@@ -463,9 +500,10 @@ class ExpressionResolver(
         TempRegistry.getBuiltinMethodNames(targetType)?.let { methodCandidates.addAll(it) }
         TempRegistry.getTypeMethodNames(targetType)?.let { methodCandidates.addAll(it) }
         // Collect UFCS candidates
-        val ufcsCandidates = scope.allNamesInScope { sym ->
-            sym is FuncSymbol && sym.params.isNotEmpty() && sym.params[0].type.isAssignableFrom(targetType)
-        }
+        val ufcsCandidates =
+            scope.allNamesInScope { sym ->
+                sym is FuncSymbol && sym.params.isNotEmpty() && sym.params[0].type.isAssignableFrom(targetType)
+            }
         methodCandidates.addAll(ufcsCandidates)
         val suggestion = DiagnosticHelpers.didYouMeanMsg(call.methodName, methodCandidates)
         errors.report(
@@ -481,7 +519,11 @@ class ExpressionResolver(
      * the function must have at least one parameter, and its first parameter
      * type must be assignable from [targetType].
      */
-    private fun findUFCSFunction(scope: SymbolTable, funcName: String, targetType: TypeRef): FuncSymbol? {
+    private fun findUFCSFunction(
+        scope: SymbolTable,
+        funcName: String,
+        targetType: TypeRef,
+    ): FuncSymbol? {
         val symbol = scope.lookup(funcName) ?: return null
         if (symbol !is FuncSymbol) return null
         if (symbol.params.isEmpty()) return null
@@ -490,7 +532,10 @@ class ExpressionResolver(
         return null
     }
 
-    private fun resolveBinary(scope: SymbolTable, expr: BinaryExpr): TypeRef? {
+    private fun resolveBinary(
+        scope: SymbolTable,
+        expr: BinaryExpr,
+    ): TypeRef? {
         val left = resolveExpr(scope, expr.left)
         val right = resolveExpr(scope, expr.right)
 
@@ -504,16 +549,19 @@ class ExpressionResolver(
                     // String concatenation: string + string
                     expr.op == BinaryOp.ADD && left == TypeRef.STRING && right == TypeRef.STRING -> TypeRef.STRING
                     else -> {
-                        val suggestion = when {
-                            // string + non-string: suggest interpolation
-                            expr.op == BinaryOp.ADD && (left == TypeRef.STRING || right == TypeRef.STRING) ->
-                                "Use template literals for string concatenation: `\${value1}\${value2}`"
-                            // non-numeric: suggest conversion
-                            !left.isNumeric() -> DiagnosticHelpers.conversionHint(left, TypeRef.INT)
-                                ?: DiagnosticHelpers.conversionHint(left, TypeRef.DOUBLE)
-                            else -> DiagnosticHelpers.conversionHint(right, TypeRef.INT)
-                                ?: DiagnosticHelpers.conversionHint(right, TypeRef.DOUBLE)
-                        }
+                        val suggestion =
+                            when {
+                                // string + non-string: suggest interpolation
+                                expr.op == BinaryOp.ADD && (left == TypeRef.STRING || right == TypeRef.STRING) ->
+                                    "Use template literals for string concatenation: `\${value1}\${value2}`"
+                                // non-numeric: suggest conversion
+                                !left.isNumeric() ->
+                                    DiagnosticHelpers.conversionHint(left, TypeRef.INT)
+                                        ?: DiagnosticHelpers.conversionHint(left, TypeRef.DOUBLE)
+                                else ->
+                                    DiagnosticHelpers.conversionHint(right, TypeRef.INT)
+                                        ?: DiagnosticHelpers.conversionHint(right, TypeRef.DOUBLE)
+                            }
                         errors.report(
                             expr.loc,
                             "Operator '${expr.op.symbol}' cannot be applied to '$left' and '$right'",
@@ -530,7 +578,8 @@ class ExpressionResolver(
                 if (!left.isNumeric() || !right.isNumeric()) {
                     errors.report(
                         expr.loc,
-                        "'${expr.op.symbol}' requires two numeric operands (int or double), got '$left' and '$right'",
+                        "'${expr.op.symbol}' requires two numeric operands (int or double), " +
+                            "got '$left' and '$right'",
                         suggestion = "Use '==' or '!=' for non-numeric comparison",
                     )
                 }
@@ -540,7 +589,9 @@ class ExpressionResolver(
             // Equality: same type or null comparison→boolean
             BinaryOp.EQ, BinaryOp.NE -> {
                 if (left == null && right == null) return TypeRef.BOOLEAN // null == null
-                if (left != null && !left.isComparable(right)) {
+                if (left != null &&
+                    !left.isComparable(right)
+                ) {
                     errors.report(
                         expr.loc,
                         "Cannot compare '$left' with '${right ?: "null"}' using '${expr.op.symbol}'",
@@ -563,14 +614,24 @@ class ExpressionResolver(
                     errors.report(
                         expr.left.loc,
                         "Logical '${expr.op.symbol}' expected 'boolean', got '$left'",
-                        suggestion = if (left.isNumeric()) "Did you mean a comparison? e.g. '${expr.left} != 0'" else null,
+                        suggestion =
+                            if (left.isNumeric()) {
+                                "Did you mean a comparison? e.g. '${expr.left} != 0'"
+                            } else {
+                                null
+                            },
                     )
                 }
                 if (right != null && right != TypeRef.BOOLEAN) {
                     errors.report(
                         expr.right.loc,
                         "Logical '${expr.op.symbol}' expected 'boolean', got '$right'",
-                        suggestion = if (right.isNumeric()) "Did you mean a comparison? e.g. '${expr.right} != 0'" else null,
+                        suggestion =
+                            if (right.isNumeric()) {
+                                "Did you mean a comparison? e.g. '${expr.right} != 0'"
+                            } else {
+                                null
+                            },
                     )
                 }
                 TypeRef.BOOLEAN
@@ -616,7 +677,10 @@ class ExpressionResolver(
         }
     }
 
-    private fun resolveUnary(scope: SymbolTable, expr: UnaryExpr): TypeRef? {
+    private fun resolveUnary(
+        scope: SymbolTable,
+        expr: UnaryExpr,
+    ): TypeRef? {
         val operandType = resolveExpr(scope, expr.operand) ?: return null
 
         return when (expr.op) {
@@ -636,7 +700,12 @@ class ExpressionResolver(
                     errors.report(
                         expr.loc,
                         "Logical '!' requires 'boolean', got '$operandType'",
-                        suggestion = if (operandType.isNumeric()) "Did you mean a comparison? e.g. '!(x != 0)'" else null,
+                        suggestion =
+                            if (operandType.isNumeric()) {
+                                "Did you mean a comparison? e.g. '!(x != 0)'"
+                            } else {
+                                null
+                            },
                     )
                     return null
                 }
@@ -657,7 +726,10 @@ class ExpressionResolver(
         }
     }
 
-    private fun resolvePostfix(scope: SymbolTable, expr: PostfixExpr): TypeRef? {
+    private fun resolvePostfix(
+        scope: SymbolTable,
+        expr: PostfixExpr,
+    ): TypeRef? {
         val operandType = resolveExpr(scope, expr.operand) ?: return null
         if (!operandType.isNumeric()) {
             val opSymbol = if (expr.op == PostfixOp.INCREMENT) "++" else "--"
@@ -670,16 +742,20 @@ class ExpressionResolver(
         return operandType
     }
 
-    private fun resolveCast(scope: SymbolTable, expr: CastExpr): TypeRef {
+    private fun resolveCast(
+        scope: SymbolTable,
+        expr: CastExpr,
+    ): TypeRef {
         val sourceType = resolveExpr(scope, expr.operand)
 
         // Only json to struct casts are allowed
         if (sourceType != null && sourceType != TypeRef.JSON) {
-            val suggestion = if (sourceType.isStructType()) {
-                "Convert via json first: 'json j = value; ${expr.targetType} result = j as ${expr.targetType};'"
-            } else {
-                "Only 'json' values can be cast to struct types. Use type conversion methods instead (e.g. '.toInt()', '.toString()')"
-            }
+            val suggestion =
+                if (sourceType.isStructType()) {
+                    "Convert via json first: 'json j = value; ${expr.targetType} result = j as ${expr.targetType};'"
+                } else {
+                    "Only 'json' values can be cast to struct types. Use type conversion methods instead (e.g. '.toInt()', '.toString()')"
+                }
             errors.report(
                 expr.loc,
                 "Cannot cast from '$sourceType', only 'json' can be cast to a struct type",
@@ -691,8 +767,9 @@ class ExpressionResolver(
         val targetSym = globalScope.lookup(expr.targetType.name)
         if (targetSym == null || targetSym !is TypeSymbol) {
             val candidates = globalScope.allNamesInScope { it is TypeSymbol }
-            val suggestion = DiagnosticHelpers.didYouMeanMsg(expr.targetType.name, candidates)
-                ?: "Declare it with 'type ${expr.targetType} { ... }'"
+            val suggestion =
+                DiagnosticHelpers.didYouMeanMsg(expr.targetType.name, candidates)
+                    ?: "Declare it with 'type ${expr.targetType} { ... }'"
             errors.report(
                 expr.loc,
                 "Cast target type '${expr.targetType}' is not defined. It must be a struct type",
@@ -713,7 +790,7 @@ class ExpressionResolver(
         val name: String,
         val type: TypeRef,
         val hasDefault: Boolean,
-        val isVarargs: Boolean = false
+        val isVarargs: Boolean = false,
     )
 
     /**
@@ -748,32 +825,35 @@ class ExpressionResolver(
         }
 
         for (i in args.indices) {
-            val argType = args[i].resolvedType ?: resolveExpr(
-                scope,
-                args[i]
-            ) // It should have already been resolved, doesn't hurt to make sure
-            val param = if (hasVarargs && i >= params.size - 1) {
-                params.last()
-            } else if (i < params.size) {
-                params[i]
-            } else {
-                null
-            }
+            val argType =
+                args[i].resolvedType ?: resolveExpr(
+                    scope,
+                    args[i],
+                ) // It should have already been resolved, doesn't hurt to make sure
+            val param =
+                if (hasVarargs && i >= params.size - 1) {
+                    params.last()
+                } else if (i < params.size) {
+                    params[i]
+                } else {
+                    null
+                }
 
             if (param != null) {
-                val expectedType = if (param.isVarargs) {
-                    // Allow direct array passing: sum([1,2,3]) for int ...vals[]
-                    // Check if exactly one arg maps to the varargs slot and it matches the array type
-                    val varargSlotIndex = params.size - 1
-                    val argsInVarargSlot = args.size - varargSlotIndex
-                    if (argsInVarargSlot == 1 && param.type.isAssignableFrom(argType)) {
-                        continue
+                val expectedType =
+                    if (param.isVarargs) {
+                        // Allow direct array passing: sum([1,2,3]) for int ...vals[]
+                        // Check if exactly one arg maps to the varargs slot and it matches the array type
+                        val varargSlotIndex = params.size - 1
+                        val argsInVarargSlot = args.size - varargSlotIndex
+                        if (argsInVarargSlot == 1 && param.type.isAssignableFrom(argType)) {
+                            continue
+                        }
+                        // For individual varargs elements, expect the element type
+                        param.type.elementType()
+                    } else {
+                        param.type
                     }
-                    // For individual varargs elements, expect the element type
-                    param.type.elementType()
-                } else {
-                    param.type
-                }
 
                 if (!expectedType.isAssignableFrom(argType)) {
                     errors.report(

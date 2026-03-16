@@ -9,7 +9,6 @@ package nox.compiler.codegen
  * See docs/vm/instruction-set.md for the full reference.
  */
 object Opcode {
-
     // Arithmetic
 
     const val IADD = 0x00
@@ -59,17 +58,17 @@ object Opcode {
 
     // Type Conversion
 
-    const val I2D = 0x35   // int  -> double
-    const val I2S = 0x36   // int  -> string
-    const val D2S = 0x37   // double -> string
-    const val B2S = 0x38   // boolean -> string
-    const val D2I = 0x39   // double -> int  (truncate)
+    const val I2D = 0x35 // int  -> double
+    const val I2S = 0x36 // int  -> string
+    const val D2S = 0x37 // double -> string
+    const val B2S = 0x38 // boolean -> string
+    const val D2I = 0x39 // double -> int  (truncate)
 
     // Control Flow
 
     const val JMP = 0x40
-    const val JIF = 0x41   // jump if false (pMem[A] == 0)
-    const val JIT = 0x42   // jump if true  (pMem[A] != 0)
+    const val JIF = 0x41 // jump if false (pMem[A] == 0)
+    const val JIT = 0x42 // jump if true  (pMem[A] != 0)
     const val CALL = 0x43
     const val RET = 0x44
 
@@ -79,15 +78,15 @@ object Opcode {
 
     // Host Super-Instructions
 
-    const val HACC = 0x50   // Host Access  (read property)
-    const val HMOD = 0x51   // Host Modify  (write property)
-    const val SCONCAT = 0x52  // String Concatenation: rMem[A] = rMem[B] + rMem[C]
+    const val HACC = 0x50 // Host Access  (read property)
+    const val HMOD = 0x51 // Host Modify  (write property)
+    const val SCONCAT = 0x52 // String Concatenation: rMem[A] = rMem[B] + rMem[C]
     const val AGET_KEY = 0x53
     const val AGET_IDX = 0x54
     const val AGET_PATH = 0x55
     const val ASET_KEY = 0x56
     const val ASET_IDX = 0x57
-    
+
     // Streaming
 
     const val YIELD = 0x60
@@ -127,50 +126,101 @@ object Opcode {
 
     // Array Construction
 
-    const val NEW_ARRAY = 0x88   // Create a new ArrayList
-    const val ARR_PUSH = 0x89   // Append element to array
+    const val NEW_ARRAY = 0x88 // Create a new ArrayList
+    const val ARR_PUSH = 0x89 // Append element to array
 
     // Struct Construction
 
-    const val NEW_OBJ = 0x90   // Create a new NoxObject (map)
-    const val OBJ_SET = 0x91   // Set a field on the object
+    const val NEW_OBJ = 0x90 // Create a new NoxObject (map)
+    const val OBJ_SET = 0x91 // Set a field on the object
 
     // Struct Validation
 
-    const val CAST_STRUCT = 0x92  // Validate rMem[B] against TypeDescriptor at pool[C], store in rMem[A]
+    const val CAST_STRUCT = 0x92 // Validate rMem[B] against TypeDescriptor at pool[C], store in rMem[A]
 
     // Reverse Lookup
 
     private val names: Map<Int, String> by lazy {
         buildMap {
-            put(IADD, "IADD"); put(ISUB, "ISUB"); put(IMUL, "IMUL"); put(IDIV, "IDIV")
-            put(IMOD, "IMOD"); put(INEG, "INEG")
-            put(DADD, "DADD"); put(DSUB, "DSUB"); put(DMUL, "DMUL"); put(DDIV, "DDIV")
-            put(DMOD, "DMOD"); put(DNEG, "DNEG")
-            put(AND, "AND"); put(OR, "OR"); put(NOT, "NOT")
-            put(IEQ, "IEQ"); put(INE, "INE"); put(ILT, "ILT"); put(ILE, "ILE")
-            put(IGT, "IGT"); put(IGE, "IGE")
-            put(DEQ, "DEQ"); put(DNE, "DNE"); put(DLT, "DLT"); put(DLE, "DLE")
-            put(DGT, "DGT"); put(DGE, "DGE")
-            put(SEQ, "SEQ"); put(SNE, "SNE")
-            put(MOV, "MOV"); put(MOVR, "MOVR"); put(LDC, "LDC"); put(LDI, "LDI")
+            put(IADD, "IADD")
+            put(ISUB, "ISUB")
+            put(IMUL, "IMUL")
+            put(IDIV, "IDIV")
+            put(IMOD, "IMOD")
+            put(INEG, "INEG")
+            put(DADD, "DADD")
+            put(DSUB, "DSUB")
+            put(DMUL, "DMUL")
+            put(DDIV, "DDIV")
+            put(DMOD, "DMOD")
+            put(DNEG, "DNEG")
+            put(AND, "AND")
+            put(OR, "OR")
+            put(NOT, "NOT")
+            put(IEQ, "IEQ")
+            put(INE, "INE")
+            put(ILT, "ILT")
+            put(ILE, "ILE")
+            put(IGT, "IGT")
+            put(IGE, "IGE")
+            put(DEQ, "DEQ")
+            put(DNE, "DNE")
+            put(DLT, "DLT")
+            put(DLE, "DLE")
+            put(DGT, "DGT")
+            put(DGE, "DGE")
+            put(SEQ, "SEQ")
+            put(SNE, "SNE")
+            put(MOV, "MOV")
+            put(MOVR, "MOVR")
+            put(LDC, "LDC")
+            put(LDI, "LDI")
             put(KILL_REF, "KILL_REF")
-            put(I2D, "I2D"); put(I2S, "I2S"); put(D2S, "D2S"); put(B2S, "B2S"); put(D2I, "D2I")
-            put(JMP, "JMP"); put(JIF, "JIF"); put(JIT, "JIT"); put(CALL, "CALL"); put(RET, "RET")
+            put(I2D, "I2D")
+            put(I2S, "I2S")
+            put(D2S, "D2S")
+            put(B2S, "B2S")
+            put(D2I, "D2I")
+            put(JMP, "JMP")
+            put(JIF, "JIF")
+            put(JIT, "JIT")
+            put(CALL, "CALL")
+            put(RET, "RET")
             put(SCALL, "SCALL")
-            put(HACC, "HACC"); put(HMOD, "HMOD")
-            put(AGET_KEY, "AGET_KEY"); put(AGET_IDX, "AGET_IDX"); put(AGET_PATH, "AGET_PATH")
-            put(ASET_KEY, "ASET_KEY"); put(ASET_IDX, "ASET_IDX")
+            put(HACC, "HACC")
+            put(HMOD, "HMOD")
+            put(AGET_KEY, "AGET_KEY")
+            put(AGET_IDX, "AGET_IDX")
+            put(AGET_PATH, "AGET_PATH")
+            put(ASET_KEY, "ASET_KEY")
+            put(ASET_IDX, "ASET_IDX")
             put(SCONCAT, "SCONCAT")
             put(YIELD, "YIELD")
-            put(IINC, "IINC"); put(IDEC, "IDEC"); put(IINCN, "IINCN"); put(IDECN, "IDECN")
-            put(DINC, "DINC"); put(DDEC, "DDEC"); put(DINCN, "DINCN"); put(DDECN, "DDECN")
-            put(BAND, "BAND"); put(BOR, "BOR"); put(BXOR, "BXOR"); put(BNOT, "BNOT")
-            put(SHL, "SHL"); put(SHR, "SHR"); put(USHR, "USHR")
-            put(GLOAD, "GLOAD"); put(GSTORE, "GSTORE"); put(GLOADR, "GLOADR"); put(GSTORER, "GSTORER")
-            put(THROW, "THROW"); put(KILL, "KILL")
-            put(NEW_ARRAY, "NEW_ARRAY"); put(ARR_PUSH, "ARR_PUSH")
-            put(NEW_OBJ, "NEW_OBJ"); put(OBJ_SET, "OBJ_SET")
+            put(IINC, "IINC")
+            put(IDEC, "IDEC")
+            put(IINCN, "IINCN")
+            put(IDECN, "IDECN")
+            put(DINC, "DINC")
+            put(DDEC, "DDEC")
+            put(DINCN, "DINCN")
+            put(DDECN, "DDECN")
+            put(BAND, "BAND")
+            put(BOR, "BOR")
+            put(BXOR, "BXOR")
+            put(BNOT, "BNOT")
+            put(SHL, "SHL")
+            put(SHR, "SHR")
+            put(USHR, "USHR")
+            put(GLOAD, "GLOAD")
+            put(GSTORE, "GSTORE")
+            put(GLOADR, "GLOADR")
+            put(GSTORER, "GSTORER")
+            put(THROW, "THROW")
+            put(KILL, "KILL")
+            put(NEW_ARRAY, "NEW_ARRAY")
+            put(ARR_PUSH, "ARR_PUSH")
+            put(NEW_OBJ, "NEW_OBJ")
+            put(OBJ_SET, "OBJ_SET")
             put(CAST_STRUCT, "CAST_STRUCT")
         }
     }
@@ -185,26 +235,27 @@ object Opcode {
      * Returns `null` for opcodes that don't map to a simple infix operator.
      * Used by [nox.compiler.codegen.NoxcEmitter] to produce readable disassembly comments.
      */
-    fun symbol(opcode: Int): String? = when (opcode) {
-        IADD, DADD -> "+"
-        ISUB, DSUB -> "-"
-        IMUL, DMUL -> "*"
-        IDIV, DDIV -> "/"
-        IMOD, DMOD -> "%"
-        IEQ, DEQ, SEQ -> "=="
-        INE, DNE, SNE -> "!="
-        ILT, DLT -> "<"
-        ILE, DLE -> "<="
-        IGT, DGT -> ">"
-        IGE, DGE -> ">="
-        AND -> "&&"
-        OR -> "||"
-        BAND -> "&"
-        BOR -> "|"
-        BXOR -> "^"
-        SHL -> "<<"
-        SHR -> ">>"
-        USHR -> ">>>"
-        else -> null
-    }
+    fun symbol(opcode: Int): String? =
+        when (opcode) {
+            IADD, DADD -> "+"
+            ISUB, DSUB -> "-"
+            IMUL, DMUL -> "*"
+            IDIV, DDIV -> "/"
+            IMOD, DMOD -> "%"
+            IEQ, DEQ, SEQ -> "=="
+            INE, DNE, SNE -> "!="
+            ILT, DLT -> "<"
+            ILE, DLE -> "<="
+            IGT, DGT -> ">"
+            IGE, DGE -> ">="
+            AND -> "&&"
+            OR -> "||"
+            BAND -> "&"
+            BOR -> "|"
+            BXOR -> "^"
+            SHL -> "<<"
+            SHR -> ">>"
+            USHR -> ">>>"
+            else -> null
+        }
 }

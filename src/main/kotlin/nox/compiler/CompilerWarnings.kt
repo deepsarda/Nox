@@ -38,7 +38,11 @@ class CompilerWarnings {
     /**
      * Report a warning at the given [location].
      */
-    fun report(location: SourceLocation, message: String, suggestion: String? = null) {
+    fun report(
+        location: SourceLocation,
+        message: String,
+        suggestion: String? = null,
+    ) {
         warnings.add(CompilerWarning(location, message, suggestion))
     }
 
@@ -60,34 +64,35 @@ class CompilerWarnings {
      *    = help: Remove this code or move the 'return'/'throw'/'break' before it.
      * ```
      */
-    fun format(): String = buildString {
-        for (w in warnings) {
-            appendLine("warning: ${w.message}")
-            appendLine("  --> ${w.location}")
+    fun format(): String =
+        buildString {
+            for (w in warnings) {
+                appendLine("warning: ${w.message}")
+                appendLine("  --> ${w.location}")
 
-            val lineIdx = w.location.line - 1
-            if (sourceLines.isNotEmpty() && lineIdx in sourceLines.indices) {
-                val sourceLine = sourceLines[lineIdx]
-                val lineNum = w.location.line.toString()
-                val gutterWidth = lineNum.length
+                val lineIdx = w.location.line - 1
+                if (sourceLines.isNotEmpty() && lineIdx in sourceLines.indices) {
+                    val sourceLine = sourceLines[lineIdx]
+                    val lineNum = w.location.line.toString()
+                    val gutterWidth = lineNum.length
 
-                appendLine("${" ".repeat(gutterWidth + 1)}|")
-                appendLine("$lineNum | $sourceLine")
+                    appendLine("${" ".repeat(gutterWidth + 1)}|")
+                    appendLine("$lineNum | $sourceLine")
 
-                val col = w.location.column.coerceAtLeast(0)
-                val caretPad = " ".repeat(col)
-                appendLine("${" ".repeat(gutterWidth + 1)}| $caretPad^")
+                    val col = w.location.column.coerceAtLeast(0)
+                    val caretPad = " ".repeat(col)
+                    appendLine("${" ".repeat(gutterWidth + 1)}| $caretPad^")
+                }
+
+                if (w.suggestion != null) {
+                    appendLine("  = help: ${w.suggestion}")
+                }
+                appendLine()
             }
 
-            if (w.suggestion != null) {
-                appendLine("  = help: ${w.suggestion}")
+            if (warnings.isNotEmpty()) {
+                val s = if (warnings.size == 1) "" else "s"
+                appendLine("Generated ${warnings.size} warning$s.")
             }
-            appendLine()
         }
-
-        if (warnings.isNotEmpty()) {
-            val s = if (warnings.size == 1) "" else "s"
-            appendLine("Generated ${warnings.size} warning$s.")
-        }
-    }
 }

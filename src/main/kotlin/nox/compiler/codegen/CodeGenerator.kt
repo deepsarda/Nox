@@ -12,7 +12,6 @@ import nox.compiler.types.*
 class CodeGenerator(
     private val modules: List<ResolvedModule> = emptyList(),
 ) {
-
     // Builder state
     private val pool = ConstantPool()
     private val bytecode = mutableListOf<Long>()
@@ -23,7 +22,7 @@ class CodeGenerator(
 
     /**
      * Generates a [CompiledProgram] from the given [program]. Orchestrates the entire code generation process.
-     * 
+     *
      * @param program The program to generate a compiled version of.
      * @return The compiled program.
      */
@@ -43,8 +42,8 @@ class CodeGenerator(
         for (mod in modules) {
             val initFuncIdx = emitModuleInit(mod.program, mod.namespace, mod.sourcePath)
             val exportedFuncIndices = mutableListOf<Int>()
-            
-            //TODO: We should track which functions are actually called and skip unused functions
+
+            // TODO: We should track which functions are actually called and skip unused functions
             for (func in mod.program.functionsByName.values) {
                 exportedFuncIndices.add(emitFunction(mod.program, func, mod.sourcePath))
             }
@@ -56,7 +55,9 @@ class CodeGenerator(
                     globalPrimitiveCount = mod.program.globals.count { it.type.isPrimitive() },
                     globalReferenceCount = mod.program.globals.count { !it.type.isPrimitive() },
                     exportedFunctions = exportedFuncIndices,
-                    exportedTypes = mod.program.typesByName.keys.toList(),
+                    exportedTypes =
+                        mod.program.typesByName.keys
+                            .toList(),
                     initFuncIndex = initFuncIdx,
                 ),
             )
@@ -99,13 +100,20 @@ class CodeGenerator(
         var primSlot = 0
         var refSlot = 0
         for (global in program.globals) {
-            if (global.globalSlot >= 0) continue   // already assigned (imported module)
-            if (global.type.isPrimitive()) global.globalSlot = primSlot++
-            else global.globalSlot = refSlot++
+            if (global.globalSlot >= 0) continue // already assigned (imported module)
+            if (global.type.isPrimitive()) {
+                global.globalSlot = primSlot++
+            } else {
+                global.globalSlot = refSlot++
+            }
         }
     }
 
-    private fun emitModuleInit(program: Program, ns: String, sourcePath: String = ""): Int {
+    private fun emitModuleInit(
+        program: Program,
+        ns: String,
+        sourcePath: String = "",
+    ): Int {
         val needsInit = program.globals.any { it.initializer != null }
         if (!needsInit) return -1
 
@@ -133,11 +141,12 @@ class CodeGenerator(
         appendEmitter(entryPc, emitter)
 
         // Build "gN=name (type)" / "grN=name (ref)" labels for the disassembler
-        val globalVarNames = program.globals.map { g ->
-            val prefix = if (g.type.isPrimitive()) "g" else "gr"
-            val typeLabel = if (g.type.isPrimitive()) g.type.name else "ref"
-            "$prefix${g.globalSlot}=${g.name} ($typeLabel)"
-        }
+        val globalVarNames =
+            program.globals.map { g ->
+                val prefix = if (g.type.isPrimitive()) "g" else "gr"
+                val typeLabel = if (g.type.isPrimitive()) g.type.name else "ref"
+                "$prefix${g.globalSlot}=${g.name} ($typeLabel)"
+            }
 
         val name = if (ns == "main") "<module_init>" else "<module_init:$ns>"
         val metaIdx = funcMetas.size
@@ -158,7 +167,11 @@ class CodeGenerator(
         return metaIdx
     }
 
-    private fun emitFunction(program: Program, func: FuncDef, sourcePath: String = ""): Int {
+    private fun emitFunction(
+        program: Program,
+        func: FuncDef,
+        sourcePath: String = "",
+    ): Int {
         val liveness = LivenessAnalyzer().also { it.analyze(func) }
         return emitFunctionBody(
             name = func.name,
@@ -174,7 +187,11 @@ class CodeGenerator(
         }
     }
 
-    private fun emitMain(program: Program, main: MainDef, sourcePath: String = ""): Int {
+    private fun emitMain(
+        program: Program,
+        main: MainDef,
+        sourcePath: String = "",
+    ): Int {
         val liveness = LivenessAnalyzer().also { it.analyze(main) }
         return emitFunctionBody(
             name = "main",
@@ -237,7 +254,10 @@ class CodeGenerator(
         return metaIdx
     }
 
-    private fun appendEmitter(entryPc: Int, emitter: BytecodeEmitter) {
+    private fun appendEmitter(
+        entryPc: Int,
+        emitter: BytecodeEmitter,
+    ) {
         val emittedInstructions = emitter.build()
         bytecode.addAll(emittedInstructions)
         allSrcLines.addAll(emitter.sourceLines)

@@ -21,4 +21,3 @@ data class ResolvedModule(
     val globalBaseOffset: Int,
     val globalCount: Int,
 )
-

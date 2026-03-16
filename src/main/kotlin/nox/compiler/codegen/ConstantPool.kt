@@ -16,7 +16,6 @@ import nox.compiler.types.TypeDescriptor
  * See docs/compiler/codegen.md.
  */
 class ConstantPool {
-
     private val entries = mutableListOf<Any?>()
     private val dedup = mutableMapOf<Any?, Int>()
 
@@ -36,12 +35,13 @@ class ConstantPool {
      * - [TypeDescriptor] struct shape descriptors for `CAST_STRUCT` validation
      * - `null`   represents the null constant (rarely used)
      */
-    fun add(value: Any?): Int = dedup.getOrPut(value) {
-        val idx = entries.size
-        entries.add(value)
-        if (value is TypeDescriptor) typeDescriptorIndex[value.name] = idx
-        idx
-    }
+    fun add(value: Any?): Int =
+        dedup.getOrPut(value) {
+            val idx = entries.size
+            entries.add(value)
+            if (value is TypeDescriptor) typeDescriptorIndex[value.name] = idx
+            idx
+        }
 
     /**
      * Reserves a new index in the pool without an initial value, bypassing deduplication.
@@ -63,7 +63,10 @@ class ConstantPool {
      * (which may reference this same index), then the placeholder is
      * replaced with the finished [TypeDescriptor].
      */
-    fun replace(index: Int, value: Any?) {
+    fun replace(
+        index: Int,
+        value: Any?,
+    ) {
         val old = entries[index]
         entries[index] = value
         if (old != null) {
