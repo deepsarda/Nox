@@ -65,7 +65,7 @@ class ControlFlowValidatorTest :
                 }
                 main() { return "ok"; }
                 """.trimIndent(),
-                "must return a value",
+                "does not return",
             )
         }
 
@@ -90,7 +90,7 @@ class ControlFlowValidatorTest :
                 }
                 main() { return "ok"; }
                 """.trimIndent(),
-                "must return a value",
+                "does not return",
             )
         }
 
@@ -140,7 +140,7 @@ class ControlFlowValidatorTest :
                 }
                 main() { return "ok"; }
                 """.trimIndent(),
-                "must return a value",
+                "does not return",
             )
         }
 
@@ -171,7 +171,7 @@ class ControlFlowValidatorTest :
                 }
                 main() { return "ok"; }
                 """.trimIndent(),
-                "must return a value",
+                "does not return",
             )
         }
 
@@ -232,7 +232,7 @@ class ControlFlowValidatorTest :
                     return "ok";
                 }
                 """.trimIndent(),
-                "'break' can only appear inside a loop",
+                "'break' can only appear inside a 'while', 'for', or 'foreach' loop",
             )
         }
 
@@ -244,7 +244,7 @@ class ControlFlowValidatorTest :
                     return "ok";
                 }
                 """.trimIndent(),
-                "'continue' can only appear inside a loop",
+                "'continue' can only appear inside a 'while', 'for', or 'foreach' loop",
             )
         }
 
@@ -326,7 +326,7 @@ class ControlFlowValidatorTest :
                 }
                 main() { return "ok"; }
                 """.trimIndent(),
-                "'break' can only appear inside a loop",
+                "'break' can only appear inside a 'while', 'for', or 'foreach' loop",
             )
         }
 

@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldContain
 import nox.compiler.types.SourceLocation
 
 class CompilerErrorsTest :
@@ -33,9 +34,12 @@ class CompilerErrorsTest :
             allErrors[1].suggestion shouldBe "Fix it"
 
             val formatted = errors.formatAll()
-            formatted shouldBe "Error at test.nox:10:6: First error\n" +
-                    "Error at test.nox:20:9: Second error\n" +
-                    "  Suggestion: Fix it\n"
+            formatted shouldContain "error: First error"
+            formatted shouldContain "--> test.nox:10:6"
+            formatted shouldContain "error: Second error"
+            formatted shouldContain "--> test.nox:20:9"
+            formatted shouldContain "= help: Fix it"
+            formatted shouldContain "Found 2 errors."
         }
 
         test("CompilerError data class methods") {

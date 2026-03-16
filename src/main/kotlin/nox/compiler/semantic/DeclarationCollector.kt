@@ -58,14 +58,22 @@ class DeclarationCollector(
         if (decl.fields.isEmpty()) {
             // Grammar requires fieldDeclaration+ but ANTLR error recovery
             // can still produce a TypeDef with zero fields. Skip it.
-            errors.report(decl.loc, "Empty struct '${decl.name}' is not allowed")
+            errors.report(
+                decl.loc,
+                "Struct '${decl.name}' has no fields! Structs must have at least one field declaration",
+                suggestion = "Add a field: 'type ${decl.name} { string name; }'",
+            )
             return
         }
 
         // Register with empty fields; actual field types resolved in Pass 2
         val symbol = TypeSymbol(decl.name, linkedMapOf(), decl)
         if (!globalScope.define(decl.name, symbol)) {
-            errors.report(decl.loc, "Duplicate type definition '${decl.name}'")
+            errors.report(
+                decl.loc,
+                "Type '${decl.name}' is already defined",
+                suggestion = "Rename one of the type definitions or remove the duplicate",
+            )
         }
     }
 
@@ -83,19 +91,35 @@ class DeclarationCollector(
             if (p.defaultValue != null) {
                 optionalSeen = true
             } else if (!p.isVarargs && optionalSeen) {
-                errors.report(p.loc, "Required parameter '${p.name}' must appear before optional parameters")
+                errors.report(
+                    p.loc,
+                    "Required parameter '${p.name}' must come before optional parameters",
+                    suggestion = "Reorder parameters: put all required params before any with default values",
+                )
             }
 
             // Validate Varargs Constraints
             if (p.isVarargs) {
                 if (varargsSeen) {
-                    errors.report(p.loc, "At most one varargs parameter is allowed")
+                    errors.report(
+                        p.loc,
+                        "A function can only have one varargs parameter ('...')",
+                        suggestion = "Remove extra '...' markers",
+                    )
                 }
                 if (index != decl.params.size - 1) {
-                    errors.report(p.loc, "Varargs parameter '${p.name}' must be the last parameter")
+                    errors.report(
+                        p.loc,
+                        "Varargs parameter '${p.name}' must be the last parameter in the function signature",
+                        suggestion = "Move '${p.name}' to the end of the parameter list",
+                    )
                 }
                 if (p.defaultValue != null) {
-                    errors.report(p.loc, "Varargs parameter '${p.name}' cannot have a default value")
+                    errors.report(
+                        p.loc,
+                        "Varargs parameter '${p.name}' cannot have a default value",
+                        suggestion = "Remove the '= ...' default from '${p.name}'",
+                    )
                 }
                 varargsSeen = true
             }
@@ -105,7 +129,11 @@ class DeclarationCollector(
 
         val symbol = FuncSymbol(decl.name, decl.returnType, params, decl)
         if (!globalScope.define(decl.name, symbol)) {
-            errors.report(decl.loc, "Duplicate function definition '${decl.name}'")
+            errors.report(
+                decl.loc,
+                "Function '${decl.name}' is already defined",
+                suggestion = "Rename one of the functions or remove the duplicate definition",
+            )
         }
     }
 
@@ -117,7 +145,11 @@ class DeclarationCollector(
      */
     private fun collectMain(decl: MainDef, program: Program) {
         if (mainSeen) {
-            errors.report(decl.loc, "Multiple main definitions")
+            errors.report(
+                decl.loc,
+                "Only one 'main()' block is allowed per file",
+                suggestion = "Remove the extra 'main()' definition",
+            )
             return
         }
         mainSeen = true
@@ -133,7 +165,11 @@ class DeclarationCollector(
 
         val symbol = GlobalSymbol(decl.name, decl.type, globalSlotCounter)
         if (!globalScope.define(decl.name, symbol)) {
-            errors.report(decl.loc, "Duplicate global variable '${decl.name}'")
+            errors.report(
+                decl.loc,
+                "Global variable '${decl.name}' is already declared",
+                suggestion = "Rename the variable or remove the duplicate declaration",
+            )
             return
         }
         

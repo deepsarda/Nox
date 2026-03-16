@@ -41,14 +41,14 @@ class ASTBuilder(
             when (decl) {
                 is TypeDef -> {
                     if (program.typesByName.containsKey(decl.name)) {
-                        errors.report(decl.loc, "Duplicate type declaration: '${decl.name}'")
+                        errors.report(decl.loc, "Duplicate type declaration: '${decl.name}'", suggestion = "Rename one of the type definitions or remove the duplicate")
                     } else {
                         program.typesByName[decl.name] = decl
                     }
                 }
                 is FuncDef -> {
                     if (program.functionsByName.containsKey(decl.name)) {
-                        errors.report(decl.loc, "Duplicate function declaration: '${decl.name}'")
+                        errors.report(decl.loc, "Duplicate function declaration: '${decl.name}'", suggestion = "Rename one of the functions or remove the duplicate")
                     } else {
                         program.functionsByName[decl.name] = decl
                     }
@@ -145,7 +145,7 @@ class ASTBuilder(
         val baseName = ctx.primitiveType()?.text
             ?: ctx.Identifier()?.text
             ?: run {
-                errors.report(locOf(ctx), "Missing type name in type reference")
+                errors.report(locOf(ctx), "Expected a type name here", suggestion = "Use a built-in type (int, double, boolean, string, json) or a declared struct name")
                 return TypeRef("error", 0)
             }
         val arrayDepth = ctx.LBRACK().size
@@ -320,7 +320,7 @@ class ASTBuilder(
                 try {
                     IntLiteralExpr(ctx.IntegerLiteral().text.toLong(), locOf(ctx))
                 } catch (_: NumberFormatException) {
-                    errors.report(locOf(ctx), "Integer literal overflow: '${ctx.IntegerLiteral().text}'")
+                    errors.report(locOf(ctx), "Integer literal '${ctx.IntegerLiteral().text}' is too large. Nox integers are 64-bit signed (max: 9,223,372,036,854,775,807)", suggestion = "Use a 'double' literal if you need a larger value")
                     ErrorExpr(locOf(ctx))
                 }
             }
@@ -328,7 +328,7 @@ class ASTBuilder(
                 try {
                     DoubleLiteralExpr(ctx.DoubleLiteral().text.toDouble(), locOf(ctx))
                 } catch (_: NumberFormatException) {
-                    errors.report(locOf(ctx), "Invalid double literal: '${ctx.DoubleLiteral().text}'")
+                    errors.report(locOf(ctx), "'${ctx.DoubleLiteral().text}' is not a valid floating-point number", suggestion = "Expected a format like '3.14' or '1.5e10'")
                     ErrorExpr(locOf(ctx))
                 }
             }

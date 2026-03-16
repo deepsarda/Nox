@@ -156,7 +156,7 @@ class DeclarationCollectorTest :
             )
 
             errors.hasErrors() shouldBe true
-            errors.all()[0].message shouldContain "Duplicate global variable 'x'"
+            errors.all()[0].message shouldContain "already declared"
         }
 
         test("reports error on multiple main definitions") {
@@ -168,7 +168,7 @@ class DeclarationCollectorTest :
             )
 
             errors.hasErrors() shouldBe true
-            errors.all()[0].message shouldContain "Multiple main definitions"
+            errors.all()[0].message shouldContain "Only one 'main()' block is allowed"
         }
 
         test("rejects empty struct from ANTLR recovery") {
@@ -182,7 +182,7 @@ class DeclarationCollectorTest :
             )
 
             errors.hasErrors() shouldBe true
-            errors.all().any { it.message.contains("Empty struct") } shouldBe true
+            errors.all().any { it.message.contains("has no fields") } shouldBe true
             scope.lookup("Empty").shouldBeNull()
         }
 
@@ -234,7 +234,7 @@ class DeclarationCollectorTest :
                 void foo(int ...a[], string ...b[]) { }
                 main() { return "ok"; }
                 """.trimIndent(),
-                "At most one varargs parameter is allowed"
+                "only have one varargs parameter"
             )
         }
 
@@ -264,7 +264,7 @@ class DeclarationCollectorTest :
                 void foo(int a = 1, int b) { }
                 main() { return "ok"; }
                 """.trimIndent(),
-                "Required parameter 'b' must appear before optional parameters"
+                "Required parameter 'b' must come before optional parameters"
             )
         }
     })

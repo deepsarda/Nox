@@ -175,6 +175,29 @@ object TempRegistry {
     fun lookupTypeMethod(targetType: TypeRef, methodName: String): CallTarget? =
         typeMethods[targetType.name]?.get(methodName)
 
+    /**
+     * Return all available built-in method names for [targetType],
+     * or `null` if no built-in methods exist for that type.
+     *
+     * Used by diagnostics to generate did-you-mean suggestions.
+     */
+    fun getBuiltinMethodNames(targetType: TypeRef): Set<String>? {
+        val names = mutableSetOf<String>()
+        if (targetType.isArray) names.addAll(arrayMethods)
+        builtinMethods[targetType.name]?.keys?.let { names.addAll(it) }
+        if (targetType.isStructType()) builtinMethods["json"]?.keys?.let { names.addAll(it) }
+        return names.ifEmpty { null }
+    }
+
+    /**
+     * Return all available type-bound conversion method names for [targetType],
+     * or `null` if none exist.
+     *
+     * Used by diagnostics to generate did-you-mean suggestions.
+     */
+    fun getTypeMethodNames(targetType: TypeRef): Set<String>? =
+        typeMethods[targetType.name]?.keys
+
     private fun target(name: String, params: List<Pair<String, TypeRef>>, returnType: TypeRef) =
         CallTarget(name, params, returnType)
 }

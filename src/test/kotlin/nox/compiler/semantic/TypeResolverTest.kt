@@ -221,7 +221,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "requires 'boolean'",
+                "Logical '&&' expected 'boolean'",
             )
         }
 
@@ -242,7 +242,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "Bitwise operator '&' requires 'int'",
+                "Bitwise '&' requires 'int' operands",
             )
         }
 
@@ -265,7 +265,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "cannot compare",
+                "Cannot compare 'int'",
             )
         }
 
@@ -301,7 +301,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "Cannot negate non-numeric",
+                "Unary '-' cannot be applied to",
             )
         }
 
@@ -324,7 +324,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "Logical NOT requires 'boolean'",
+                "Logical '!' requires 'boolean'",
             )
         }
 
@@ -348,7 +348,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "Cannot assign null to non-nullable",
+                "not nullable",
             )
         }
 
@@ -420,7 +420,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "Missing field 'y'",
+                "requires field 'y'",
             )
         }
 
@@ -433,7 +433,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "Unknown field 'z'",
+                "has no field 'z'",
             )
         }
 
@@ -446,7 +446,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "Type mismatch for field 'y'",
+                "Field 'y' expects",
             )
         }
 
@@ -499,7 +499,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "Unknown cast target type",
+                "Cast target type 'Unknown' is not defined",
             )
         }
 
@@ -575,7 +575,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "No method 'nonexistent' found on type 'int'",
+                "has no method 'nonexistent'",
             )
         }
 
@@ -588,7 +588,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "Undefined variable 'y'",
+                "not declared in this scope",
             )
         }
 
@@ -617,7 +617,7 @@ class TypeResolverTest :
                     return "ok";
                 }
                 """.trimIndent(),
-                "Undefined variable 'x'",
+                "not declared in this scope",
             )
         }
 
@@ -655,7 +655,7 @@ class TypeResolverTest :
                     return "ok";
                 }
                 """.trimIndent(),
-                "foreach requires an array",
+                "'foreach' requires an array type",
             )
         }
 
@@ -667,7 +667,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "throw requires a string",
+                "'throw' requires a string message",
             )
         }
 
@@ -679,7 +679,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "Invalid assignment target",
+                "is not a valid assignment target",
             )
         }
 
@@ -829,7 +829,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "expects at least 2 arguments",
+                "Too few arguments: 'add' requires at least 2",
             )
         }
 
@@ -856,7 +856,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "requires 'boolean'",
+                "condition must be 'boolean'",
             )
         }
 
@@ -869,7 +869,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "requires 'boolean'",
+                "condition must be 'boolean'",
             )
         }
 
@@ -881,7 +881,7 @@ class TypeResolverTest :
                 int counter = "hello";
                 main() { return "ok"; }
                 """.trimIndent(),
-                "Type mismatch for global 'counter'",
+                "initializer has type 'string'",
             )
         }
 
@@ -1027,7 +1027,7 @@ class TypeResolverTest :
                 int process(string s) { return s.length(); }
                 main() { int x = 42; x.process(); return "ok"; }
                 """.trimIndent(),
-                "No method 'process' found on type 'int'",
+                "has no method 'process'",
             )
         }
 
@@ -1059,7 +1059,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "No method 'getValue' found on type 'int'",
+                "has no method 'getValue'",
             )
         }
 
@@ -1127,7 +1127,7 @@ class TypeResolverTest :
             TypeResolver(globalScope, errors, listOf(module)).resolve(program)
 
             errors.hasErrors() shouldBe true
-            errors.all().any { it.message.contains("has no function 'nonexistent'") } shouldBe true
+            errors.all().any { it.message.contains("does not export a function named 'nonexistent'") } shouldBe true
         }
 
         // Namespace arg validation
@@ -1140,7 +1140,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "expects at most 1 arguments",
+                "Too many arguments: 'Math.sqrt' accepts at most 1",
             )
         }
 
@@ -1370,7 +1370,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "Argument 2 of 'foo': expected 'int', got 'string'"
+                "Argument 2 ('vals') of 'foo': expected 'int', got 'string'"
             )
         }
 
@@ -1380,7 +1380,7 @@ class TypeResolverTest :
                 type Bad { void x; }
                 main() { return "ok"; }
                 """.trimIndent(),
-                "Invalid type 'void' for field 'x' in struct 'Bad'"
+                "'void' is not allowed for struct fields"
             )
         }
 
@@ -1390,7 +1390,7 @@ class TypeResolverTest :
                 void foo(void x) { }
                 main() { return "ok"; }
                 """.trimIndent(),
-                "Invalid parameter type 'void'"
+                "cannot have type 'void'"
             )
         }
 
@@ -1400,7 +1400,7 @@ class TypeResolverTest :
                 void g = null;
                 main() { return "ok"; }
                 """.trimIndent(),
-                "Invalid type 'void' for global variable 'g'"
+                "cannot have type 'void'"
             )
         }
 
@@ -1412,7 +1412,7 @@ class TypeResolverTest :
                     return "ok"; 
                 }
                 """.trimIndent(),
-                "Invalid type 'void' for variable 'x'"
+                "'void' is not a valid variable type"
             )
         }
 
@@ -1435,7 +1435,7 @@ class TypeResolverTest :
                 void foo(int x = "bad") { }
                 main() { return "ok"; }
                 """.trimIndent(),
-                "Default value for parameter 'x' does not match parameter type 'int': got 'string'"
+                "Default value for 'x' has type 'string', but the parameter expects 'int'"
             )
         }
 
@@ -1859,7 +1859,7 @@ class TypeResolverTest :
                     json j = { a: 1, a: 2 };
                     return "ok";
                 }
-            """.trimIndent(), "Duplicate key 'a'"
+            """.trimIndent(), "appears more than once in this json literal"
             )
         }
 
@@ -1869,7 +1869,7 @@ class TypeResolverTest :
             resolveError(
                 """
                 main() { int x = null; return "ok"; }
-            """.trimIndent(), "Cannot assign null to non-nullable"
+            """.trimIndent(), "not nullable"
             )
         }
 
@@ -1894,7 +1894,7 @@ class TypeResolverTest :
                 """
                 void foo(int a) { }
                 main() { foo(1, 2, 3); return "ok"; }
-            """.trimIndent(), "expects at most"
+            """.trimIndent(), "Too many arguments: 'foo' accepts at most 1"
             )
         }
 
@@ -1917,7 +1917,7 @@ class TypeResolverTest :
                     string s = "hello" + 1;
                     return "ok";
                 }
-            """.trimIndent(), "requires numeric operands"
+            """.trimIndent(), "cannot be applied to 'string' and 'int'"
             )
         }
 
@@ -1928,7 +1928,7 @@ class TypeResolverTest :
                     int x = true + 1;
                     return "ok";
                 }
-            """.trimIndent(), "requires numeric operands"
+            """.trimIndent(), "cannot be applied to 'boolean' and 'int'"
             )
         }
 
@@ -1936,7 +1936,7 @@ class TypeResolverTest :
             resolveError(
                 """
                 main() { if (42) { } return "ok"; }
-            """.trimIndent(), "requires 'boolean'"
+            """.trimIndent(), "condition must be 'boolean'"
             )
         }
 
@@ -1944,7 +1944,7 @@ class TypeResolverTest :
             resolveError(
                 """
                 main() { foreach (int x in 42) { } return "ok"; }
-            """.trimIndent(), "foreach requires an array"
+            """.trimIndent(), "'foreach' requires an array type"
             )
         }
 
@@ -1952,7 +1952,7 @@ class TypeResolverTest :
             resolveError(
                 """
                 main() { throw 42; return "ok"; }
-            """.trimIndent(), "throw requires a string"
+            """.trimIndent(), "'throw' requires a string message"
             )
         }
 
@@ -2065,7 +2065,7 @@ class TypeResolverTest :
                     foreach (int x in matrix) { }
                     return "ok";
                 }
-            """.trimIndent(), "foreach element type mismatch"
+            """.trimIndent(), "Element type mismatch: declared 'int' but the array contains 'int[]'"
             )
         }
 
@@ -2372,7 +2372,7 @@ class TypeResolverTest :
                 type Point { int x; int y; }
                 Point bad() { return { x: "oops", y: 1 }; }
                 main() { return "ok"; }
-            """.trimIndent(), "expected 'int'")
+            """.trimIndent(), "Field 'x' expects 'int'")
         }
 
         test("missing field in returned struct reports error") {
@@ -2380,7 +2380,7 @@ class TypeResolverTest :
                 type Point { int x; int y; }
                 Point bad() { return { x: 1 }; }
                 main() { return "ok"; }
-            """.trimIndent(), "Missing field")
+            """.trimIndent(), "requires field 'y'")
         }
 
         test("unknown field in returned struct reports error") {
@@ -2388,7 +2388,7 @@ class TypeResolverTest :
                 type Foo { int a; }
                 Foo bad() { return { b: 1 }; }
                 main() { return "ok"; }
-            """.trimIndent(), "Unknown field")
+            """.trimIndent(), "has no field 'b'")
         }
     }
     })

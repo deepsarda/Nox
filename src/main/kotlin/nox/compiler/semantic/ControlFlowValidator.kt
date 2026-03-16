@@ -39,7 +39,8 @@ class ControlFlowValidator(
                 if (!allPathsReturn(decl.body)) {
                     errors.report(
                         decl.loc,
-                        "Function '${decl.name}' must return a value of type '${decl.returnType}' on all code paths",
+                        "Function '${decl.name}' does not return '${decl.returnType}' on all code paths",
+                        suggestion = "Add a 'return' statement at the end, or ensure every if/else branch returns a value",
                     )
                 }
             }
@@ -114,7 +115,11 @@ class ControlFlowValidator(
         for (stmt in block.statements) {
             // Dead code detection: any statement after a terminator is unreachable
             if (terminated) {
-                warnings.report(stmt.loc, "Unreachable code")
+                warnings.report(
+                    stmt.loc,
+                    "Unreachable code, this statement will never execute",
+                    suggestion = "Remove this code or move the preceding 'return'/'throw'/'break' after it",
+                )
                 break // Only report once per block
             }
 
@@ -137,13 +142,20 @@ class ControlFlowValidator(
             // Loop context checks
             is BreakStmt -> {
                 if (loopDepth == 0) {
-                    errors.report(stmt.loc, "'break' can only appear inside a loop")
+                    errors.report(
+                        stmt.loc,
+                        "'break' can only appear inside a 'while', 'for', or 'foreach' loop",
+                        suggestion = "If you want to exit a function early, use 'return' instead",
+                    )
                 }
             }
 
             is ContinueStmt -> {
                 if (loopDepth == 0) {
-                    errors.report(stmt.loc, "'continue' can only appear inside a loop")
+                    errors.report(
+                        stmt.loc,
+                        "'continue' can only appear inside a 'while', 'for', or 'foreach' loop",
+                    )
                 }
             }
 

@@ -64,6 +64,11 @@ object NoxCompiler {
         val errors = CompilerErrors()
         val warnings = CompilerWarnings()
 
+        // Provide source lines to error/warning formatters for rich diagnostics
+        val lines = source.lines()
+        errors.sourceLines = lines
+        warnings.sourceLines = lines
+
         // Phase 1: Parse
         val program = NoxParsing.parse(source, fileName, errors)
 

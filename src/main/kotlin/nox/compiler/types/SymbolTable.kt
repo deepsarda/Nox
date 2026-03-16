@@ -68,4 +68,27 @@ class SymbolTable(
      * Does **not** include parent symbols. Intended for testing and debugging.
      */
     fun allSymbols(): Map<String, Symbol> = symbols.toMap()
+
+    /**
+     * Collect the names of all reachable symbols by walking up the scope chain.
+     *
+     * Used by diagnostic helpers (did-you-mean) to fuzzy-match against
+     * every name the programmer could have intended to reference.
+     *
+     * @param filter optional predicate to restrict which symbol types are included
+     *               (e.g. only [VarSymbol] and [ParamSymbol] for variable lookups)
+     */
+    fun allNamesInScope(filter: ((Symbol) -> Boolean)? = null): Set<String> {
+        val names = mutableSetOf<String>()
+        var scope: SymbolTable? = this
+        while (scope != null) {
+            for ((name, sym) in scope.symbols) {
+                if (filter == null || filter(sym)) {
+                    names.add(name)
+                }
+            }
+            scope = scope.parent
+        }
+        return names
+    }
 }

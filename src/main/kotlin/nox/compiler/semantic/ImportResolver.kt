@@ -70,7 +70,11 @@ internal class ImportResolver(
 
         // 3. Cycle detection
         if (resolved in processingSet) {
-            errors.report(imp.loc, "Circular import detected: ${imp.path}")
+            errors.report(
+                imp.loc,
+                "Circular import detected: '${imp.path}' is already being resolved (import cycle)",
+                suggestion = "Break the cycle by extracting shared code into a third file that neither imports",
+            )
             return
         }
 
@@ -94,7 +98,11 @@ internal class ImportResolver(
         val source = try {
             fileReader(resolved)
         } catch (_: Exception) {
-            errors.report(imp.loc, "Cannot read imported file: ${imp.path}")
+            errors.report(
+                imp.loc,
+                "Cannot read imported file '${imp.path}'",
+                suggestion = "Check that the file exists and the path is relative to the importing file's directory",
+            )
             return
         }
 
@@ -154,15 +162,27 @@ internal class ImportResolver(
     private fun validateNamespace(imp: ImportDecl): Boolean {
         return when (val name = imp.namespace) {
             in builtinNamespaces -> {
-                errors.report(imp.loc, "Import namespace '$name' clashes with built-in namespace")
+                errors.report(
+                    imp.loc,
+                    "Import namespace '$name' conflicts with built-in namespace '$name'",
+                    suggestion = "Choose a different alias: 'import \"${imp.path}\" as My$name;'",
+                )
                 false
             }
             in externalPluginNamespaces -> {
-                errors.report(imp.loc, "Import namespace '$name' clashes with external plugin namespace")
+                errors.report(
+                    imp.loc,
+                    "Import namespace '$name' conflicts with a loaded plugin namespace '$name'",
+                    suggestion = "Choose a different alias: 'import \"${imp.path}\" as My$name;'",
+                )
                 false
             }
             in importedNamespaces -> {
-                errors.report(imp.loc, "Duplicate import namespace '$name'")
+                errors.report(
+                    imp.loc,
+                    "Namespace '$name' is already imported",
+                    suggestion = "Use a different alias for this import: 'import \"${imp.path}\" as OtherName;'",
+                )
                 false
             }
             else -> {

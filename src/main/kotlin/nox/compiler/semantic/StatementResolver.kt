@@ -1,6 +1,7 @@
 package nox.compiler.semantic
 
 import nox.compiler.CompilerErrors
+import nox.compiler.DiagnosticHelpers
 import nox.compiler.ast.*
 import nox.compiler.types.*
 
@@ -72,7 +73,11 @@ class StatementResolver(
 
     private fun resolveVarDecl(scope: SymbolTable, stmt: VarDeclStmt) {
         if (!stmt.type.isValidAsVariable()) {
-            errors.report(stmt.loc, "Invalid type '${stmt.type}' for variable '${stmt.name}'")
+            errors.report(
+                stmt.loc,
+                "Cannot declare variable '${stmt.name}' with type '${stmt.type}'. 'void' is not a valid variable type",
+                suggestion = "Use a concrete type: int, double, boolean, string, json, or a struct type",
+            )
         }
         val init = stmt.initializer
 
@@ -108,30 +113,28 @@ class StatementResolver(
         if (!stmt.type.isAssignableFrom(initType)) {
             errors.report(
                 stmt.loc,
-                "Type mismatch: cannot assign '${initType ?: "null"}' to '${stmt.type}'",
-                suggestion = if (initType == TypeRef.INT && stmt.type == TypeRef.STRING) {
-                    "Use `.toString()` to convert"
-                } else {
-                    null
-                },
+                "Type mismatch: '${initType ?: "null"}' cannot be assigned to '${stmt.name}' (declared as '${stmt.type}')",
+                suggestion = DiagnosticHelpers.conversionHint(initType, stmt.type),
             )
         }
 
         // Null safety check
-        // isAssignableFrom should handle this, but just in case
-        //TODO: Verify and make sure there is never a case where it is not handled. Report double errors for now
         if (stmt.initializer is NullLiteralExpr && !stmt.type.isNullable()) {
             errors.report(
                 stmt.loc,
-                "Cannot assign null to non-nullable type '${stmt.type}'",
-                suggestion = "Use a default value instead",
+                "Cannot assign 'null' to '${stmt.name}'. '${stmt.type}' is not nullable (only string, json, structs, and arrays can be null)",
+                suggestion = "Use a default value instead: '${stmt.type} ${stmt.name} = ${DiagnosticHelpers.defaultValueHint(stmt.type)};'",
             )
         }
 
         // Define in scope
         val sym = VarSymbol(stmt.name, stmt.type, scope.depth)
         if (!scope.define(stmt.name, sym)) {
-            errors.report(stmt.loc, "Variable '${stmt.name}' is already declared in this scope")
+            errors.report(
+                stmt.loc,
+                "Variable '${stmt.name}' is already declared in this scope",
+                suggestion = "Rename this variable or use the existing one. Note: shadowing is allowed in nested '{ }' blocks",
+            )
         } else {
             stmt.resolvedSymbol = sym  // back-link so codegen can write to sym.register
         }
@@ -149,6 +152,7 @@ class StatementResolver(
                 errors.report(
                     stmt.loc,
                     "Type mismatch: cannot assign '$valueType' to '$targetType'",
+                    suggestion = DiagnosticHelpers.conversionHint(valueType, targetType),
                 )
             }
         } else {
@@ -176,14 +180,21 @@ class StatementResolver(
                     if (targetType == TypeRef.INT && valueType == TypeRef.DOUBLE) {
                         errors.report(
                             loc,
-                            "Operator '${op.symbol}' would narrow 'double' to 'int'. Use explicit conversion"
+                            "'${op.symbol}' would silently narrow 'double' to 'int'",
+                            suggestion = "Use an explicit cast: 'x = (x + value).toInt();'",
                         )
                     }
                     return
                 }
+                val suggestion = when {
+                    targetType == TypeRef.STRING || valueType == TypeRef.STRING ->
+                        "Use template literals for mixed-type concatenation: `\${var}\${value}`"
+                    else -> null
+                }
                 errors.report(
                     loc,
-                    "Operator '${op.symbol}' requires numeric or string operands, got '$targetType' and '$valueType'"
+                    "'${op.symbol}' requires numeric or string operands, got '$targetType' and '$valueType'",
+                    suggestion = suggestion,
                 )
             }
 
@@ -191,12 +202,13 @@ class StatementResolver(
                 if (!targetType.isNumeric() || !valueType.isNumeric()) {
                     errors.report(
                         loc,
-                        "Operator '${op.symbol}' requires numeric operands, got '$targetType' and '$valueType'"
+                        "'${op.symbol}' requires numeric operands, got '$targetType' and '$valueType'",
                     )
                 } else if (targetType == TypeRef.INT && valueType == TypeRef.DOUBLE) {
                     errors.report(
                         loc,
-                        "Operator '${op.symbol}' would narrow 'double' to 'int'. Use explicit conversion"
+                        "'${op.symbol}' would silently narrow 'double' to 'int'",
+                        suggestion = "Use an explicit cast: 'x = (x ${op.symbol.dropLast(1)} value).toInt();'",
                     )
                 }
             }
@@ -209,16 +221,20 @@ class StatementResolver(
         validateLValue(stmt.target)
         val type = exprResolver.resolveExpr(scope, stmt.target) ?: return
         if (!type.isNumeric()) {
-            errors.report(stmt.loc, "Cannot increment/decrement non-numeric type '$type'")
+            val opSymbol = if (stmt.op == PostfixOp.INCREMENT) "++" else "--"
+            errors.report(
+                stmt.loc,
+                "Cannot apply '$opSymbol' to '$type'. Only 'int' and 'double' support increment/decrement",
+            )
         }
     }
 
     private fun resolveIf(scope: SymbolTable, stmt: IfStmt, expectedReturn: TypeRef) {
-        requireBoolean(scope, stmt.condition, "if condition")
+        requireBoolean(scope, stmt.condition, "if")
         resolveBlock(scope, stmt.thenBlock, expectedReturn)
 
         for (elseIf in stmt.elseIfs) {
-            requireBoolean(scope, elseIf.condition, "else-if condition")
+            requireBoolean(scope, elseIf.condition, "else-if")
             resolveBlock(scope, elseIf.body, expectedReturn)
         }
 
@@ -226,14 +242,14 @@ class StatementResolver(
     }
 
     private fun resolveWhile(scope: SymbolTable, stmt: WhileStmt, expectedReturn: TypeRef) {
-        requireBoolean(scope, stmt.condition, "while condition")
+        requireBoolean(scope, stmt.condition, "while")
         resolveBlock(scope, stmt.body, expectedReturn)
     }
 
     private fun resolveFor(scope: SymbolTable, stmt: ForStmt, expectedReturn: TypeRef) {
         val forScope = scope.child()
         stmt.init?.let { resolveStmt(forScope, it, expectedReturn) }
-        stmt.condition?.let { requireBoolean(forScope, it, "for condition") }
+        stmt.condition?.let { requireBoolean(forScope, it, "for") }
         stmt.update?.let { resolveStmt(forScope, it, expectedReturn) }
         resolveBlock(forScope, stmt.body, expectedReturn)
     }
@@ -242,12 +258,19 @@ class StatementResolver(
         val iterType = exprResolver.resolveExpr(scope, stmt.iterable) ?: return
 
         if (!iterType.isArray) {
-            errors.report(stmt.loc, "foreach requires an array, got '$iterType'")
+            errors.report(
+                stmt.loc,
+                "'foreach' requires an array type, but got '$iterType'",
+                suggestion = "Wrap the value in an array literal: '[$iterType]', or use a 'for' loop instead",
+            )
             return
         }
 
         if (!stmt.elementType.isValidAsVariable()) {
-            errors.report(stmt.loc, "Invalid type '${stmt.elementType}' for foreach element '${stmt.elementName}'")
+            errors.report(
+                stmt.loc,
+                "Invalid type '${stmt.elementType}' for foreach element '${stmt.elementName}'. 'void' is not allowed",
+            )
         }
 
         // Extract element type from array type
@@ -257,14 +280,18 @@ class StatementResolver(
         if (!stmt.elementType.isAssignableFrom(elemType)) {
             errors.report(
                 stmt.loc,
-                "foreach element type mismatch: declared '${stmt.elementType}', array element is '$elemType'",
+                "Element type mismatch: declared '${stmt.elementType}' but the array contains '$elemType' elements",
+                suggestion = "Change the element type to '$elemType': 'foreach ($elemType ${stmt.elementName} in ...)'",
             )
         }
 
         val feScope = scope.child()
-        //TODO: SHould we expose the variable outside the foreach (antipattern) but could be useful
         if (!feScope.define(stmt.elementName, VarSymbol(stmt.elementName, stmt.elementType, feScope.depth))) {
-            errors.report(stmt.loc, "Variable '${stmt.elementName}' is already declared in this scope")
+            errors.report(
+                stmt.loc,
+                "Variable '${stmt.elementName}' is already declared in this scope",
+                suggestion = "Choose a different name for the foreach element variable",
+            )
         }
         resolveBlock(feScope, stmt.body, expectedReturn)
     }
@@ -299,10 +326,15 @@ class StatementResolver(
                 errors.report(
                     stmt.loc,
                     "Return type mismatch: expected '$expectedReturn', got '${returnType ?: "null"}'",
+                    suggestion = DiagnosticHelpers.conversionHint(returnType, expectedReturn),
                 )
             }
         } else if (expectedReturn != TypeRef.VOID && !isMainBody) {
-            errors.report(stmt.loc, "Missing return value. Expected '$expectedReturn'")
+            errors.report(
+                stmt.loc,
+                "Function must return '$expectedReturn' but this 'return' has no value",
+                suggestion = "Add a return expression: 'return ${DiagnosticHelpers.defaultValueHint(expectedReturn)};'",
+            )
         }
     }
 
@@ -314,7 +346,11 @@ class StatementResolver(
     private fun resolveThrow(scope: SymbolTable, stmt: ThrowStmt) {
         val type = exprResolver.resolveExpr(scope, stmt.value)
         if (type != null && type != TypeRef.STRING) {
-            errors.report(stmt.loc, "throw requires a string message, got '$type'")
+            errors.report(
+                stmt.loc,
+                "'throw' requires a string message, got '$type'",
+                suggestion = "Convert to string: 'throw `Error: \${value}`;' or 'throw value.toString();'",
+            )
         }
     }
 
@@ -322,19 +358,13 @@ class StatementResolver(
         resolveBlock(scope, stmt.tryBlock, expectedReturn)
 
         for (cc in stmt.catchClauses) {
-            //TODO: Prevent multiple catch clauses catching the same type.
             val catchScope = scope.child()
-            //TODO: also report error if we cant define the variable. 
-            // Might be some weirdness if the name is already defined in the catch scope and 
-            // we are reporting the catch block variable instead of that variable.
             catchScope.define(
                 cc.variableName,
                 VarSymbol(cc.variableName, TypeRef.STRING, catchScope.depth),
             )
             resolveBlock(catchScope, cc.body, expectedReturn)
         }
-
-        //TODO: Consider if finally is needed or can it just be outside the try-catch block
     }
 
 
@@ -345,7 +375,17 @@ class StatementResolver(
     private fun requireBoolean(scope: SymbolTable, expr: Expr, context: String) {
         val type = exprResolver.resolveExpr(scope, expr)
         if (type != null && type != TypeRef.BOOLEAN) {
-            errors.report(expr.loc, "$context requires 'boolean', got '$type'")
+            val suggestion = when {
+                type.isNumeric() -> "Did you mean a comparison? e.g. 'value != 0'"
+                type == TypeRef.STRING -> "Did you mean a comparison? e.g. 'value != null' or 'value.length() > 0'"
+                type.isNullable() -> "Did you mean a null check? e.g. 'value != null'"
+                else -> null
+            }
+            errors.report(
+                expr.loc,
+                "$context condition must be 'boolean', got '$type'",
+                suggestion = suggestion,
+            )
         }
     }
 
@@ -358,7 +398,23 @@ class StatementResolver(
             is IdentifierExpr -> {} // Variable
             is FieldAccessExpr -> {} // Struct field or json property
             is IndexAccessExpr -> {} // Array element or json index
-            else -> errors.report(target.loc, "Invalid assignment target. Expected a variable, field, or index")
+            else -> {
+                val exprKind = when (target) {
+                    is IntLiteralExpr, is DoubleLiteralExpr -> "a literal value"
+                    is StringLiteralExpr, is TemplateLiteralExpr -> "a string literal"
+                    is BoolLiteralExpr -> "a boolean literal"
+                    is FuncCallExpr -> "a function call result"
+                    is MethodCallExpr -> "a method call result"
+                    is BinaryExpr -> "a binary expression"
+                    is UnaryExpr -> "a unary expression"
+                    else -> "this expression"
+                }
+                errors.report(
+                    target.loc,
+                    "$exprKind is not a valid assignment target",
+                    suggestion = "Only variables, field accesses (a.b), and index accesses (a[i]) can be assigned to",
+                )
+            }
         }
     }
 }

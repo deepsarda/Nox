@@ -1,6 +1,7 @@
 package nox.compiler.semantic
 
 import nox.compiler.CompilerErrors
+import nox.compiler.DiagnosticHelpers
 import nox.compiler.ast.*
 import nox.compiler.types.*
 import nox.plugin.TempRegistry
@@ -88,7 +89,11 @@ class ExpressionResolver(
 
         val firstType = resolveExpr(scope, expr.elements[0])
         if (firstType == null) {
-            errors.report(expr.elements[0].loc, "Array element cannot be null without a known element type")
+            errors.report(
+                expr.elements[0].loc,
+                "First element of array literal cannot be 'null'. The element type cannot be inferred",
+                suggestion = "Provide an explicit typed variable: 'string[] arr = [null];'",
+            )
             return null
         }
 
@@ -102,12 +107,10 @@ class ExpressionResolver(
             if (elementType == TypeRef.DOUBLE && elemType == TypeRef.INT) continue
 
             if (elementType == TypeRef.INT && elemType == TypeRef.DOUBLE) {
-                // Upgrade element type to double, we would need to re-check,
-                // but for simplicity we report an error asking for explicit types
-                // TODO: in the future, we should allow this and upgrade the element type to double
                 errors.report(
                     expr.elements[i].loc,
-                    "Mixed array element types: expected '$elementType', found '$elemType'",
+                    "Array element ${i + 1} has type 'double' but the array was inferred as 'int[]' from the first element",
+                    suggestion = "Ensure all elements have the same type, or declare the variable as 'double[]'",
                 )
                 continue
             }
@@ -122,7 +125,8 @@ class ExpressionResolver(
 
             errors.report(
                 expr.elements[i].loc,
-                "Mixed array element types: expected '$elementType', found '$elemType'",
+                "Array element ${i + 1} has type '$elemType' but the array was inferred as '${elementType}[]' from the first element",
+                suggestion = "Ensure all elements have the same type, or use 'json[]' for a mixed array",
             )
         }
 
@@ -138,7 +142,11 @@ class ExpressionResolver(
      */
     fun resolveStructLiteral(scope: SymbolTable, expr: StructLiteralExpr): TypeRef? {
         if (expr.structType == null) {
-            errors.report(expr.loc, "Cannot infer struct type from context. Use an explicit type.")
+            errors.report(
+                expr.loc,
+                "Struct literal has no type context, we are unable to infer which struct this is",
+                suggestion = "Declare the variable with an explicit type: 'MyStruct s = { ... };'",
+            )
             return null
         }
 
@@ -148,7 +156,11 @@ class ExpressionResolver(
             val seenKeys = mutableSetOf<String>()
             for (init in expr.fields) {
                 if (!seenKeys.add(init.name)) {
-                    errors.report(init.loc, "Duplicate key '${init.name}' in json literal")
+                    errors.report(
+                        init.loc,
+                        "Key '${init.name}' appears more than once in this json literal",
+                        suggestion = "Remove the duplicate key or rename it",
+                    )
                 }
                 resolveExpr(scope, init.value)
             }
@@ -158,7 +170,11 @@ class ExpressionResolver(
         val typeSym = globalScope.lookup(expr.structType!!.name)
 
         if (typeSym == null || typeSym !is TypeSymbol) {
-            errors.report(expr.loc, "Unknown struct type '${expr.structType!!.name}'")
+            errors.report(
+                expr.loc,
+                "Type '${expr.structType!!.name}' is not defined",
+                suggestion = "Declare it with 'type ${expr.structType!!.name} { ... }' before using it",
+            )
             return null
         }
 
@@ -169,7 +185,13 @@ class ExpressionResolver(
             provided.add(init.name)
             val expectedFieldType = typeSym.fields[init.name]
             if (expectedFieldType == null) {
-                errors.report(init.loc, "Unknown field '${init.name}' in struct '${typeSym.name}'")
+                val suggestion = DiagnosticHelpers.didYouMeanMsg(init.name, typeSym.fields.keys)
+                    ?: "Available fields: ${typeSym.fields.keys.joinToString(", ")}"
+                errors.report(
+                    init.loc,
+                    "Struct '${typeSym.name}' has no field '${init.name}'",
+                    suggestion = suggestion,
+                )
                 continue
             }
 
@@ -182,7 +204,8 @@ class ExpressionResolver(
             if (!expectedFieldType.isAssignableFrom(actualType)) {
                 errors.report(
                     init.loc,
-                    "Type mismatch for field '${init.name}': expected '$expectedFieldType', found '${actualType ?: "null"}'",
+                    "Field '${init.name}' expects '${expectedFieldType}', but '${actualType ?: "null"}' was given",
+                    suggestion = DiagnosticHelpers.conversionHint(actualType, expectedFieldType),
                 )
             }
         }
@@ -190,7 +213,12 @@ class ExpressionResolver(
         // Check for missing required fields
         for (fieldName in typeSym.fields.keys) {
             if (fieldName !in provided) {
-                errors.report(expr.loc, "Missing field '$fieldName' in struct '${typeSym.name}'")
+                val fieldType = typeSym.fields[fieldName]
+                errors.report(
+                    expr.loc,
+                    "Struct '${typeSym.name}' requires field '$fieldName' (type '$fieldType') but it was not provided",
+                    suggestion = "Add '$fieldName: ${DiagnosticHelpers.defaultValueHint(fieldType!!)}' to the struct literal",
+                )
             }
         }
 
@@ -200,7 +228,13 @@ class ExpressionResolver(
     private fun resolveIdentifier(scope: SymbolTable, expr: IdentifierExpr): TypeRef? {
         val symbol = scope.lookup(expr.name)
         if (symbol == null) {
-            errors.report(expr.loc, "Undefined variable '${expr.name}'")
+            val candidates = scope.allNamesInScope { it is VarSymbol || it is ParamSymbol || it is GlobalSymbol }
+            val suggestion = DiagnosticHelpers.didYouMeanMsg(expr.name, candidates)
+            errors.report(
+                expr.loc,
+                "Variable '${expr.name}' is not declared in this scope",
+                suggestion = suggestion,
+            )
             return null
         }
         expr.resolvedSymbol = symbol
@@ -219,12 +253,28 @@ class ExpressionResolver(
             if (structSym is TypeSymbol) {
                 val fieldType = structSym.fields[expr.fieldName]
                 if (fieldType != null) return fieldType
-                errors.report(expr.loc, "Struct '${targetType.name}' has no field '${expr.fieldName}'")
+
+                val suggestion = DiagnosticHelpers.didYouMeanMsg(expr.fieldName, structSym.fields.keys)
+                    ?: "Available fields: ${structSym.fields.keys.joinToString(", ")}"
+                errors.report(
+                    expr.loc,
+                    "Struct '${targetType.name}' has no field '${expr.fieldName}'",
+                    suggestion = suggestion,
+                )
                 return null
             }
         }
 
-        errors.report(expr.loc, "Cannot access field '${expr.fieldName}' on type '$targetType'")
+        val suggestion = if (expr.fieldName == "length" && (targetType == TypeRef.STRING || targetType.isArray)) {
+            "Use '.length()' with parentheses, it is a method, not a property"
+        } else {
+            "Field access '.' is only valid on structs and json types"
+        }
+        errors.report(
+            expr.loc,
+            "Cannot access field '${expr.fieldName}' on type '$targetType'",
+            suggestion = suggestion,
+        )
         return null
     }
 
@@ -238,19 +288,32 @@ class ExpressionResolver(
         // array[int] to element type
         if (targetType.isArray) {
             if (indexType != TypeRef.INT) {
-                errors.report(expr.index.loc, "Array index must be 'int', found '$indexType'")
+                errors.report(
+                    expr.index.loc,
+                    "Array index must be 'int', got '$indexType'",
+                    suggestion = if (indexType == TypeRef.DOUBLE) "Use '.toInt()' to convert the index" else null,
+                )
             }
             return targetType.elementType()
         }
 
-        errors.report(expr.loc, "Cannot index into type '$targetType'")
+        errors.report(
+            expr.loc,
+            "Type '$targetType' does not support '[]' index access, only arrays and json can be indexed",
+        )
         return null
     }
 
     private fun resolveFuncCall(scope: SymbolTable, expr: FuncCallExpr): TypeRef? {
         val symbol = scope.lookup(expr.name)
         if (symbol == null || symbol !is FuncSymbol) {
-            errors.report(expr.loc, "Undefined function '${expr.name}'")
+            val candidates = scope.allNamesInScope { it is FuncSymbol }
+            val suggestion = DiagnosticHelpers.didYouMeanMsg(expr.name, candidates)
+            errors.report(
+                expr.loc,
+                "Function '${expr.name}' is not defined",
+                suggestion = suggestion,
+            )
             return null
         }
 
@@ -307,7 +370,14 @@ class ExpressionResolver(
                     )
                     return importedFunc.returnType
                 }
-                errors.report(call.loc, "Namespace '${namespaceName}' has no function '${call.methodName}'")
+                val available = module.program.functionsByName.keys
+                val suggestion = DiagnosticHelpers.didYouMeanMsg(call.methodName, available)
+                    ?: if (available.isNotEmpty()) "Available functions: ${available.joinToString(", ")}" else null
+                errors.report(
+                    call.loc,
+                    "Namespace '${namespaceName}' does not export a function named '${call.methodName}'",
+                    suggestion = suggestion,
+                )
                 return null
             }
 
@@ -327,7 +397,11 @@ class ExpressionResolver(
                     )
                     return builtin.returnType
                 }
-                errors.report(call.loc, "Namespace '$namespaceName' has no function '${call.methodName}'")
+                errors.report(
+                    call.loc,
+                    "Namespace '$namespaceName' does not export a function named '${call.methodName}'",
+                    suggestion = "Check the standard library docs for available '$namespaceName' functions",
+                )
                 return null
             }
         }
@@ -383,8 +457,22 @@ class ExpressionResolver(
             return ufcsFunc.returnType
         }
 
-        // Step 6: Error
-        errors.report(call.loc, "No method '${call.methodName}' found on type '$targetType'")
+        // Step 6: Error, try to suggest available methods
+        val methodCandidates = mutableListOf<String>()
+        // Collect built-in type methods and conversion methods
+        TempRegistry.getBuiltinMethodNames(targetType)?.let { methodCandidates.addAll(it) }
+        TempRegistry.getTypeMethodNames(targetType)?.let { methodCandidates.addAll(it) }
+        // Collect UFCS candidates
+        val ufcsCandidates = scope.allNamesInScope { sym ->
+            sym is FuncSymbol && sym.params.isNotEmpty() && sym.params[0].type.isAssignableFrom(targetType)
+        }
+        methodCandidates.addAll(ufcsCandidates)
+        val suggestion = DiagnosticHelpers.didYouMeanMsg(call.methodName, methodCandidates)
+        errors.report(
+            call.loc,
+            "Type '$targetType' has no method '${call.methodName}'",
+            suggestion = suggestion,
+        )
         return null
     }
 
@@ -416,9 +504,20 @@ class ExpressionResolver(
                     // String concatenation: string + string
                     expr.op == BinaryOp.ADD && left == TypeRef.STRING && right == TypeRef.STRING -> TypeRef.STRING
                     else -> {
+                        val suggestion = when {
+                            // string + non-string: suggest interpolation
+                            expr.op == BinaryOp.ADD && (left == TypeRef.STRING || right == TypeRef.STRING) ->
+                                "Use template literals for string concatenation: `\${value1}\${value2}`"
+                            // non-numeric: suggest conversion
+                            !left.isNumeric() -> DiagnosticHelpers.conversionHint(left, TypeRef.INT)
+                                ?: DiagnosticHelpers.conversionHint(left, TypeRef.DOUBLE)
+                            else -> DiagnosticHelpers.conversionHint(right, TypeRef.INT)
+                                ?: DiagnosticHelpers.conversionHint(right, TypeRef.DOUBLE)
+                        }
                         errors.report(
                             expr.loc,
-                            "Operator '${expr.op.symbol}' requires numeric operands, got '$left' and '$right'",
+                            "Operator '${expr.op.symbol}' cannot be applied to '$left' and '$right'",
+                            suggestion = suggestion,
                         )
                         null
                     }
@@ -431,7 +530,8 @@ class ExpressionResolver(
                 if (!left.isNumeric() || !right.isNumeric()) {
                     errors.report(
                         expr.loc,
-                        "Comparison operator '${expr.op.symbol}' requires numeric operands, got '$left' and '$right'"
+                        "'${expr.op.symbol}' requires two numeric operands (int or double), got '$left' and '$right'",
+                        suggestion = "Use '==' or '!=' for non-numeric comparison",
                     )
                 }
                 TypeRef.BOOLEAN
@@ -443,13 +543,15 @@ class ExpressionResolver(
                 if (left != null && !left.isComparable(right)) {
                     errors.report(
                         expr.loc,
-                        "Equality '${expr.op.symbol}' operator cannot compare '$left' with '${right ?: "null"}'"
+                        "Cannot compare '$left' with '${right ?: "null"}' using '${expr.op.symbol}'",
+                        suggestion = "Both sides must have the same type, or one may be null for nullable types",
                     )
                 }
                 if (right != null && !right.isComparable(left)) {
                     errors.report(
                         expr.loc,
-                        "Equality '${expr.op.symbol}' operator cannot compare '${left ?: "null"}' with '$right'"
+                        "Cannot compare '${left ?: "null"}' with '$right' using '${expr.op.symbol}'",
+                        suggestion = "Both sides must have the same type, or one may be null for nullable types",
                     )
                 }
                 TypeRef.BOOLEAN
@@ -458,10 +560,18 @@ class ExpressionResolver(
             // Logical: boolean×boolean→boolean
             BinaryOp.AND, BinaryOp.OR -> {
                 if (left != null && left != TypeRef.BOOLEAN) {
-                    errors.report(expr.left.loc, "'${expr.op.symbol}' requires 'boolean' operand, got '$left'")
+                    errors.report(
+                        expr.left.loc,
+                        "Logical '${expr.op.symbol}' expected 'boolean', got '$left'",
+                        suggestion = if (left.isNumeric()) "Did you mean a comparison? e.g. '${expr.left} != 0'" else null,
+                    )
                 }
                 if (right != null && right != TypeRef.BOOLEAN) {
-                    errors.report(expr.right.loc, "'${expr.op.symbol}' requires 'boolean' operand, got '$right'")
+                    errors.report(
+                        expr.right.loc,
+                        "Logical '${expr.op.symbol}' expected 'boolean', got '$right'",
+                        suggestion = if (right.isNumeric()) "Did you mean a comparison? e.g. '${expr.right} != 0'" else null,
+                    )
                 }
                 TypeRef.BOOLEAN
             }
@@ -471,13 +581,15 @@ class ExpressionResolver(
                 if (left != null && left != TypeRef.INT) {
                     errors.report(
                         expr.left.loc,
-                        "Bitwise operator '${expr.op.symbol}' requires 'int' operands, got '$left'"
+                        "Bitwise '${expr.op.symbol}' requires 'int' operands, got '$left'",
+                        suggestion = if (left == TypeRef.DOUBLE) "Use '.toInt()' to convert" else null,
                     )
                 }
                 if (right != null && right != TypeRef.INT) {
                     errors.report(
                         expr.right.loc,
-                        "Bitwise operator '${expr.op.symbol}' requires 'int' operands, got '$right'"
+                        "Bitwise '${expr.op.symbol}' requires 'int' operands, got '$right'",
+                        suggestion = if (right == TypeRef.DOUBLE) "Use '.toInt()' to convert" else null,
                     )
                 }
                 TypeRef.INT
@@ -488,13 +600,15 @@ class ExpressionResolver(
                 if (left != null && left != TypeRef.INT) {
                     errors.report(
                         expr.left.loc,
-                        "Shift operator '${expr.op.symbol}' requires 'int' operands, got '$left'"
+                        "Shift '${expr.op.symbol}' requires 'int' operands, got '$left'",
+                        suggestion = if (left == TypeRef.DOUBLE) "Use '.toInt()' to convert" else null,
                     )
                 }
                 if (right != null && right != TypeRef.INT) {
                     errors.report(
                         expr.right.loc,
-                        "Shift operator '${expr.op.symbol}' requires 'int' operands, got '$right'"
+                        "Shift '${expr.op.symbol}' requires 'int' operands, got '$right'",
+                        suggestion = if (right == TypeRef.DOUBLE) "Use '.toInt()' to convert" else null,
                     )
                 }
                 TypeRef.INT
@@ -508,7 +622,10 @@ class ExpressionResolver(
         return when (expr.op) {
             UnaryOp.NEG -> {
                 if (!operandType.isNumeric()) {
-                    errors.report(expr.loc, "Cannot negate non-numeric type '$operandType'")
+                    errors.report(
+                        expr.loc,
+                        "Unary '-' cannot be applied to '$operandType', only 'int' and 'double' can be negated",
+                    )
                     return null
                 }
                 operandType // -int to int, -double to double
@@ -516,7 +633,11 @@ class ExpressionResolver(
 
             UnaryOp.NOT -> {
                 if (operandType != TypeRef.BOOLEAN) {
-                    errors.report(expr.loc, "Logical NOT requires 'boolean', got '$operandType'")
+                    errors.report(
+                        expr.loc,
+                        "Logical '!' requires 'boolean', got '$operandType'",
+                        suggestion = if (operandType.isNumeric()) "Did you mean a comparison? e.g. '!(x != 0)'" else null,
+                    )
                     return null
                 }
                 TypeRef.BOOLEAN
@@ -524,7 +645,11 @@ class ExpressionResolver(
 
             UnaryOp.BIT_NOT -> {
                 if (operandType != TypeRef.INT) {
-                    errors.report(expr.loc, "Bitwise NOT requires 'int', got '$operandType'")
+                    errors.report(
+                        expr.loc,
+                        "Bitwise '~' requires 'int', got '$operandType'",
+                        suggestion = if (operandType == TypeRef.DOUBLE) "Use '.toInt()' to convert first" else null,
+                    )
                     return null
                 }
                 TypeRef.INT
@@ -535,7 +660,11 @@ class ExpressionResolver(
     private fun resolvePostfix(scope: SymbolTable, expr: PostfixExpr): TypeRef? {
         val operandType = resolveExpr(scope, expr.operand) ?: return null
         if (!operandType.isNumeric()) {
-            errors.report(expr.loc, "Cannot increment/decrement non-numeric type '$operandType'")
+            val opSymbol = if (expr.op == PostfixOp.INCREMENT) "++" else "--"
+            errors.report(
+                expr.loc,
+                "'$opSymbol' can only be used on numeric types (int, double), got '$operandType'",
+            )
             return null
         }
         return operandType
@@ -546,13 +675,29 @@ class ExpressionResolver(
 
         // Only json to struct casts are allowed
         if (sourceType != null && sourceType != TypeRef.JSON) {
-            errors.report(expr.loc, "Cannot cast from '$sourceType'. Only 'json' can be cast")
+            val suggestion = if (sourceType.isStructType()) {
+                "Convert via json first: 'json j = value; ${expr.targetType} result = j as ${expr.targetType};'"
+            } else {
+                "Only 'json' values can be cast to struct types. Use type conversion methods instead (e.g. '.toInt()', '.toString()')"
+            }
+            errors.report(
+                expr.loc,
+                "Cannot cast from '$sourceType', only 'json' can be cast to a struct type",
+                suggestion = suggestion,
+            )
         }
 
         // Target must be a known struct type
         val targetSym = globalScope.lookup(expr.targetType.name)
         if (targetSym == null || targetSym !is TypeSymbol) {
-            errors.report(expr.loc, "Unknown cast target type '${expr.targetType}'")
+            val candidates = globalScope.allNamesInScope { it is TypeSymbol }
+            val suggestion = DiagnosticHelpers.didYouMeanMsg(expr.targetType.name, candidates)
+                ?: "Declare it with 'type ${expr.targetType} { ... }'"
+            errors.report(
+                expr.loc,
+                "Cast target type '${expr.targetType}' is not defined. It must be a struct type",
+                suggestion = suggestion,
+            )
         }
 
         // Actual validation happens at runtime (CastError if fields mismatch)
@@ -587,9 +732,19 @@ class ExpressionResolver(
         val requiredCount = params.count { !it.hasDefault && !it.isVarargs }
 
         if (args.size < requiredCount) {
-            errors.report(callLoc, "'$funcName' expects at least $requiredCount arguments, got ${args.size}")
+            val paramSig = params.joinToString(", ") { "${it.type} ${it.name}" }
+            errors.report(
+                callLoc,
+                "Too few arguments: '$funcName' requires at least $requiredCount, but ${args.size} ${if (args.size == 1) "was" else "were"} given",
+                suggestion = "Expected signature: $funcName($paramSig)",
+            )
         } else if (!hasVarargs && args.size > params.size) {
-            errors.report(callLoc, "'$funcName' expects at most ${params.size} arguments, got ${args.size}")
+            val paramSig = params.joinToString(", ") { "${it.type} ${it.name}" }
+            errors.report(
+                callLoc,
+                "Too many arguments: '$funcName' accepts at most ${params.size}, but ${args.size} were given",
+                suggestion = "Expected signature: $funcName($paramSig)",
+            )
         }
 
         for (i in args.indices) {
@@ -623,7 +778,8 @@ class ExpressionResolver(
                 if (!expectedType.isAssignableFrom(argType)) {
                     errors.report(
                         args[i].loc,
-                        "Argument ${i + 1} of '$funcName': expected '$expectedType', got '${argType ?: "null"}'",
+                        "Argument ${i + 1} ('${param.name}') of '$funcName': expected '$expectedType', got '${argType ?: "null"}'",
+                        suggestion = DiagnosticHelpers.conversionHint(argType, expectedType),
                     )
                 }
             }
@@ -638,5 +794,3 @@ class ExpressionResolver(
     private fun builtinSpecs(params: List<Pair<String, TypeRef>>): List<ArgSpec> =
         params.map { (name, type) -> ArgSpec(name, type, hasDefault = false) }
 }
-
-

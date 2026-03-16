@@ -107,7 +107,7 @@ class ImportResolverTest :
             resolver.resolveImports(program)
 
             errors.hasErrors() shouldBe true
-            errors.all()[0].message shouldContain "clashes with built-in namespace"
+            errors.all()[0].message shouldContain "conflicts with built-in namespace"
         }
 
         test("rejects external plugin namespace collision") {
@@ -129,7 +129,7 @@ class ImportResolverTest :
             resolver.resolveImports(program)
 
             errors.hasErrors() shouldBe true
-            errors.all()[0].message shouldContain "clashes with external plugin namespace"
+            errors.all()[0].message shouldContain "conflicts with a loaded plugin namespace"
         }
 
         test("rejects duplicate namespace names") {
@@ -156,7 +156,7 @@ class ImportResolverTest :
             resolver.resolveImports(program)
 
             errors.hasErrors() shouldBe true
-            errors.all().any { it.message.contains("Duplicate import namespace") } shouldBe true
+            errors.all().any { it.message.contains("already imported") } shouldBe true
         }
 
         test("assigns sequential global slot offsets across modules") {

@@ -1,6 +1,7 @@
 package nox.compiler.semantic
 
 import nox.compiler.CompilerErrors
+import nox.compiler.DiagnosticHelpers
 import nox.compiler.ast.*
 import nox.compiler.types.*
 
@@ -82,23 +83,31 @@ class TypeResolver(
         for (field in typeDef.fields) {
             // Check for duplicate field names
             if (field.name in seenFields) {
-                errors.report(field.loc, "Duplicate field '${field.name}' in struct '${typeDef.name}'")
+                errors.report(
+                    field.loc,
+                    "Field '${field.name}' is declared more than once in struct '${typeDef.name}'",
+                    suggestion = "Remove or rename the duplicate field",
+                )
                 continue
             }
             seenFields.add(field.name)
 
             // Validate the field type exists and is a valid variable type (not void)
             if (!isKnownType(field.type)) {
+                val candidates = globalScope.allNamesInScope { it is TypeSymbol }
+                val suggestion = DiagnosticHelpers.didYouMeanMsg(field.type.name, candidates)
+                    ?: "Declare the type first with 'type ${field.type.name} { ... }' or use a built-in type (int, double, boolean, string, json)"
                 errors.report(
                     field.loc,
-                    "Unknown type '${field.type}' for field '${field.name}' in struct '${typeDef.name}'"
+                    "Unknown type '${field.type}' for field '${field.name}' in struct '${typeDef.name}'",
+                    suggestion = suggestion,
                 )
                 continue
             }
             if (!field.type.isValidAsVariable()) {
                 errors.report(
                     field.loc,
-                    "Invalid type '${field.type}' for field '${field.name}' in struct '${typeDef.name}'"
+                    "Field '${field.name}' cannot have type '${field.type}' since 'void' is not allowed for struct fields",
                 )
                 continue
             }
@@ -153,10 +162,21 @@ class TypeResolver(
     private fun registerParams(scope: SymbolTable, params: List<Param>) {
         for (param in params) {
             if (!isKnownType(param.type)) {
-                errors.report(param.loc, "Unknown parameter type '${param.type}'")
+                val candidates = globalScope.allNamesInScope { it is TypeSymbol }
+                val suggestion = DiagnosticHelpers.didYouMeanMsg(param.type.name, candidates)
+                    ?: "Supported types: int, double, boolean, string, json, or a declared struct type"
+                errors.report(
+                    param.loc,
+                    "Parameter '${param.name}' has unknown type '${param.type}'",
+                    suggestion = suggestion,
+                )
             }
             if (!param.type.isValidAsVariable()) {
-                errors.report(param.loc, "Invalid parameter type '${param.type}'")
+                errors.report(
+                    param.loc,
+                    "Parameter '${param.name}' cannot have type 'void'",
+                    suggestion = "Use a concrete type: int, double, boolean, string, json, or a struct type",
+                )
             }
 
             // Validate default value type (P2)
@@ -169,14 +189,19 @@ class TypeResolver(
                 if (!param.type.isAssignableFrom(defaultValueType)) {
                     errors.report(
                         param.defaultValue.loc,
-                        "Default value for parameter '${param.name}' does not match parameter type '${param.type}': got '${defaultValueType ?: "null"}'"
+                        "Default value for '${param.name}' has type '${defaultValueType ?: "null"}', but the parameter expects '${param.type}'",
+                        suggestion = DiagnosticHelpers.conversionHint(defaultValueType, param.type),
                     )
                 }
             }
 
             val symbol = ParamSymbol(param.name, param.type, param.defaultValue, param.isVarargs)
             if (!scope.define(param.name, symbol)) {
-                errors.report(param.loc, "Duplicate parameter name '${param.name}'")
+                errors.report(
+                    param.loc,
+                    "Parameter '${param.name}' is declared more than once",
+                    suggestion = "Rename one of the parameters",
+                )
             } else {
                 param.resolvedSymbol = symbol  // back-link so codegen can write sym.register
             }
@@ -188,7 +213,11 @@ class TypeResolver(
      */
     private fun resolveGlobalInit(decl: GlobalVarDecl) {
         if (!decl.type.isValidAsVariable()) {
-            errors.report(decl.loc, "Invalid type '${decl.type}' for global variable '${decl.name}'")
+            errors.report(
+                decl.loc,
+                "Global variable '${decl.name}' cannot have type 'void'",
+                suggestion = "Use a concrete type: int, double, boolean, string, json, or a struct type",
+            )
         }
         if (decl.initializer == null) return
 
@@ -202,7 +231,8 @@ class TypeResolver(
         if (!decl.type.isAssignableFrom(initType)) {
             errors.report(
                 decl.loc,
-                "Type mismatch for global '${decl.name}': expected '${decl.type}', got '${initType ?: "null"}'",
+                "Global '${decl.name}': initializer has type '${initType ?: "null"}', but variable is declared as '${decl.type}'",
+                suggestion = DiagnosticHelpers.conversionHint(initType, decl.type),
             )
         }
     }

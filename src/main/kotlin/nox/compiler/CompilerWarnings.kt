@@ -30,6 +30,12 @@ class CompilerWarnings {
     private val warnings = mutableListOf<CompilerWarning>()
 
     /**
+     * Source lines of the file being compiled.
+     * Set by [NoxCompiler] so [format] can show the source context.
+     */
+    var sourceLines: List<String> = emptyList()
+
+    /**
      * Report a warning at the given [location].
      */
     fun report(location: SourceLocation, message: String, suggestion: String? = null) {
@@ -43,20 +49,45 @@ class CompilerWarnings {
     fun all(): List<CompilerWarning> = warnings.toList()
 
     /**
-     * Format all warnings for display.
+     * Format all warnings for display with rich diagnostics.
      *
      * ```
-     * warning: Dead code after return statement
+     * warning: Unreachable code. This statement will never execute.
      *   --> script.nox:15:4
+     *    |
+     * 15 |     int x = 0;
+     *    |     ^
+     *    = help: Remove this code or move the 'return'/'throw'/'break' before it.
      * ```
      */
     fun format(): String = buildString {
         for (w in warnings) {
             appendLine("warning: ${w.message}")
             appendLine("  --> ${w.location}")
-            if (w.suggestion != null) {
-                appendLine("  = suggestion: ${w.suggestion}")
+
+            val lineIdx = w.location.line - 1
+            if (sourceLines.isNotEmpty() && lineIdx in sourceLines.indices) {
+                val sourceLine = sourceLines[lineIdx]
+                val lineNum = w.location.line.toString()
+                val gutterWidth = lineNum.length
+
+                appendLine("${" ".repeat(gutterWidth + 1)}|")
+                appendLine("$lineNum | $sourceLine")
+
+                val col = w.location.column.coerceAtLeast(0)
+                val caretPad = " ".repeat(col)
+                appendLine("${" ".repeat(gutterWidth + 1)}| $caretPad^")
             }
+
+            if (w.suggestion != null) {
+                appendLine("  = help: ${w.suggestion}")
+            }
+            appendLine()
+        }
+
+        if (warnings.isNotEmpty()) {
+            val s = if (warnings.size == 1) "" else "s"
+            appendLine("Generated ${warnings.size} warning$s.")
         }
     }
 }
