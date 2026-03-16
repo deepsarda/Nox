@@ -1,8 +1,6 @@
 # Gradle
 .gradle/
 gradle-app.setting
-!gradle/wrapper/gradle-wrapper.jar
-!gradle/wrapper/gradle-wrapper.properties
 
 # Build output
 build/
@@ -19,6 +17,10 @@ out/
 *.jar
 *.war
 
+# Gradle wrapper (must be after *.jar so the negation wins)
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
 # macOS
 .DS_Store
 .AppleDouble
@@ -28,3 +30,7 @@ out/
 # Logs
 *.log
 logs/
+
+PLAN.md
+
+bin/

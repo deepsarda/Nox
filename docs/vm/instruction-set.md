@@ -107,18 +107,26 @@ Each operand can carry flags to modify its interpretation:
 |---|---|---|
 | `SCALL` | `SCALL A, funcId, argStart` | System call via FFI. Result in register `A`. |
 
+### Struct Operations
+
+| Opcode | Syntax | Description |
+|---|---|---|
+| `NEW_OBJ` | `NEW_OBJ A` | Creates a new empty `NoxObject` and stores it in `rMem[A]`. |
+| `OBJ_SET` | `OBJ_SET A, keyId, val` | Sets property `pool[keyId]` on object `rMem[A]` to `val`. |
+| `CAST_STRUCT` | `CAST_STRUCT [SubOp] A, B, typeId` | Validates `rMem[B]` against `TypeDescriptor` at `pool[typeId]`, storing result in `rMem[A]`. If `SubOp=1`, validates array of structs. |
+
 ### Host Interaction (Super-Instructions)
 
 | Opcode | Syntax | Description |
 |---|---|---|
 | `HMOD` | `HMOD [SubOp] A, key, val` | Host Modify: modify a property on a host object |
 | `HACC` | `HACC [SubOp] A, B, key` | Host Access: read a property from a host object |
-| `HINV` | `HINV [SubOp] A, B, arg` | Host Invoke: call a method on a host object |
 | `AGET_KEY` | `AGET_KEY A, B, key` | Get a named property from object `B`, store in `A` |
 | `AGET_IDX` | `AGET_IDX A, B, C` | Get element at index `C` from collection `B`, store in `A` |
 | `AGET_PATH` | `AGET_PATH A, B, path` | Traverse a cached static path on object `B`, store in `A` |
 | `ASET_KEY` | `ASET_KEY A, key, val` | Set a named property on object `A` |
 | `ASET_IDX` | `ASET_IDX A, B, C` | Set element at index `B` in collection `A` to value `C` |
+| `SCONCAT` | `SCONCAT A, B, C` | String concat: `rMem[A] = rMem[B] + rMem[C]` |
 
 ### Streaming & Output
 
@@ -173,7 +181,7 @@ Index 0: "user_name"          (String)
 Index 1: 3.14159265358979     (Double)
 Index 2: "status"             (String)  
 Index 3: 100000               (Large Integer)
-Index 4: TypeID(ApiConfig)    (Type Identifier)
+Index 4: TypeDescriptor("ApiConfig") (Struct Schema)
 ```
 
 ### Deduplication

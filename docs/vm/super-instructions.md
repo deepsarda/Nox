@@ -99,34 +99,24 @@ config.put("retries", current + 1);
 | `GET_OBJ` | `json child = obj.data` | `rMem[dest] = obj.get("data")` |
 | `HAS_KEY` | `json.has("key")` | `pMem[dest] = obj.has("key") ? 1 : 0` |
  
-### `HINV` -- Host Invoke
 
-**Purpose:** Call a method on a host-managed type.
+ 
+### `SCONCAT` -- String Concatenation
 
-**Use Cases:** String methods, array methods, JSON utility methods.
+**Purpose:** Concatenate two strings into one.
+
+**Use Cases:** Template literals, string `+` operator.
 
 #### Instruction Layout
 
 ```
 ┌────────┬──────────┬──────────┬──────────┬──────────┐
-│ HINV   │ Sub-Op   │  Dest    │  Object  │   Arg    │
-│        │ (method) │  (reg)   │  (reg)   │  (reg)   │
+│ SCONCAT│  (0)     │  Dest    │  Left    │  Right   │
+│        │          │  (reg)   │  (reg)   │  (reg)   │
 └────────┴──────────┴──────────┴──────────┴──────────┘
 ```
 
-#### Sub-Opcodes
-
-| Sub-Opcode | NSL Operation | Kotlin Host Action |
-|---|---|---|
-| `STR_LEN` | `s.length` | `pMem[dest] = str.length()` |
-| `STR_UPPER` | `s.upper()` | `rMem[dest] = str.toUpperCase()` |
-| `STR_LOWER` | `s.lower()` | `rMem[dest] = str.toLowerCase()` |
-| `STR_CONTAINS` | `s.contains("x")` | `pMem[dest] = str.contains(arg) ? 1 : 0` |
-| `STR_SPLIT` | `s.split(",")` | `rMem[dest] = Arrays.asList(str.split(arg))` |
-| `ARR_LEN` | `arr.length` | `pMem[dest] = list.size()` |
-| `ARR_PUSH` | `arr.push(42)` | `list.add(42)` |
-| `ARR_POP` | `arr.pop()` | `dest = list.remove(list.size()-1)` |
-| `JSON_KEYS` | `obj.keys()` | `rMem[dest] = new ArrayList<>(obj.keySet())` |
+`rMem[Dest] = rMem[Left] + rMem[Right]`
  
 ## Deep Nesting: The Accessor Family
 

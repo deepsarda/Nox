@@ -64,16 +64,16 @@ parameterList
     ;
 
 parameter
-    : typeRef ELLIPSIS Identifier LBRACK RBRACK     // Varargs: int ...values[]
-    | typeRef Identifier (ASSIGN expression)?        // Regular or default
+    : typeRef ELLIPSIS Identifier LBRACK RBRACK (ASSIGN expression)?  // Varargs: int ...values[]
+    | typeRef Identifier (ASSIGN expression)?                         // Regular or default
     ;
 
 
  
  // Types
  typeRef
-    : primitiveType (LBRACK RBRACK)?                // int, string[], json, etc.
-    | Identifier    (LBRACK RBRACK)?                // ApiConfig, Point[], etc.
+    : primitiveType (LBRACK RBRACK)*                // int, string[], int[][], etc.
+    | Identifier    (LBRACK RBRACK)*                // ApiConfig, Point[][], etc.
     ;
 
 primitiveType

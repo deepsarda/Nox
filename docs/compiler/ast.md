@@ -11,6 +11,7 @@
          │  • Attaches SourceLocation to every node
          ▼
   AST (Expr, Stmt, Decl hierarchy)
+         │  • Includes ErrorNode placeholders for invalid syntax
          │
          │  SemanticAnalyzer (when-based passes)
          │  • Fills in resolvedType on every Expr
@@ -201,6 +202,9 @@ class FieldAccessExpr(
 class IndexAccessExpr(
     val target: Expr, val index: Expr, loc: SourceLocation
 ) : Expr(loc)
+
+//  Syntax Error Placeholder 
+class ErrorExpr(loc: SourceLocation) : Expr(loc)
 ```
 
 ### Expression Pattern Matching Example
@@ -323,6 +327,9 @@ class Block(
 ) : Stmt(loc) {
     var scopeDepth: Int = -1         // Set by semantic analyzer
 }
+
+//  Syntax Error Placeholder 
+class ErrorStmt(loc: SourceLocation) : Stmt(loc)
 ```
  
 ## Declarations
@@ -386,6 +393,9 @@ data class Param(
     val isVarargs: Boolean,
     val loc: SourceLocation
 )
+
+//  Syntax Error Placeholder 
+class ErrorDecl(loc: SourceLocation) : Decl(loc)
 ```
  
 ## Program (Root Node)
@@ -419,6 +429,7 @@ The `ASTBuilder` (ANTLR visitor that converts parse tree -> AST) performs these 
 | `HEADER_KEY` `"@tool:name"` | `Header("name", ...)` | Strip prefix during construction |
 | Escape sequences in `StringLiteral` | Resolved `String` value | `"hello\n"` -> `"hello"` + newline |
 | `TEMPLATE_TEXT` + `TEMPLATE_EXPR_OPEN` | `TemplateLiteralExpr` with parts | Lexer tokens -> structured parts list |
+| Invalid / Unexpected Syntax | `ErrorExpr` / `ErrorStmt` / `ErrorDecl` | Prevent compiler crashes on partial parse trees |
 
 **Not** desugared (kept as first-class nodes):
 - `foreach` is kept for clear error messages and potential future iterator optimization

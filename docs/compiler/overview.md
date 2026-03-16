@@ -101,7 +101,6 @@ Multiple passes over the AST, each using exhaustive `when` on sealed types:
 **Pass 3: Control Flow Validation:**
 - Every code path in non-void functions returns a value
 - `break`/`continue` only appear inside loops
-- `yield` only appears in `main`
 - Dead code detection (statements after `return`/`throw`)
 
 ### Phase 4: Code Generation

@@ -1,7 +1,9 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.kover)
     antlr
+    idea
 }
 
 // JVM target
@@ -51,14 +53,16 @@ dependencies {
  *    -no-listener  →  skip listener boilerplate (we use visitors in the ASTBuilder)
  *    -package      →  put generated classes in the nox.parser package
  */
-val antlrOutputDir =
+val antlrSourceRoot =
     layout.buildDirectory
         .dir("generated-src/antlr/main")
         .get()
         .asFile
 
+val antlrPackageDir = File(antlrSourceRoot, "nox/parser")
+
 tasks.generateGrammarSource {
-    outputDirectory = antlrOutputDir
+    outputDirectory = antlrPackageDir
     arguments = arguments +
         listOf(
             "-visitor",
@@ -88,8 +92,18 @@ sourceSets {
         }
         java {
             // Include the ANTLR-generated Java alongside regular Java sources
-            srcDir(antlrOutputDir)
+            srcDir(antlrSourceRoot)
         }
+        kotlin {
+            srcDir(antlrSourceRoot)
+        }
+    }
+}
+
+// Tell IntelliJ to treat the ANTLR output as generated sources
+idea {
+    module {
+        generatedSourceDirs.add(antlrSourceRoot)
     }
 }
 
@@ -106,9 +120,26 @@ tasks.test {
 
 // ktlint, exclude ANTLR-generated Java (not our code)
 ktlint {
-    version.set("1.5.0")
+
     filter {
         exclude { entry -> entry.file.path.contains("generated-src") }
         exclude { entry -> entry.file.path.contains("antlr4") }
+    }
+}
+
+// ktlint coverage configuration
+kover {
+    reports {
+        filters {
+            excludes {
+                classes("nox.parser.*")
+            }
+        }
+    }
+}
+
+tasks.withType<Test> {
+    this.testLogging {
+        this.showStandardStreams = true
     }
 }

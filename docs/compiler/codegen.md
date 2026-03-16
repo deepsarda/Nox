@@ -15,6 +15,7 @@ Annotated AST
     │   • Opcode selection based on .resolvedType
     │   • Super-instruction selection for json/struct access
     │   • Forward-reference backpatching for jumps
+    │   • RegNameEvent recording (params, locals, loop vars)
     │
     ├── Constant Pool Construction
     │   • Deduplicated strings, doubles, large ints, type IDs
@@ -24,12 +25,12 @@ Annotated AST
     │   • Nested try-catch support
     ▼
 CompiledProgram {
-    long[]       bytecode;       // Packed 64-bit instructions
-    Object[]     constantPool;   // Strings, doubles, type metadata
-    ExEntry[]    exceptionTable; // try-catch PC ranges
-    FuncMeta[]   functions;      // Per-function metadata (frame sizes, entry PCs)
-    ModuleMeta[] modules;        // Per-module metadata (global offsets, exports)
-    int          totalGlobalSlots; // Total global slots across all modules
+    long[]        bytecode;              // Packed 64-bit instructions
+    Object[]      constantPool;          // Strings, doubles, type metadata
+    ExEntry[]     exceptionTable;        // try-catch PC ranges
+    FuncMeta[]    functions;             // Per-function metadata (frame sizes, entry PCs, name events)
+    ModuleMeta[]  modules;               // Per-module metadata (global offsets, exports)
+    int           totalGlobalSlots;      // Total global slots across all modules
 }
 ```
  
@@ -58,9 +59,24 @@ data class FuncMeta(
     val entryPC: Int,                // First instruction of this function
     val paramCount: Int,
     val primitiveFrameSize: Int,     // Number of pMem registers needed
-    val referenceFrameSize: Int      // Number of rMem registers needed
+    val referenceFrameSize: Int,     // Number of rMem registers needed
+    val sourceLines: IntArray,       // Source-line number per instruction (parallel to bytecode slice)
+    val labels: Map<Int, String>,    // localPC → label name (loop_start, loop_exit, catch_*, end)
+    val regNameEvents: List<RegNameEvent>, // Register↔name timeline for the disassembler
+    val sourcePath: String,          // Source file this function was defined in
+    val globalVarNames: List<String> // Init blocks only: "g0=name (type)" entries
+)
+
+/** Records when a register is first assigned to a named variable. */
+data class RegNameEvent(
+    val localPC: Int,    // Instruction index relative to entryPC
+    val isPrim: Boolean, // true = pMem, false = rMem
+    val register: Int,   // Register number within the bank
+    val name: String,    // Source variable name
 )
 ```
+
+The disassembler rebuilds a live `register → name` map by walking `regNameEvents` in `localPC` order. Parameters are recorded at `localPC = 0`; locals are recorded at the instruction where their declaration is emitted.
 
 ### ExEntry
 
@@ -198,11 +214,15 @@ When a reference variable goes out of scope, the compiler emits `KILL_REF` to nu
 {
     string temp = "hello";      // rMem[2] = "hello"
     yield temp;
-}                               // KILL_REF 2  <- emitted here
+}                               // KILL_REF 2  <- emitted here at scope exit
 // rMem[2] is now null, "hello" is eligible for GC
 ```
 
-**Rule:** At every scope exit, emit `KILL_REF` for each `rMem` register first used in that scope.
+**Rules:**
+
+1. **Scope exit:** At the end of a block, emit `KILL_REF` for each `rMem` register first allocated inside that block. Skipped if the block ends with a `return` statement (rule 2 covers it).
+
+2. **Before `return`:** `emitReturn` emits `KILL_REF` for **all** live `rMem` registers before the `RET` instruction.
  
 ## Bytecode Emission
 
@@ -330,6 +350,19 @@ if (expr.left.resolvedType == TypeRef.INT && expr.resolvedType == TypeRef.DOUBLE
     emit(I2D, 0, leftReg, leftReg, 0)  // int-to-double conversion
 }
 ```
+
+### Cast Emission
+
+A `json as StructType` cast requires runtime validation. The compiler builds a `TypeDescriptor` from the target struct's AST `TypeDef`, adding it to the constant pool.
+
+1. **Allocate** slot via `ConstantPool.addPlaceholder()` (to handle recursive/self-referencing structs)
+2. **Build** the descriptor fields (`FieldSpec` objects)
+3. **Commit** the descriptor via `ConstantPool.replace()`
+4. **Emit** `CAST_STRUCT dest, src, poolIdx`
+
+SubOp values:
+- `0`: scalar cast (`json as Config`)
+- `1`: array cast (`json as Config[]`), validates each element
  
 ### Statement Emission
 
@@ -477,7 +510,8 @@ Compiles to an index-based loop:
 
 ```
     LDI  idx_reg, 0                    // int __idx = 0
-    HINV ARR_LEN, len_reg, items_reg   // int __len = items.length
+    MOVR len_arg, items_reg             // pass arr as arg
+    SCALL len_reg, __arr_length, len_arg // int __len = items.length()
 LOOP_START:
     ILT  cond_reg, idx_reg, len_reg    // __idx < __len
     JIF  cond_reg, LOOP_EXIT
@@ -542,10 +576,11 @@ fun emitMethodCall(call: MethodCallExpr, dest: Int) {
             }
         }
         MethodCallExpr.Resolution.TYPE_BOUND -> {
-            // text.upper() -> HINV STR_UPPER
-            val targetReg = allocTemp(call.target.resolvedType!!)
-            emitExpr(call.target, targetReg)
-            emit(HINV, subOpFor(call.methodName), dest, targetReg, 0)
+            // text.upper() -> SCALL (receiver is first arg)
+            val argStart = allocTemp()
+            emitExpr(call.target, argStart)
+            emitArgs(call.args, argStart + 1)
+            emit(SCALL, 0, dest, funcId, argStart)
         }
         MethodCallExpr.Resolution.UFCS -> {
             // point.distance(other) -> CALL distance(point, other)
@@ -561,7 +596,7 @@ fun emitMethodCall(call: MethodCallExpr, dest: Int) {
  
 ## Super-Instruction Selection
 
-### When to Use HMOD / HACC / HINV
+### When to Use HMOD / HACC
 
 The code generator pattern-matches on field access and mutation to select the most efficient instruction:
 
@@ -584,13 +619,6 @@ fun emitFieldAccess(expr: FieldAccessExpr, dest: Int) {
 
         val keyIdx = constantPool.add(expr.fieldName)
         emit(HACC, subOp, dest, targetReg, keyIdx)
-    }
-    else if (expr.fieldName == "length") {
-        // string.length or array.length -> HINV
-        val targetReg = allocTemp(targetType)
-        emitExpr(expr.target, targetReg)
-        val subOp = if (targetType == TypeRef.STRING) STR_LEN else ARR_LEN
-        emit(HINV, subOp, dest, targetReg, 0)
     }
 }
 ```
@@ -643,7 +671,7 @@ class ConstantPool {
 | `Double` | Double literals (can't fit in 16-bit immediate) | `3.14159` |
 | `Long` | Integer literals > 16 bits | `100000` |
 | `String` | Cached access paths | `"server.db.host"` |
-| `TypeId` | Struct type identifiers for `as` casts | `TypeId("ApiConfig")` |
+| `TypeDescriptor` | Struct shape descriptors for `CAST_STRUCT` validation | `TypeDescriptor("ApiConfig", fields)` |
 
 ### Loading Constants: LDC
 
@@ -791,19 +819,19 @@ yield `Hello ${name}, you have ${count} items`;
 Compiles to a sequence of string concatenation operations:
 
 ```
-    LDC   t0, "Hello "                     // Constant pool
-    MOVR  result, t0                        // result = "Hello "
-    HINV  STR_CONCAT, result, result, name_reg  // result += name
-    LDC   t0, ", you have "
-    HINV  STR_CONCAT, result, result, t0    // result += ", you have "
-    I2S   t1, count_reg                     // int tostring conversion
-    HINV  STR_CONCAT, result, result, t1    // result += count
-    LDC   t0, " items"
-    HINV  STR_CONCAT, result, result, t0    // result += " items"
-    YIELD result
+    LDC    t0, "Hello "                      // Constant pool
+    MOVR   result, t0                         // result = "Hello "
+    SCONCAT result, result, name_reg           // result += name
+    LDC    t0, ", you have "
+    SCONCAT result, result, t0                 // result += ", you have "
+    I2S    t1, count_reg                      // int tostring conversion
+    SCONCAT result, result, t1                 // result += count
+    LDC    t0, " items"
+    SCONCAT result, result, t0                 // result += " items"
+    YIELD  result
 ```
 
-**Optimization opportunity:** For templates with many parts, emit a `TEMPLATE` super-instruction that takes a parts array from the constant pool, avoiding N separate `STR_CONCAT` calls.
+**Optimization opportunity:** For templates with many parts, emit a `TEMPLATE` super-instruction that takes a parts array from the constant pool, avoiding N separate `SCONCAT` calls.
  
 ## Global Variables
 
@@ -823,16 +851,183 @@ GLOADR   dest_reg, globalSlot     // Reference variant
 GSTORER  globalSlot, source_reg   // Reference variant
 ```
  
+## Module Initialization
+
+Global variables with initializers require code that runs **before `main()`**. The compiler emits a synthetic function called `<module_init>` for each module that has at least one global with a non-trivial initializer.
+
+### What `<module_init>` Is
+
+A `<module_init>` block is a **compiler-generated function** that:
+- Has no parameters (`paramCount = 0`)
+- Returns nothing (void)
+- Appears as a regular `FuncMeta` entry in `CompiledProgram.functions`
+- Is **never callable from user code** instead, it's invoked by the VM startup sequence
+
+```kotlin
+// Generated FuncMeta for a module_init block
+FuncMeta(
+    name = "<module_init>",       // Or "<module_init:helpers>" for imported modules
+    entryPC = ...,
+    paramCount = 0,
+    primitiveFrameSize = ...,     // Scratch registers needed for init expressions
+    referenceFrameSize = ...
+)
+```
+
+### Emission Rules
+
+For each `GlobalVarDecl` in the module, **in declaration order**:
+
+| Initializer | Action | Example |
+|---|---|---|
+| **None** | Skip — `gMem`/`gMemRef` are zero/null-filled at allocation | `int count;` → already `0` |
+| **Literal** | Emit `LDI` + `GSTORE` or `LDC` + `GSTORER` | `int x = 42;` → `LDI p0, 42; GSTORE 0, p0` |
+| **Expression** | Emit the full expression, then `GSTORE` the result | `int x = add(1,2);` → `LDI p0,1; LDI p1,2; CALL add,p0; GSTORE 0,p0` |
+
+When **all** globals in a module either have no initializer or are primitives with the value `0`, no `<module_init>` is emitted because the zero-filled memory is sufficient.
+
+### Declaration-Order Constraint
+
+Within a single file, globals are initialized **top-to-bottom**. A global may reference only globals declared **before** it in the same file:
+
+```c
+// VALID — b references a, which is already initialized
+int a = 10;
+int b = a + 5;
+
+// INVALID — a references b, which hasn't been initialized yet
+int a = b + 5;     // Compile error: forward reference to global 'b'
+int b = 10;
+```
+
+The compiler enforces this in Pass 2: when resolving a global's initializer, only globals with a lower `globalSlot` index are visible.
+
+### Cross-Module Execution Order
+
+Init blocks execute in **depth-first import order** and a module's init runs only after all of its imports' inits have completed:
+
+```
+main.nox imports:
+  ├─ helpers.nox (no imports)
+  └─ math.nox imports:
+       └─ constants.nox (no imports)
+
+Execution order:
+  1. constants.nox  <module_init>    (leaf)
+  2. math.nox       <module_init>    (depends on constants)
+  3. helpers.nox    <module_init>    (leaf)
+  4. main.nox       <module_init>    (depends on helpers, math)
+  5. main()
+```
+
+This order is determined by the `ImportResolver` during compilation and stored as the ordering of `CompiledProgram.modules`. The VM iterates `modules` in order and calls each `<module_init>` function before jumping to `main`.
+
+### FuncMeta Integration
+
+Init blocks are included in the `functions` array alongside user functions. They are distinguished by their naming convention:
+
+```
+Functions array:
+  [0]  <module_init>            (main module)
+  [1]  <module_init:helpers>    (helpers.nox)
+  [2]  <module_init:math>       (math.nox)
+  [3]  double_it                (user function)
+  [4]  main                     (entry point)
+```
+
+The VM knows the init block indices from `ModuleMeta`. `CompiledProgram.mainFuncIndex` still points to `main`, and the VM runs all init blocks first.
+
+### Default Values
+
+When a global has no explicit initializer, its value comes from the memory allocation itself:
+
+| Type | Default | Mechanism |
+|---|---|---|
+| `int` | `0` | `gMem` is zero-filled at VM startup |
+| `double` | `0.0` | `0L` bits = `0.0` under IEEE 754 |
+| `boolean` | `false` | `0L` = false |
+| `string` | `null` | `gMemRef` is null-filled at VM startup |
+| `json` | `null` | `gMemRef` is null-filled |
+| Struct | `null` | `gMemRef` is null-filled |
+| Array | `null` | `gMemRef` is null-filled |
+
+Because both `gMem` and `gMemRef` are pre-allocated and zeroed, **no code is emitted for uninitialized globals**. This is free.
+
+### Bytecode Example
+
+```c
+// constants.nox
+double PI = 3.14159;
+int MAX_RETRIES = 5;
+```
+
+```c
+// main.nox
+import "constants.nox" as c;
+
+string PREFIX = "item_";
+int counter = 0;                    // no init needed (default is 0)
+
+main() {
+    return `${PREFIX}${counter}`;
+}
+```
+
+**Generated init blocks:**
+
+```
+.init c
+  ; globals: g0=PI (double)  g1=MAX_RETRIES (int)
+  ; source:  constants.nox
+  ;
+  ; constants.nox:1  double PI = 3.14159;
+  0000:  LDC       p0, #0                   ; p0 = 3.14159
+  0001:  GSTORE    g0, p0                   ; g0 = PI
+  ;
+  ; constants.nox:2  int MAX_RETRIES = 5;
+  0002:  LDI       p0, 5                    ; p0 = 5
+  0003:  GSTORE    g1, p0                   ; g1 = MAX_RETRIES
+  0004:  RET                                ; return (void)
+
+.init main
+  ; globals: gr0=PREFIX (string)
+  ; source:  main.nox
+  ; note:    g2=counter (int) skipped, default is 0
+  ;
+  ; main.nox:5  string PREFIX = "item_";
+  0005:  LDC       r0, #1                   ; r0 = "item_"
+  0006:  GSTORER   gr0, r0                  ; gr0 = PREFIX
+  0007:  RET                                ; return (void)
+
+.func main
+  ;
+  ; main.nox:8  return `${PREFIX}${counter}`;
+  0008:  GLOADR    r0, gr0                  ; r0 = gr0
+  0009:  GLOAD     p0, g2                   ; p0 = g2
+  0010:  I2S       r1, p0                   ; r1 = toString(p0)
+  0011:  SCONCAT   r0, r0, r1               ; r0 = r0 + r1
+  0012:  KILL_REF  r1                       ; r1 = null (GC)
+  0013:  KILL_REF  r0                       ; r0 = null (GC)
+  0014:  RET       r0                       ; return r0
+```
+
+**Execution sequence:**
+1. VM calls `<module_init:c>` (instructions 0–4)
+2. VM calls `<module_init>` (instructions 5–7)
+3. VM calls `main` (instructions 8–12)
+ 
 ## Full Compilation Example
 
 ### Source
 
 ```c
 @tool:name "adder"
-@tool:description "Adds two numbers."
+@tool:description "Adds two numbers and scales the result."
+
+int MULTIPLIER = 2;
 
 int double_it(int x) {
-    return x * 2;
+    return x * MULTIPLIER;
 }
 
 main(int a = 1, int b = 2) {
@@ -851,29 +1046,51 @@ main(int a = 1, int b = 2) {
 ### Function Metadata
 
 ```
-Func 0: "double_it"  entry=0  params=1  pFrame=2  rFrame=0
-Func 1: "main"       entry=3  params=2  pFrame=3  rFrame=2
+Init 0: "<module_init>"  entry=0   params=0  pFrame=1  rFrame=0
+Func 1: "double_it"      entry=3   params=1  pFrame=2  rFrame=0
+Func 2: "main"           entry=6   params=2  pFrame=4  rFrame=2
 ```
 
 ### Bytecode
 
 ```
-;;─ double_it(int x)─
-;; x is in pMem[bp+0], result in pMem[bp+1]
-0: LDI     R1, 2                    // R1 = 2
-1: IMUL    R1, R0, R1               // R1 = x * 2
-2: RET     R1                       // return R1
+.init main
+  ; globals: g0=MULTIPLIER (int)
+  ;
+  ; adder.nox:4  int MULTIPLIER = 2;
+  0000:  LDI       p0, 2                    ; p0 = 2
+  0001:  GSTORE    g0, p0                   ; g0 = MULTIPLIER
+  0002:  RET                                ; return (void)
 
-;;─ main(int a, int b)─
-;; a is in pMem[bp+0], b is in pMem[bp+1]
-3: IADD    R2, R0, R1               // R2 = a + b  (sum)
-4: MOV     argstart, R2             // Copy sum as arg
-5: CALL    0, argstart              // call double_it and put the result in R2
-6: LDC     rR0, #0                  // rR0 = "Result: "
-7: I2S     rR1, R2                  // rR1 = toString(result)
-8: HINV    STR_CONCAT, rR0, rR0, rR1  // rR0 = "Result: " + result
-9: RET     rR0                      // return the string
+.func double_it
+  ; params: p0=x
+  ;
+  ; adder.nox:7  return x * MULTIPLIER;
+  0003:  GLOAD     p1, g0                   ; p1 = MULTIPLIER
+  0004:  IMUL      p1, p0, p1               ; p1 = x:p0 * p1
+  0005:  RET       p1                       ; return p1
+
+.func main
+  ; params: p0=a  p1=b
+  ;
+  ; adder.nox:11  int sum = a + b;
+  0006:  IADD      p2, p0, p1               ; sum:p2 = a:p0 + b:p1
+  ;
+  ; adder.nox:12  int result = double_it(sum);
+  0007:  MOV       p3, p2                   ; p3 = sum:p2
+  0008:  CALL      double_it, p3            ; call double_it(p3...)
+  0009:  MOV       p2, p3                   ; result:p2 = p3
+  ;
+  ; adder.nox:13  return `Result: ${result}`;
+  0010:  LDC       r0, #0                   ; r0 = "Result: "
+  0011:  I2S       r1, p2                   ; r1 = toString(result:p2)
+  0012:  SCONCAT   r0, r0, r1               ; r0 = r0 + r1
+  0013:  KILL_REF  r1                       ; r1 = null (GC)
+  0014:  KILL_REF  r0                       ; r0 = null (GC)
+  0015:  RET       r0                       ; return r0
 ```
+
+**Execution sequence:** VM calls `<module_init>` (0–2), then `main` (6–13). `main` calls `double_it` (3–5) which reads the global `MULTIPLIER` via `GLOAD`.
  
 ## Compilation Metrics
 
@@ -881,11 +1098,13 @@ After compilation, the compiler can report:
 
 ```
 Compiled "adder" successfully.
-  Functions: 2
-  Bytecode:  10 instructions (80 bytes)
-  Constants: 1 entry
-  Max frame: pMem=3, rMem=2 (main)
-  Estimated memory: ~200 bytes
+  Init blocks: 1
+  Functions:   2
+  Bytecode:    13 instructions (104 bytes)
+  Constants:   1 entry
+  Globals:     1p + 0r
+  Max frame:   pMem=4, rMem=2 (main)
+  Estimated memory: ~300 bytes
 ```
  
 ## Next Steps

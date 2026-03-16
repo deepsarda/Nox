@@ -399,7 +399,7 @@ abstract class NoxTestHarness {
 // Super-instructions
 @Test fun fieldAccessEmitsHACC()
 @Test fun fieldMutationEmitsHMOD()
-@Test fun methodCallEmitsHINV()
+@Test fun methodCallEmitsSCALL()
 @Test fun deepPathEmitsAGET_PATH()        // config.server.db is a single instruction
 
 // Import codegen
@@ -413,7 +413,7 @@ abstract class NoxTestHarness {
 @Test fun ifElseEmitsJIFAndJMP()
 @Test fun whileEmitsBackwardJMP()
 @Test fun forLoopEmitsCorrectStructure()
-@Test fun foreachDesugarsToIndexLoop()     // ARR_LEN + AGET_IDX + IINC
+@Test fun foreachDesugarsToIndexLoop()     // SCALL(__arr_length) + AGET_IDX + IINC
 
 // Memory management
 @Test fun killRefEmittedAtScopeExit()
@@ -547,8 +547,8 @@ abstract class NoxTestHarness {
 @Test fun arrayIndexAccess()              // arr[0], arr[2]
 @Test fun arrayIndexOutOfBounds()         // arr[5] on 3-element array gives IndexOutOfBoundsError
 @Test fun negativeArrayIndex()            // arr[-1] gives IndexOutOfBoundsError (no wrap)
-@Test fun arrayLength()                   // [1,2,3].length = 3
-@Test fun emptyArrayLength()              // [].length = 0
+@Test fun arrayLength()                   // [1,2,3].length() = 3
+@Test fun emptyArrayLength()              // [].length() = 0
 @Test fun arrayMutation()                 // arr[0] = 99
 
 // Structs
@@ -578,7 +578,7 @@ abstract class NoxTestHarness {
 @Test fun jsonCastWrongFieldTypeThrows()  // Wrong type gives CastError
 
 // Strings
-@Test fun stringLength()                  // "hello".length = 5
+@Test fun stringLength()                  // "hello".length() = 5
 @Test fun stringUpper()                   // "hello".upper() = "HELLO"
 @Test fun stringLower()                   // "HELLO".lower() = "hello"
 @Test fun stringContains()                // "hello".contains("ell") = true
@@ -867,7 +867,6 @@ While E2E tests verify *behavior*, they often miss subtle regressions in *effici
 ### What to Look For in Diffs
 *   **Registers**: Changes in `p0` vs `p1` might indicate a bug in the liveness analyzer.
 *   **Labels**: Shifted `.loop_start` or `.loop_exit` labels indicate jump target errors.
-*   **HINV/HACC**: Missing super-instructions where they were previously present.
 *   **KILL_REF**: Incorrectly placed or missing cleanup opcodes.
  
 ## Next Steps
