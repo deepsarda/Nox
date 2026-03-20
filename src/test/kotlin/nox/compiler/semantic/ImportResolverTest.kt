@@ -110,6 +110,7 @@ class ImportResolverTest :
                     basePath = Path.of("/project/main.nox"),
                     errors = errors,
                     fileReader = fs,
+                    builtinNamespaces = setOf("Math", "File", "Http", "Env", "Date"),
                 )
             resolver.resolveImports(program)
 

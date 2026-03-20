@@ -4,6 +4,7 @@ import nox.compiler.CompilerErrors
 import nox.compiler.DiagnosticHelpers
 import nox.compiler.ast.*
 import nox.compiler.types.*
+import nox.plugin.LibraryRegistry
 
 /**
  * Pass 2: Type Resolution
@@ -24,8 +25,9 @@ class TypeResolver(
     private val globalScope: SymbolTable,
     private val errors: CompilerErrors,
     private val modules: List<ResolvedModule> = emptyList(),
+    private val registry: LibraryRegistry = LibraryRegistry.createDefault(),
 ) {
-    private val exprResolver = ExpressionResolver(globalScope, errors, modules)
+    private val exprResolver = ExpressionResolver(globalScope, errors, modules, registry)
     private val stmtResolver = StatementResolver(exprResolver, errors)
     private val resolvedModulePaths = mutableSetOf<String>()
 
@@ -47,7 +49,7 @@ class TypeResolver(
 
             val moduleScope = SymbolTable()
             DeclarationCollector(moduleScope, errors).collect(module.program)
-            TypeResolver(moduleScope, errors).resolve(module.program)
+            TypeResolver(moduleScope, errors, registry = registry).resolve(module.program)
         }
 
         // Step 1: Resolve struct field types

@@ -31,6 +31,12 @@ dependencies {
     // ANTLR4: runtime (shipped in the final JAR, needed by generated lexer/parser)
     implementation(libs.antlr4.runtime)
 
+    // Kotlin reflection: used by plugin system for annotation scanning and MethodHandle linking
+    implementation(libs.kotlin.reflect)
+
+    // ClassGraph: fast classpath scanner for auto-discovering @NoxModule plugins
+    implementation(libs.classgraph)
+
     // Kotlin coroutines: used for lightweight Sandbox execution (each Sandbox is a coroutine)
     implementation(libs.coroutines.core)
 
