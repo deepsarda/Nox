@@ -193,10 +193,14 @@ object Linker {
 
                 val bank =
                     when {
-                        javaType == Long::class.java || javaType == java.lang.Long::class.java -> RegisterBank.PRIMITIVE
-                        javaType == Int::class.java || javaType == java.lang.Integer::class.java -> RegisterBank.PRIMITIVE
-                        javaType == Double::class.java || javaType == java.lang.Double::class.java -> RegisterBank.PRIMITIVE
-                        javaType == Boolean::class.java || javaType == java.lang.Boolean::class.java -> RegisterBank.PRIMITIVE
+                        javaType == Long::class.java ||
+                            javaType == java.lang.Long::class.java -> RegisterBank.PRIMITIVE
+                        javaType == Int::class.java ||
+                            javaType == java.lang.Integer::class.java -> RegisterBank.PRIMITIVE
+                        javaType == Double::class.java ||
+                            javaType == java.lang.Double::class.java -> RegisterBank.PRIMITIVE
+                        javaType == Boolean::class.java ||
+                            javaType == java.lang.Boolean::class.java -> RegisterBank.PRIMITIVE
                         javaType == String::class.java -> RegisterBank.REFERENCE
                         else -> RegisterBank.REFERENCE // json, structs, arrays
                     }
@@ -251,11 +255,16 @@ object Linker {
 
                 val bank =
                     when {
-                        returnType == Void.TYPE || returnType == Unit::class.java -> null
-                        returnType == Long::class.java || returnType == java.lang.Long::class.java -> RegisterBank.PRIMITIVE
-                        returnType == Int::class.java || returnType == java.lang.Integer::class.java -> RegisterBank.PRIMITIVE
-                        returnType == Double::class.java || returnType == java.lang.Double::class.java -> RegisterBank.PRIMITIVE
-                        returnType == Boolean::class.java || returnType == java.lang.Boolean::class.java -> RegisterBank.PRIMITIVE
+                        returnType == Void.TYPE ||
+                            returnType == Unit::class.java -> null
+                        returnType == Long::class.java ||
+                            returnType == java.lang.Long::class.java -> RegisterBank.PRIMITIVE
+                        returnType == Int::class.java ||
+                            returnType == java.lang.Integer::class.java -> RegisterBank.PRIMITIVE
+                        returnType == Double::class.java ||
+                            returnType == java.lang.Double::class.java -> RegisterBank.PRIMITIVE
+                        returnType == Boolean::class.java ||
+                            returnType == java.lang.Boolean::class.java -> RegisterBank.PRIMITIVE
                         else -> RegisterBank.REFERENCE
                     }
 
