@@ -51,7 +51,6 @@ class LibraryRegistry {
     // Tier 1 namespace tracking
     private val _externalPluginNamespaces = mutableSetOf<String>()
 
-
     /** All built-in (Tier 0) namespace names. */
     val builtinNamespaceNames: Set<String> get() = namespaceFunctions.keys
 
@@ -114,7 +113,6 @@ class LibraryRegistry {
 
     /** Look up a linked native function by SCALL name (for VM dispatch). */
     fun lookupNativeFunc(scallName: String): NoxNativeFunc? = nativeFuncs[scallName]
-
 
     /**
      * Register a Tier 0 (Kotlin) plugin module.
@@ -320,7 +318,6 @@ class LibraryRegistry {
 
             return registry
         }
-
 
         /** Map a Kotlin/Java type to the corresponding Nox [TypeRef]. */
         fun kotlinTypeToTypeRef(javaType: Class<*>): TypeRef =

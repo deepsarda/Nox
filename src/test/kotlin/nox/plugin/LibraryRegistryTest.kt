@@ -175,13 +175,19 @@ class LibraryRegistryTest :
 
         test("registerExternalPlugin adds namespace functions") {
             val registry = LibraryRegistry()
-            val manifest = NoxPluginManifest(
-                namespace = "GameAPI",
-                functions = listOf(
-                    NoxExternalFunc("spawn", listOf(NoxTypeTag.STRING, NoxTypeTag.DOUBLE, NoxTypeTag.DOUBLE), NoxTypeTag.INT),
-                    NoxExternalFunc("destroy", listOf(NoxTypeTag.INT), NoxTypeTag.VOID),
-                ),
-            )
+            val manifest =
+                NoxPluginManifest(
+                    namespace = "GameAPI",
+                    functions =
+                        listOf(
+                            NoxExternalFunc(
+                                "spawn",
+                                listOf(NoxTypeTag.STRING, NoxTypeTag.DOUBLE, NoxTypeTag.DOUBLE),
+                                NoxTypeTag.INT,
+                            ),
+                            NoxExternalFunc("destroy", listOf(NoxTypeTag.INT), NoxTypeTag.VOID),
+                        ),
+                )
             registry.registerExternalPlugin(manifest)
 
             registry.isBuiltinNamespace("GameAPI") shouldBe true
@@ -266,7 +272,10 @@ object TestNamespaceModule {
     @NoxFunction(name = "add")
     @NoxType("int")
     @JvmStatic
-    fun add(a: Long, b: Long): Long = a + b
+    fun add(
+        a: Long,
+        b: Long,
+    ): Long = a + b
 
     @NoxFunction(name = "greet")
     @JvmStatic
@@ -278,7 +287,10 @@ object TestNamespaceModule2 {
     @NoxFunction(name = "add")
     @NoxType("int")
     @JvmStatic
-    fun add(a: Long, b: Long): Long = a + b
+    fun add(
+        a: Long,
+        b: Long,
+    ): Long = a + b
 }
 
 @NoxModule(namespace = "_TestTypeMethods")

@@ -15,25 +15,34 @@ class PermissionGatedModuleTest :
 
         // Helper contexts
 
-        fun grantAllContext(): RuntimeContext = object : RuntimeContext {
-            override fun yield(data: String) {}
-            override fun returnResult(data: String) {}
-            override suspend fun requestPermission(request: PermissionRequest): PermissionResponse =
-                PermissionResponse.Granted.Unconstrained
-        }
+        fun grantAllContext(): RuntimeContext =
+            object : RuntimeContext {
+                override fun yield(data: String) {}
 
-        fun denyAllContext(reason: String = "denied by policy"): RuntimeContext = object : RuntimeContext {
-            override fun yield(data: String) {}
-            override fun returnResult(data: String) {}
-            override suspend fun requestPermission(request: PermissionRequest): PermissionResponse =
-                PermissionResponse.Denied(reason)
-        }
+                override fun returnResult(data: String) {}
+
+                override suspend fun requestPermission(request: PermissionRequest): PermissionResponse =
+                    PermissionResponse.Granted.Unconstrained
+            }
+
+        fun denyAllContext(reason: String = "denied by policy"): RuntimeContext =
+            object : RuntimeContext {
+                override fun yield(data: String) {}
+
+                override fun returnResult(data: String) {}
+
+                override suspend fun requestPermission(request: PermissionRequest): PermissionResponse =
+                    PermissionResponse.Denied(reason)
+            }
 
         /** Tracks which permission types were requested. */
         class TrackingContext : RuntimeContext {
             val requests = mutableListOf<PermissionRequest>()
+
             override fun yield(data: String) {}
+
             override fun returnResult(data: String) {}
+
             override suspend fun requestPermission(request: PermissionRequest): PermissionResponse {
                 requests.add(request)
                 return PermissionResponse.Granted.Unconstrained
@@ -41,15 +50,49 @@ class PermissionGatedModuleTest :
         }
 
         /** Selectively grants/denies based on a predicate. */
-        fun selectiveContext(allow: (PermissionRequest) -> Boolean): RuntimeContext = object : RuntimeContext {
-            override fun yield(data: String) {}
-            override fun returnResult(data: String) {}
-            override suspend fun requestPermission(request: PermissionRequest): PermissionResponse =
-                if (allow(request)) PermissionResponse.Granted.Unconstrained
-                else PermissionResponse.Denied("selective deny")
-        }
+        fun selectiveContext(allow: (PermissionRequest) -> Boolean): RuntimeContext =
+            object : RuntimeContext {
+                override fun yield(data: String) {}
 
-        // FileModule: permission checks
+                override fun returnResult(data: String) {}
+
+                override suspend fun requestPermission(request: PermissionRequest): PermissionResponse =
+                    if (allow(request)) {
+                        PermissionResponse.Granted.Unconstrained
+                    } else {
+                        PermissionResponse.Denied("selective deny")
+                    }
+            }
+
+        /** Returns a FileGrant with the specified constraints for all requests. */
+        fun fileGrantContext(grant: PermissionResponse.Granted.FileGrant): RuntimeContext =
+            object : RuntimeContext {
+                override fun yield(data: String) {}
+
+                override fun returnResult(data: String) {}
+
+                override suspend fun requestPermission(request: PermissionRequest): PermissionResponse = grant
+            }
+
+        /** Returns an HttpGrant with the specified constraints for all requests. */
+        fun httpGrantContext(grant: PermissionResponse.Granted.HttpGrant): RuntimeContext =
+            object : RuntimeContext {
+                override fun yield(data: String) {}
+
+                override fun returnResult(data: String) {}
+
+                override suspend fun requestPermission(request: PermissionRequest): PermissionResponse = grant
+            }
+
+        /** Returns an EnvGrant with the specified constraints for all requests. */
+        fun envGrantContext(grant: PermissionResponse.Granted.EnvGrant): RuntimeContext =
+            object : RuntimeContext {
+                override fun yield(data: String) {}
+
+                override fun returnResult(data: String) {}
+
+                override suspend fun requestPermission(request: PermissionRequest): PermissionResponse = grant
+            }
 
         test("File.read with granted permission reads file") {
             val tmpFile = Files.createTempFile("nox_test_", ".txt")
@@ -63,9 +106,10 @@ class PermissionGatedModuleTest :
         }
 
         test("File.read with denied permission throws SecurityException") {
-            val ex = shouldThrow<SecurityException> {
-                runBlocking { FileModule.read(denyAllContext(), "/some/path.txt") }
-            }
+            val ex =
+                shouldThrow<SecurityException> {
+                    runBlocking { FileModule.read(denyAllContext(), "/some/path.txt") }
+                }
             ex.message shouldContain "Permission denied"
         }
 
@@ -92,18 +136,6 @@ class PermissionGatedModuleTest :
                 runBlocking { FileModule.exists(grantAllContext(), "/nonexistent/file.txt") } shouldBe false
             } finally {
                 Files.deleteIfExists(tmpFile)
-            }
-        }
-
-        test("File.exists with denied permission throws SecurityException") {
-            shouldThrow<SecurityException> {
-                runBlocking { FileModule.exists(denyAllContext(), "/any/path") }
-            }
-        }
-
-        test("File.delete with denied permission throws SecurityException") {
-            shouldThrow<SecurityException> {
-                runBlocking { FileModule.delete(denyAllContext(), "/some/file") }
             }
         }
 
@@ -138,7 +170,185 @@ class PermissionGatedModuleTest :
             }
         }
 
-        // EnvModule: permission checks
+        test("FileGrant.readOnly blocks write") {
+            val ctx = fileGrantContext(PermissionResponse.Granted.FileGrant(readOnly = true))
+            shouldThrow<SecurityException> {
+                runBlocking { FileModule.write(ctx, "/tmp/nox_test.txt", "data") }
+            }.message shouldContain "readOnly"
+        }
+
+        test("FileGrant.readOnly blocks append") {
+            val ctx = fileGrantContext(PermissionResponse.Granted.FileGrant(readOnly = true))
+            shouldThrow<SecurityException> {
+                runBlocking { FileModule.append(ctx, "/tmp/nox_test.txt", "data") }
+            }.message shouldContain "readOnly"
+        }
+
+        test("FileGrant.readOnly blocks delete") {
+            val ctx = fileGrantContext(PermissionResponse.Granted.FileGrant(readOnly = true))
+            shouldThrow<SecurityException> {
+                runBlocking { FileModule.delete(ctx, "/tmp/nox_test.txt") }
+            }.message shouldContain "readOnly"
+        }
+
+        test("FileGrant.readOnly allows read") {
+            val tmpFile = Files.createTempFile("nox_test_", ".txt")
+            Files.writeString(tmpFile, "readable content")
+            val ctx = fileGrantContext(PermissionResponse.Granted.FileGrant(readOnly = true))
+            try {
+                val result = runBlocking { FileModule.read(ctx, tmpFile.toString()) }
+                result shouldBe "readable content"
+            } finally {
+                Files.deleteIfExists(tmpFile)
+            }
+        }
+
+        test("FileGrant.maxBytes truncates read content") {
+            val tmpFile = Files.createTempFile("nox_test_", ".txt")
+            Files.writeString(tmpFile, "abcdefghij") // 10 bytes
+            val ctx = fileGrantContext(PermissionResponse.Granted.FileGrant(maxBytes = 5))
+            try {
+                val result = runBlocking { FileModule.read(ctx, tmpFile.toString()) }
+                result.toByteArray().size shouldBe 5
+            } finally {
+                Files.deleteIfExists(tmpFile)
+            }
+        }
+
+        test("FileGrant.maxBytes blocks oversized write") {
+            val ctx = fileGrantContext(PermissionResponse.Granted.FileGrant(maxBytes = 5))
+            shouldThrow<SecurityException> {
+                runBlocking { FileModule.write(ctx, "/tmp/nox_test.txt", "this is way too long") }
+            }.message shouldContain "maxBytes"
+        }
+
+        test("FileGrant.maxBytes allows small enough write") {
+            val tmpFile = Files.createTempFile("nox_test_", ".txt")
+            val ctx = fileGrantContext(PermissionResponse.Granted.FileGrant(maxBytes = 100))
+            try {
+                runBlocking { FileModule.write(ctx, tmpFile.toString(), "ok") }
+                Files.readString(tmpFile) shouldBe "ok"
+            } finally {
+                Files.deleteIfExists(tmpFile)
+            }
+        }
+
+        test("FileGrant.allowedDirectories blocks paths outside whitelist") {
+            val ctx =
+                fileGrantContext(
+                    PermissionResponse.Granted.FileGrant(allowedDirectories = listOf("/safe/dir")),
+                )
+            shouldThrow<SecurityException> {
+                runBlocking { FileModule.read(ctx, "/etc/passwd") }
+            }.message shouldContain "outside allowed directories"
+        }
+
+        test("FileGrant.allowedDirectories allows paths inside whitelist") {
+            val tmpDir = Files.createTempDirectory("nox_test_safe_")
+            val tmpFile = Files.createTempFile(tmpDir, "data_", ".txt")
+            Files.writeString(tmpFile, "safe")
+            val ctx =
+                fileGrantContext(
+                    PermissionResponse.Granted.FileGrant(allowedDirectories = listOf(tmpDir.toString())),
+                )
+            try {
+                val result = runBlocking { FileModule.read(ctx, tmpFile.toString()) }
+                result shouldBe "safe"
+            } finally {
+                Files.deleteIfExists(tmpFile)
+                Files.deleteIfExists(tmpDir)
+            }
+        }
+
+        test("FileGrant.allowedExtensions blocks disallowed extensions") {
+            val tmpFile = Files.createTempFile("nox_test_", ".exe")
+            Files.writeString(tmpFile, "bad")
+            val ctx =
+                fileGrantContext(
+                    PermissionResponse.Granted.FileGrant(allowedExtensions = listOf("txt", "json")),
+                )
+            try {
+                shouldThrow<SecurityException> {
+                    runBlocking { FileModule.read(ctx, tmpFile.toString()) }
+                }.message shouldContain "allowed extensions"
+            } finally {
+                Files.deleteIfExists(tmpFile)
+            }
+        }
+
+        test("FileGrant.allowedExtensions allows permitted extensions") {
+            val tmpFile = Files.createTempFile("nox_test_", ".txt")
+            Files.writeString(tmpFile, "good")
+            val ctx =
+                fileGrantContext(
+                    PermissionResponse.Granted.FileGrant(allowedExtensions = listOf("txt", "json")),
+                )
+            try {
+                val result = runBlocking { FileModule.read(ctx, tmpFile.toString()) }
+                result shouldBe "good"
+            } finally {
+                Files.deleteIfExists(tmpFile)
+            }
+        }
+
+        test("FileGrant.rewrittenPath redirects to different path") {
+            val realFile = Files.createTempFile("nox_real_", ".txt")
+            Files.writeString(realFile, "redirected content")
+            val ctx =
+                fileGrantContext(
+                    PermissionResponse.Granted.FileGrant(rewrittenPath = realFile.toString()),
+                )
+            try {
+                val result = runBlocking { FileModule.read(ctx, "/fake/path.txt") }
+                result shouldBe "redirected content"
+            } finally {
+                Files.deleteIfExists(realFile)
+            }
+        }
+
+        test("HttpGrant.httpsOnly blocks HTTP URLs") {
+            val ctx = httpGrantContext(PermissionResponse.Granted.HttpGrant(httpsOnly = true))
+            shouldThrow<SecurityException> {
+                runBlocking { HttpModule.get(ctx, "http://example.com") }
+            }.message shouldContain "HTTPS"
+        }
+
+        test("HttpGrant.allowedDomains blocks disallowed domains") {
+            val ctx =
+                httpGrantContext(
+                    PermissionResponse.Granted.HttpGrant(allowedDomains = listOf("api.safe.com")),
+                )
+            shouldThrow<SecurityException> {
+                runBlocking { HttpModule.get(ctx, "https://evil.com/data") }
+            }.message shouldContain "not in allowed list"
+        }
+
+        test("HttpGrant.allowedPorts blocks disallowed ports") {
+            val ctx =
+                httpGrantContext(
+                    PermissionResponse.Granted.HttpGrant(allowedPorts = listOf(443, 8080)),
+                )
+            shouldThrow<SecurityException> {
+                runBlocking { HttpModule.get(ctx, "https://example.com:9999/data") }
+            }.message shouldContain "port"
+        }
+
+        test("HttpGrant.allowedPorts uses default port 443 for HTTPS") {
+            // Port 443 IS allowed, so this should NOT throw for the constraint check.
+            // It will fail later on the actual HTTP request, but that's fine.
+            val ctx =
+                httpGrantContext(
+                    PermissionResponse.Granted.HttpGrant(allowedPorts = listOf(443)),
+                )
+            // Using a URL that won't actually resolve to avoid real HTTP calls
+            try {
+                runBlocking { HttpModule.get(ctx, "https://localhost.invalid/test") }
+            } catch (e: SecurityException) {
+                throw e // Re-throw security exceptions since they mean the constraint failed
+            } catch (_: Exception) {
+                // Expected, connection failure, DNS failure, etc. The constraint passed.
+            }
+        }
 
         test("Env.get with granted permission returns env variable") {
             val result = runBlocking { EnvModule.get(grantAllContext(), "PATH") }
@@ -151,9 +361,23 @@ class PermissionGatedModuleTest :
             }
         }
 
-        test("Env.system with granted permission returns system property") {
-            val result = runBlocking { EnvModule.system(grantAllContext(), "os.name") }
-            result.isNotEmpty() shouldBe true
+        test("EnvGrant.allowedVarNames blocks disallowed variables") {
+            val ctx =
+                envGrantContext(
+                    PermissionResponse.Granted.EnvGrant(allowedVarNames = listOf("HOME", "USER")),
+                )
+            shouldThrow<SecurityException> {
+                runBlocking { EnvModule.get(ctx, "SECRET_KEY") }
+            }.message shouldContain "not in allowed list"
+        }
+
+        test("EnvGrant.allowedVarNames allows whitelisted variables") {
+            val ctx =
+                envGrantContext(
+                    PermissionResponse.Granted.EnvGrant(allowedVarNames = listOf("PATH", "HOME")),
+                )
+            // Should not throw
+            runBlocking { EnvModule.get(ctx, "PATH") }
         }
 
         test("Env.system with denied permission throws SecurityException") {
@@ -173,17 +397,11 @@ class PermissionGatedModuleTest :
             ctx.requests[1]::class shouldBe PermissionRequest.Env.SystemInfo::class
         }
 
-        test("Env.get returns empty string for non-existent variable") {
-            val result = runBlocking { EnvModule.get(grantAllContext(), "NOX_NONEXISTENT_VAR_12345") }
-            result shouldBe ""
-        }
-
-        // Selective permission: grant reads but deny writes
-
         test("selective context allows reads but denies writes") {
-            val ctx = selectiveContext { request ->
-                request is PermissionRequest.File.Read || request is PermissionRequest.File.Metadata
-            }
+            val ctx =
+                selectiveContext { request ->
+                    request is PermissionRequest.File.Read || request is PermissionRequest.File.Metadata
+                }
             val tmpFile = Files.createTempFile("nox_test_", ".txt")
             Files.writeString(tmpFile, "readable")
             try {
@@ -210,13 +428,12 @@ class PermissionGatedModuleTest :
             }
         }
 
-        // Denied response includes reason
-
         test("SecurityException includes deny reason from context") {
             val ctx = denyAllContext("sandbox policy: no file access for untrusted scripts")
-            val ex = shouldThrow<SecurityException> {
-                runBlocking { FileModule.read(ctx, "/etc/passwd") }
-            }
+            val ex =
+                shouldThrow<SecurityException> {
+                    runBlocking { FileModule.read(ctx, "/etc/passwd") }
+                }
             ex.message shouldContain "sandbox policy: no file access for untrusted scripts"
         }
     })

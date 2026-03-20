@@ -17,7 +17,6 @@ import nox.plugin.annotations.NoxTypeMethod
  */
 @NoxModule(namespace = "_TypeConversions")
 object TypeConversionMethods {
-
     @NoxTypeMethod(targetType = "int", name = "toDouble")
     @JvmStatic
     fun intToDouble(value: Long): Double = value.toDouble()
@@ -25,7 +24,6 @@ object TypeConversionMethods {
     @NoxTypeMethod(targetType = "int", name = "toString")
     @JvmStatic
     fun intToString(value: Long): String = value.toString()
-
 
     @NoxTypeMethod(targetType = "double", name = "toInt")
     @NoxType("int")

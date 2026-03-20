@@ -38,8 +38,22 @@ object FileModule {
         ctx: RuntimeContext,
         path: String,
     ): String {
-        requirePermission(ctx, PermissionRequest.File.Read(path))
-        return Path.of(path).readText()
+        val grant = requireFilePermission(ctx, PermissionRequest.File.Read(path))
+        val effectivePath = grant?.rewrittenPath ?: path
+
+        enforceDirectoryConstraint(grant, effectivePath)
+        enforceExtensionConstraint(grant, effectivePath)
+
+        val content = Path.of(effectivePath).readText()
+        if (grant?.maxBytes != null && content.toByteArray().size > grant.maxBytes) {
+            return content
+                .toByteArray()
+                .take(grant.maxBytes.toInt())
+                .toByteArray()
+                .toString(Charsets.UTF_8)
+        }
+
+        return content
     }
 
     @NoxFunction(name = "write")
@@ -49,8 +63,21 @@ object FileModule {
         path: String,
         content: String,
     ) {
-        requirePermission(ctx, PermissionRequest.File.Write(path))
-        Path.of(path).writeText(content)
+        val grant = requireFilePermission(ctx, PermissionRequest.File.Write(path))
+        if (grant?.readOnly == true) {
+            throw SecurityException("Permission denied: write blocked by readOnly constraint")
+        }
+
+        val effectivePath = grant?.rewrittenPath ?: path
+
+        enforceDirectoryConstraint(grant, effectivePath)
+        enforceExtensionConstraint(grant, effectivePath)
+
+        if (grant?.maxBytes != null && content.toByteArray().size > grant.maxBytes) {
+            throw SecurityException("Permission denied: content exceeds maxBytes limit of ${grant.maxBytes}")
+        }
+
+        Path.of(effectivePath).writeText(content)
     }
 
     @NoxFunction(name = "append")
@@ -60,8 +87,21 @@ object FileModule {
         path: String,
         content: String,
     ) {
-        requirePermission(ctx, PermissionRequest.File.Append(path))
-        Files.writeString(Path.of(path), content, StandardOpenOption.APPEND, StandardOpenOption.CREATE)
+        val grant = requireFilePermission(ctx, PermissionRequest.File.Append(path))
+        if (grant?.readOnly == true) {
+            throw SecurityException("Permission denied: append blocked by readOnly constraint")
+        }
+
+        val effectivePath = grant?.rewrittenPath ?: path
+
+        enforceDirectoryConstraint(grant, effectivePath)
+        enforceExtensionConstraint(grant, effectivePath)
+
+        if (grant?.maxBytes != null && content.toByteArray().size > grant.maxBytes) {
+            throw SecurityException("Permission denied: content exceeds maxBytes limit of ${grant.maxBytes}")
+        }
+
+        Files.writeString(Path.of(effectivePath), content, StandardOpenOption.APPEND, StandardOpenOption.CREATE)
     }
 
     @NoxFunction(name = "delete")
@@ -70,8 +110,15 @@ object FileModule {
         ctx: RuntimeContext,
         path: String,
     ) {
-        requirePermission(ctx, PermissionRequest.File.Delete(path))
-        Files.deleteIfExists(Path.of(path))
+        val grant = requireFilePermission(ctx, PermissionRequest.File.Delete(path))
+        if (grant?.readOnly == true) {
+            throw SecurityException("Permission denied: delete blocked by readOnly constraint")
+        }
+
+        val effectivePath = grant?.rewrittenPath ?: path
+        enforceDirectoryConstraint(grant, effectivePath)
+
+        Files.deleteIfExists(Path.of(effectivePath))
     }
 
     @NoxFunction(name = "exists")
@@ -80,8 +127,12 @@ object FileModule {
         ctx: RuntimeContext,
         path: String,
     ): Boolean {
-        requirePermission(ctx, PermissionRequest.File.Metadata(path))
-        return Path.of(path).exists()
+        val grant = requireFilePermission(ctx, PermissionRequest.File.Metadata(path))
+        val effectivePath = grant?.rewrittenPath ?: path
+
+        enforceDirectoryConstraint(grant, effectivePath)
+
+        return Path.of(effectivePath).exists()
     }
 
     @NoxFunction(name = "list")
@@ -91,8 +142,12 @@ object FileModule {
         ctx: RuntimeContext,
         dir: String,
     ): List<String> {
-        requirePermission(ctx, PermissionRequest.File.List(dir))
-        return Files.list(Path.of(dir)).use { stream ->
+        val grant = requireFilePermission(ctx, PermissionRequest.File.List(dir))
+        val effectiveDir = grant?.rewrittenPath ?: dir
+
+        enforceDirectoryConstraint(grant, effectiveDir)
+
+        return Files.list(Path.of(effectiveDir)).use { stream ->
             stream.map { it.fileName.toString() }.toList()
         }
     }
@@ -104,8 +159,12 @@ object FileModule {
         ctx: RuntimeContext,
         path: String,
     ): Map<String, Any?> {
-        requirePermission(ctx, PermissionRequest.File.Metadata(path))
-        val p = Path.of(path)
+        val grant = requireFilePermission(ctx, PermissionRequest.File.Metadata(path))
+        val effectivePath = grant?.rewrittenPath ?: path
+
+        enforceDirectoryConstraint(grant, effectivePath)
+
+        val p = Path.of(effectivePath)
         val attrs = Files.readAttributes(p, "size,lastModifiedTime,creationTime,isDirectory")
         return attrs.mapValues { (_, v) -> v?.toString() }
     }
@@ -116,19 +175,70 @@ object FileModule {
         ctx: RuntimeContext,
         path: String,
     ) {
-        requirePermission(ctx, PermissionRequest.File.CreateDirectory(path))
-        Files.createDirectories(Path.of(path))
+        val grant = requireFilePermission(ctx, PermissionRequest.File.CreateDirectory(path))
+        if (grant?.readOnly == true) {
+            throw SecurityException("Permission denied: createDir blocked by readOnly constraint")
+        }
+
+        val effectivePath = grant?.rewrittenPath ?: path
+        enforceDirectoryConstraint(grant, effectivePath)
+
+        Files.createDirectories(Path.of(effectivePath))
     }
 
-    private suspend fun requirePermission(
+    /**
+     * Requests permission and returns the [PermissionResponse.Granted.FileGrant] if one
+     * was returned, or null if [PermissionResponse.Granted.Unconstrained].
+     */
+    private suspend fun requireFilePermission(
         ctx: RuntimeContext,
         request: PermissionRequest,
-    ) {
-        val response = ctx.requestPermission(request)
-        if (response is PermissionResponse.Denied) {
-            throw SecurityException(
+    ): PermissionResponse.Granted.FileGrant? =
+        when (val response = ctx.requestPermission(request)) {
+            is PermissionResponse.Granted.FileGrant -> response
+            is PermissionResponse.Granted -> null // Unconstrained or other grant
+            is PermissionResponse.Denied -> throw SecurityException(
                 "Permission denied: ${request::class.simpleName}" +
                     (response.reason?.let { " - $it" } ?: ""),
+            )
+        }
+
+    private fun enforceDirectoryConstraint(
+        grant: PermissionResponse.Granted.FileGrant?,
+        path: String,
+    ) {
+        val dirs = grant?.allowedDirectories ?: return
+        val normalized =
+            Path
+                .of(path)
+                .toAbsolutePath()
+                .normalize()
+                .toString()
+        if (dirs.none {
+                normalized.startsWith(
+                    Path
+                        .of(it)
+                        .toAbsolutePath()
+                        .normalize()
+                        .toString(),
+                )
+            }
+        ) {
+            throw SecurityException(
+                "Permission denied: path '$path' is outside allowed directories: $dirs",
+            )
+        }
+    }
+
+    private fun enforceExtensionConstraint(
+        grant: PermissionResponse.Granted.FileGrant?,
+        path: String,
+    ) {
+        val exts = grant?.allowedExtensions ?: return
+        val ext = path.substringAfterLast('.', "")
+        if (ext !in exts) {
+            throw SecurityException(
+                "Permission denied: extension '.$ext' is not in allowed extensions: $exts",
             )
         }
     }

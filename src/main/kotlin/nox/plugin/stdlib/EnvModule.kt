@@ -27,7 +27,12 @@ object EnvModule {
         ctx: RuntimeContext,
         name: String,
     ): String {
-        requirePermission(ctx, PermissionRequest.Env.ReadVar(name))
+        val grant = requireEnvPermission(ctx, PermissionRequest.Env.ReadVar(name))
+        if (grant?.allowedVarNames != null && name !in grant.allowedVarNames!!) {
+            throw SecurityException(
+                "Permission denied: variable '$name' not in allowed list: ${grant.allowedVarNames}",
+            )
+        }
         return System.getenv(name) ?: ""
     }
 
@@ -37,20 +42,20 @@ object EnvModule {
         ctx: RuntimeContext,
         property: String,
     ): String {
-        requirePermission(ctx, PermissionRequest.Env.SystemInfo(property))
+        requireEnvPermission(ctx, PermissionRequest.Env.SystemInfo(property))
         return System.getProperty(property) ?: ""
     }
 
-    private suspend fun requirePermission(
+    private suspend fun requireEnvPermission(
         ctx: RuntimeContext,
         request: PermissionRequest,
-    ) {
-        val response = ctx.requestPermission(request)
-        if (response is PermissionResponse.Denied) {
-            throw SecurityException(
+    ): PermissionResponse.Granted.EnvGrant? =
+        when (val response = ctx.requestPermission(request)) {
+            is PermissionResponse.Granted.EnvGrant -> response
+            is PermissionResponse.Granted -> null
+            is PermissionResponse.Denied -> throw SecurityException(
                 "Permission denied: ${request::class.simpleName}" +
                     (response.reason?.let { " - $it" } ?: ""),
             )
         }
-    }
 }
