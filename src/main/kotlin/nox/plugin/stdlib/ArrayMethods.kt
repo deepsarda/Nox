@@ -37,7 +37,7 @@ object ArrayMethods {
         arr: Any?,
         item: Any?,
     ) {
-        val list = arr as? MutableList<Any?> ?: return
+        val list = arr as? MutableList<Any?> ?: throw NullPointerException("push() called on null array")
         list.add(item)
     }
 
@@ -49,8 +49,8 @@ object ArrayMethods {
     @NoxType("json") // actual type is T, resolved by registry
     @JvmStatic
     fun pop(arr: Any?): Any? {
-        val list = arr as? MutableList<Any?> ?: throw RuntimeException("pop() called on null array")
-        if (list.isEmpty()) throw RuntimeException("pop() called on empty array")
+        val list = arr as? MutableList<Any?> ?: throw NullPointerException("pop() called on null array")
+        if (list.isEmpty()) throw IndexOutOfBoundsException("pop() called on empty array")
         return list.removeAt(list.size - 1)
     }
 
@@ -61,7 +61,7 @@ object ArrayMethods {
     @NoxType("int")
     @JvmStatic
     fun length(arr: Any?): Long {
-        val list = arr as? List<*> ?: return 0L
+        val list = arr as? List<*> ?: throw NullPointerException("length() called on null array")
         return list.size.toLong()
     }
 }

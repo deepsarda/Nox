@@ -1,5 +1,6 @@
 package nox.plugin.stdlib
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.doubles.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.doubles.shouldBeLessThan
@@ -178,6 +179,17 @@ class StdlibModuleTest :
         test("array.length returns size") {
             ArrayMethods.length(listOf(1, 2, 3)) shouldBe 3L
             ArrayMethods.length(emptyList<Any>()) shouldBe 0L
-            ArrayMethods.length(null) shouldBe 0L
+        }
+
+        test("array.length throws on null") {
+            shouldThrow<NullPointerException> {
+                ArrayMethods.length(null)
+            }
+        }
+
+        test("array.push throws on null") {
+            shouldThrow<NullPointerException> {
+                ArrayMethods.push(null, 1)
+            }
         }
     })

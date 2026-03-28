@@ -1,6 +1,36 @@
 package nox.runtime
 
 /**
+ * Type-safe representation of values carried in plugin permission requests
+ * and grants. Replaces `Map<String, Any>` to prevent unchecked casts.
+ *
+ * Usage:
+ * ```kotlin
+ * val details = mapOf(
+ *     "path" to PluginValue.Text("/data/output"),
+ *     "maxRetries" to PluginValue.Number(3),
+ *     "dryRun" to PluginValue.Flag(true)
+ * )
+ * ```
+ */
+sealed class PluginValue {
+    /** A textual value. */
+    data class Text(
+        val value: String,
+    ) : PluginValue()
+
+    /** A numeric value (stored as Double to cover both int and floating-point). */
+    data class Number(
+        val value: Double,
+    ) : PluginValue()
+
+    /** A boolean flag. */
+    data class Flag(
+        val value: Boolean,
+    ) : PluginValue()
+}
+
+/**
  * Sealed hierarchy representing every type of permission a sandbox can request.
  *
  * The type itself encodes the category and action; constructor parameters
@@ -76,6 +106,6 @@ sealed class PermissionRequest {
     data class Plugin(
         val category: String,
         val action: String,
-        val details: Map<String, Any> = emptyMap(),
+        val details: Map<String, PluginValue> = emptyMap(),
     ) : PermissionRequest()
 }

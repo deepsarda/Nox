@@ -3,7 +3,7 @@ package nox.plugin.annotations
 /**
  * Marks a Kotlin class/object as a Nox plugin module providing a namespace of functions.
  *
- * All public methods annotated with [@NoxFunction] within this class are
+ * All public methods annotated with [NoxFunction] within this class are
  * registered as callable functions under the given [namespace].
  *
  * ```kotlin

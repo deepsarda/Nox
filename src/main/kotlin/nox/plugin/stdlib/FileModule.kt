@@ -6,10 +6,12 @@ import nox.plugin.annotations.NoxType
 import nox.runtime.PermissionRequest
 import nox.runtime.PermissionResponse
 import nox.runtime.RuntimeContext
+import java.io.InputStreamReader
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import kotlin.io.path.exists
+import kotlin.io.path.inputStream
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
@@ -44,16 +46,17 @@ object FileModule {
         enforceDirectoryConstraint(grant, effectivePath)
         enforceExtensionConstraint(grant, effectivePath)
 
-        val content = Path.of(effectivePath).readText()
-        if (grant?.maxBytes != null && content.toByteArray().size > grant.maxBytes) {
-            return content
-                .toByteArray()
-                .take(grant.maxBytes.toInt())
-                .toByteArray()
-                .toString(Charsets.UTF_8)
+        val maxBytes = grant?.maxBytes
+        if (maxBytes == null) {
+            return Path.of(effectivePath).readText()
         }
 
-        return content
+        // Stream up to maxBytes and decode with InputStreamReader to avoid
+        // splitting multi-byte UTF-8 codepoints at an arbitrary byte offset.
+        return Path.of(effectivePath).inputStream().use { stream ->
+            val limited = stream.readNBytes(maxBytes.toInt())
+            InputStreamReader(limited.inputStream(), Charsets.UTF_8).readText()
+        }
     }
 
     @NoxFunction(name = "write")
@@ -208,20 +211,18 @@ object FileModule {
         path: String,
     ) {
         val dirs = grant?.allowedDirectories ?: return
-        val normalized =
+        val normalizedPath =
             Path
                 .of(path)
                 .toAbsolutePath()
                 .normalize()
-                .toString()
-        if (dirs.none {
-                normalized.startsWith(
+        if (dirs.none { dir ->
+                val normalizedDir =
                     Path
-                        .of(it)
+                        .of(dir)
                         .toAbsolutePath()
                         .normalize()
-                        .toString(),
-                )
+                normalizedPath.startsWith(normalizedDir)
             }
         ) {
             throw SecurityException(

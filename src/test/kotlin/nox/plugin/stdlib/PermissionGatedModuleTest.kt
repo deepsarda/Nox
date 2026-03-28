@@ -377,7 +377,8 @@ class PermissionGatedModuleTest :
                     PermissionResponse.Granted.EnvGrant(allowedVarNames = listOf("PATH", "HOME")),
                 )
             // Should not throw
-            runBlocking { EnvModule.get(ctx, "PATH") }
+            val result = runBlocking { EnvModule.get(ctx, "PATH") }
+            result.isNotEmpty() shouldBe true
         }
 
         test("Env.system with denied permission throws SecurityException") {

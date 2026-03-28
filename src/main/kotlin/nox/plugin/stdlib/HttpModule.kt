@@ -1,5 +1,7 @@
 package nox.plugin.stdlib
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import nox.plugin.annotations.NoxFunction
 import nox.plugin.annotations.NoxModule
 import nox.plugin.annotations.NoxType
@@ -29,6 +31,8 @@ import java.net.http.HttpResponse
 object HttpModule {
     private val client: HttpClient = HttpClient.newHttpClient()
 
+    private const val DEFAULT_TIMEOUT_MS = 30_000L // 30 seconds
+
     @NoxFunction(name = "get")
     @JvmStatic
     suspend fun get(
@@ -39,13 +43,17 @@ object HttpModule {
         enforceHttpConstraints(grant, url)
 
         val request = buildRequest(grant, url) { it.GET() }
-        val body = client.send(request, HttpResponse.BodyHandlers.ofString()).body()
+        val body =
+            withContext(Dispatchers.IO) {
+                client.send(request, HttpResponse.BodyHandlers.ofString()).body()
+            }
         return enforceMaxResponseSize(grant, body)
     }
 
     @NoxFunction(name = "getJson")
     @NoxType("json")
     @JvmStatic
+    // TODO: implement JSON
     suspend fun getJson(
         ctx: RuntimeContext,
         url: String,
@@ -55,7 +63,10 @@ object HttpModule {
         enforceHttpConstraints(grant, url)
 
         val request = buildRequest(grant, url) { it.GET() }
-        val body = client.send(request, HttpResponse.BodyHandlers.ofString()).body()
+        val body =
+            withContext(Dispatchers.IO) {
+                client.send(request, HttpResponse.BodyHandlers.ofString()).body()
+            }
         return enforceMaxResponseSize(grant, body)
     }
 
@@ -76,7 +87,10 @@ object HttpModule {
                     .POST(HttpRequest.BodyPublishers.ofString(body))
                     .header("Content-Type", "application/json")
             }
-        val response = client.send(request, HttpResponse.BodyHandlers.ofString()).body()
+        val response =
+            withContext(Dispatchers.IO) {
+                client.send(request, HttpResponse.BodyHandlers.ofString()).body()
+            }
 
         return enforceMaxResponseSize(grant, response)
     }
@@ -99,7 +113,10 @@ object HttpModule {
                     .header("Content-Type", "application/json")
             }
 
-        val response = client.send(request, HttpResponse.BodyHandlers.ofString()).body()
+        val response =
+            withContext(Dispatchers.IO) {
+                client.send(request, HttpResponse.BodyHandlers.ofString()).body()
+            }
         return enforceMaxResponseSize(grant, response)
     }
 
@@ -114,7 +131,10 @@ object HttpModule {
         enforceHttpConstraints(grant, url)
 
         val request = buildRequest(grant, url) { it.DELETE() }
-        val response = client.send(request, HttpResponse.BodyHandlers.ofString()).body()
+        val response =
+            withContext(Dispatchers.IO) {
+                client.send(request, HttpResponse.BodyHandlers.ofString()).body()
+            }
         return enforceMaxResponseSize(grant, response)
     }
 
@@ -170,9 +190,8 @@ object HttpModule {
         configure: (HttpRequest.Builder) -> HttpRequest.Builder,
     ): HttpRequest {
         val builder = HttpRequest.newBuilder(URI.create(url))
-        if (grant?.timeoutMs != null) {
-            builder.timeout(java.time.Duration.ofMillis(grant.timeoutMs))
-        }
+        val timeout = grant?.timeoutMs ?: DEFAULT_TIMEOUT_MS
+        builder.timeout(java.time.Duration.ofMillis(timeout))
         return configure(builder).build()
     }
 

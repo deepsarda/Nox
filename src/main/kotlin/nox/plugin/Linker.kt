@@ -52,7 +52,10 @@ object Linker {
             function.javaMethod
                 ?: throw IllegalArgumentException("Cannot link ${function.name}: no backing Java method")
 
-        val lookup = MethodHandles.publicLookup()
+        // Use privateLookupIn so unreflect succeeds for package-private/protected methods,
+        // not just public ones. publicLookup() would fail for any non-public target.
+        javaMethod.isAccessible = true
+        val lookup = MethodHandles.privateLookupIn(javaMethod.declaringClass, MethodHandles.lookup())
         val handle = lookup.unreflect(javaMethod)
 
         // Determine the SCALL name
@@ -160,6 +163,8 @@ object Linker {
                 kotlinType == Int::class.java || kotlinType == java.lang.Integer::class.java -> raw.toInt()
                 kotlinType == Double::class.java || kotlinType == java.lang.Double::class.java ->
                     java.lang.Double.longBitsToDouble(raw)
+                kotlinType == Float::class.java || kotlinType == java.lang.Float::class.java ->
+                    java.lang.Float.intBitsToFloat(raw.toInt())
                 kotlinType == Boolean::class.java || kotlinType == java.lang.Boolean::class.java ->
                     raw != 0L
                 else -> throw IllegalStateException("Cannot extract primitive type: $kotlinType")
@@ -199,6 +204,8 @@ object Linker {
                             javaType == java.lang.Integer::class.java -> RegisterBank.PRIMITIVE
                         javaType == Double::class.java ||
                             javaType == java.lang.Double::class.java -> RegisterBank.PRIMITIVE
+                        javaType == Float::class.java ||
+                            javaType == java.lang.Float::class.java -> RegisterBank.PRIMITIVE
                         javaType == Boolean::class.java ||
                             javaType == java.lang.Boolean::class.java -> RegisterBank.PRIMITIVE
                         javaType == String::class.java -> RegisterBank.REFERENCE
@@ -227,6 +234,10 @@ object Linker {
                 kotlinType == Int::class.java || kotlinType == java.lang.Integer::class.java -> (value as Int).toLong()
                 kotlinType == Double::class.java || kotlinType == java.lang.Double::class.java ->
                     java.lang.Double.doubleToRawLongBits(value as Double)
+                kotlinType == Float::class.java || kotlinType == java.lang.Float::class.java ->
+                    java.lang.Float
+                        .floatToRawIntBits(value as Float)
+                        .toLong()
                 kotlinType == Boolean::class.java || kotlinType == java.lang.Boolean::class.java ->
                     if (value as Boolean) 1L else 0L
                 else -> throw IllegalStateException("Cannot pack primitive type: $kotlinType")
@@ -263,6 +274,8 @@ object Linker {
                             returnType == java.lang.Integer::class.java -> RegisterBank.PRIMITIVE
                         returnType == Double::class.java ||
                             returnType == java.lang.Double::class.java -> RegisterBank.PRIMITIVE
+                        returnType == Float::class.java ||
+                            returnType == java.lang.Float::class.java -> RegisterBank.PRIMITIVE
                         returnType == Boolean::class.java ||
                             returnType == java.lang.Boolean::class.java -> RegisterBank.PRIMITIVE
                         else -> RegisterBank.REFERENCE

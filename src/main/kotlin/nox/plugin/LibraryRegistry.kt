@@ -182,9 +182,10 @@ class LibraryRegistry {
         try {
             val linked = Linker.link(func, instance, scallName)
             nativeFuncs[linked.scallName] = linked.nativeFunc
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             // Linking may fail if method signatures aren't compatible
             // TODO: Handle this
+            System.err.println("Warning: Failed to link $scallName: ${e.message}")
         }
     }
 
@@ -222,8 +223,9 @@ class LibraryRegistry {
         try {
             val linked = Linker.link(func, instance, scallName)
             nativeFuncs[linked.scallName] = linked.nativeFunc
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             // TODO: handle this
+            System.err.println("Warning: Failed to link $scallName: ${e.message}")
         }
     }
 
@@ -280,7 +282,8 @@ class LibraryRegistry {
 
     /** Whether a method name looks like a conversion (toX, fromX). */
     private fun isConversionLike(name: String): Boolean =
-        name.startsWith("to") && name.length > 2 && name[2].isUpperCase()
+        (name.startsWith("to") && name.length > 2 && name[2].isUpperCase()) ||
+            (name.startsWith("from") && name.length > 4 && name[4].isUpperCase())
 
     companion object {
         /**
