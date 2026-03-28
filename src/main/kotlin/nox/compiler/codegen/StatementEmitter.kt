@@ -2,7 +2,7 @@ package nox.compiler.codegen
 
 import nox.compiler.ast.*
 import nox.compiler.types.*
-import nox.plugin.TempRegistry
+import nox.plugin.LibraryRegistry
 
 /**
  * Emits bytecode for all statement AST nodes.
@@ -17,6 +17,7 @@ import nox.plugin.TempRegistry
  */
 class StatementEmitter(
     private val ctx: BytecodeEmitter,
+    private val registry: LibraryRegistry,
 ) {
     // Loop context stack (break/continue backpatching)
     private data class LoopContext(
@@ -367,7 +368,7 @@ class StatementEmitter(
         ctx.regNameEvents.add(RegNameEvent(ctx.pc, stmt.elementType.isPrimitive(), elemReg, stmt.elementName))
         ctx.emit(Opcode.LDI, 0, idxReg, 0, 0, line) // idx = 0
         val lenTarget =
-            TempRegistry.lookupBuiltinMethod(iterType, "length")
+            registry.lookupBuiltinMethod(iterType, "length")
                 ?: error("No 'length' method found on type '$iterType'")
         val lenArgStart = ctx.allocator.allocTempPrim()
         ctx.emit(Opcode.MOVR, 0, lenArgStart, arrReg, 0, line)

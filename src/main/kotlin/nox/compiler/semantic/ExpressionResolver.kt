@@ -4,7 +4,7 @@ import nox.compiler.CompilerErrors
 import nox.compiler.DiagnosticHelpers
 import nox.compiler.ast.*
 import nox.compiler.types.*
-import nox.plugin.TempRegistry
+import nox.plugin.LibraryRegistry
 
 /**
  * Resolves the type of every [Expr] node in the AST.
@@ -25,6 +25,7 @@ class ExpressionResolver(
     private val globalScope: SymbolTable,
     private val errors: CompilerErrors,
     private val modules: List<ResolvedModule>,
+    private val registry: LibraryRegistry,
 ) {
     /**
      * Resolve the type of [expr] within the given [scope].
@@ -418,8 +419,8 @@ class ExpressionResolver(
             }
 
             // Step 2: Tier 0/1 built-in namespace
-            if (TempRegistry.isBuiltinNamespace(namespaceName)) {
-                val builtin = TempRegistry.lookupNamespaceFunc(namespaceName, call.methodName)
+            if (registry.isBuiltinNamespace(namespaceName)) {
+                val builtin = registry.lookupNamespaceFunc(namespaceName, call.methodName)
                 if (builtin != null) {
                     call.resolution = MethodCallExpr.Resolution.NAMESPACE
                     call.resolvedTarget = builtin
@@ -446,7 +447,7 @@ class ExpressionResolver(
         val targetType = resolveExpr(scope, target) ?: return null
 
         // Step 3: Built-in type method
-        val builtinMethod = TempRegistry.lookupBuiltinMethod(targetType, call.methodName)
+        val builtinMethod = registry.lookupBuiltinMethod(targetType, call.methodName)
         if (builtinMethod != null) {
             call.resolution = MethodCallExpr.Resolution.TYPE_BOUND
             call.resolvedTarget = builtinMethod
@@ -461,7 +462,7 @@ class ExpressionResolver(
         }
 
         // Step 4: Type-bound conversion method
-        val typeMethod = TempRegistry.lookupTypeMethod(targetType, call.methodName)
+        val typeMethod = registry.lookupTypeMethod(targetType, call.methodName)
         if (typeMethod != null) {
             call.resolution = MethodCallExpr.Resolution.TYPE_BOUND
             call.resolvedTarget = typeMethod
@@ -497,8 +498,8 @@ class ExpressionResolver(
         // Step 6: Error, try to suggest available methods
         val methodCandidates = mutableListOf<String>()
         // Collect built-in type methods and conversion methods
-        TempRegistry.getBuiltinMethodNames(targetType)?.let { methodCandidates.addAll(it) }
-        TempRegistry.getTypeMethodNames(targetType)?.let { methodCandidates.addAll(it) }
+        registry.getBuiltinMethodNames(targetType)?.let { methodCandidates.addAll(it) }
+        registry.getTypeMethodNames(targetType)?.let { methodCandidates.addAll(it) }
         // Collect UFCS candidates
         val ufcsCandidates =
             scope.allNamesInScope { sym ->

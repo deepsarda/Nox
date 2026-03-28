@@ -11,6 +11,7 @@ import nox.compiler.semantic.ImportResolver
 import nox.compiler.semantic.ResolvedModule
 import nox.compiler.semantic.TypeResolver
 import nox.compiler.types.SymbolTable
+import nox.plugin.LibraryRegistry
 import java.nio.file.Path
 
 /**
@@ -71,8 +72,18 @@ object NoxCompiler {
         // Phase 1: Parse
         val program = NoxParsing.parse(source, fileName, errors)
 
+        // Auto-discover and register all @NoxModule plugins on the classpath
+        val registry = LibraryRegistry.createDefault()
+
         // Phase 2: Import Resolution
-        val importResolver = ImportResolver(basePath, errors, fileReader)
+        val importResolver =
+            ImportResolver(
+                basePath = basePath,
+                errors = errors,
+                fileReader = fileReader,
+                builtinNamespaces = registry.builtinNamespaceNames,
+                externalPluginNamespaces = registry.externalPluginNamespaces,
+            )
         importResolver.resolveImports(program)
         val modules = importResolver.modules.toList()
 
@@ -86,7 +97,7 @@ object NoxCompiler {
         DeclarationCollector(globalScope, errors).collect(program)
 
         // Phase 4: Type Resolution (Pass 2)
-        TypeResolver(globalScope, errors, modules).resolve(program)
+        TypeResolver(globalScope, errors, modules, registry).resolve(program)
 
         // Phase 5: Control Flow Validation (Pass 3)
         ControlFlowValidator(errors, warnings).validate(program)
@@ -100,7 +111,7 @@ object NoxCompiler {
         program.sourceLines.addAll(source.lines())
 
         // Phase 6: Code Generation
-        val compiledProgram = CodeGenerator(modules).generate(program)
+        val compiledProgram = CodeGenerator(modules, registry).generate(program)
 
         // Phase 7: Disassembly
         val programName = program.headers.firstOrNull { it.key == "name" }?.value ?: "(unnamed)"

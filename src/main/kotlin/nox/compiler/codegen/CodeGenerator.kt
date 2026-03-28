@@ -3,6 +3,7 @@ package nox.compiler.codegen
 import nox.compiler.ast.*
 import nox.compiler.semantic.ResolvedModule
 import nox.compiler.types.*
+import nox.plugin.LibraryRegistry
 
 /**
  * Orchestrates register allocation and bytecode emission for an entire Nox program.
@@ -11,6 +12,7 @@ import nox.compiler.types.*
  */
 class CodeGenerator(
     private val modules: List<ResolvedModule> = emptyList(),
+    private val registry: LibraryRegistry = LibraryRegistry.createDefault(),
 ) {
     // Builder state
     private val pool = ConstantPool()
@@ -119,7 +121,7 @@ class CodeGenerator(
 
         val entryPc = bytecode.size
         val allocator = RegisterAllocator(emptyList())
-        val emitter = BytecodeEmitter(allocator, pool, program, modules)
+        val emitter = BytecodeEmitter(allocator, pool, program, modules, registry = registry)
 
         for (global in program.globals) {
             val init = global.initializer ?: continue
@@ -227,7 +229,7 @@ class CodeGenerator(
         val allocator = RegisterAllocator(params)
         allocator.setParamSymbols(params)
 
-        val emitter = BytecodeEmitter(allocator, pool, program, modules, liveness.freeAtNode)
+        val emitter = BytecodeEmitter(allocator, pool, program, modules, liveness.freeAtNode, registry)
         emitter.recordParamNames(params)
         emitter.emitBlock(body)
 

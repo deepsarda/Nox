@@ -4,7 +4,6 @@ import nox.compiler.CompilerErrors
 import nox.compiler.ast.ImportDecl
 import nox.compiler.ast.Program
 import nox.compiler.parsing.NoxParsing
-import nox.plugin.TempRegistry
 import java.nio.file.Path
 import kotlin.io.path.pathString
 
@@ -29,7 +28,7 @@ internal class ImportResolver(
     private val basePath: Path,
     private val errors: CompilerErrors,
     private val fileReader: (Path) -> String = { it.toFile().readText() },
-    private val builtinNamespaces: Set<String> = TempRegistry.builtinNamespaceNames,
+    private val builtinNamespaces: Set<String> = emptySet(),
     private val externalPluginNamespaces: Set<String> = emptySet(),
     private val processingSet: MutableSet<Path> = mutableSetOf(),
     private val resolvedFiles: MutableMap<Path, ResolvedFile> = mutableMapOf(),

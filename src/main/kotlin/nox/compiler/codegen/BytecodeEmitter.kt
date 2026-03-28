@@ -3,6 +3,7 @@ package nox.compiler.codegen
 import nox.compiler.ast.*
 import nox.compiler.semantic.ResolvedModule
 import nox.compiler.types.*
+import nox.plugin.LibraryRegistry
 
 /**
  * Converts an annotated body (function, init block, or module) into a flat list of 64-bit instructions.
@@ -19,11 +20,12 @@ class BytecodeEmitter(
     internal val program: Program,
     internal val modules: List<ResolvedModule> = emptyList(),
     private val freeAtNode: Map<Any, List<Symbol>> = emptyMap(),
+    private val registry: LibraryRegistry = LibraryRegistry.createDefault(),
 ) {
     // Sub-emitters
 
     private val expressions = ExpressionEmitter(this)
-    private val statements = StatementEmitter(this)
+    private val statements = StatementEmitter(this, registry)
 
     // Instruction buffer
 
