@@ -329,6 +329,5 @@ class NoxJsonParser(
         pos++
     }
 
-    private fun error(message: String): IllegalArgumentException =
-        IllegalArgumentException("$message at position $pos")
+    private fun error(message: String): IllegalArgumentException = IllegalArgumentException("$message at position $pos")
 }

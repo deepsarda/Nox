@@ -1,7 +1,9 @@
 package nox.plugin
 
 import nox.compiler.types.CallTarget
+import nox.compiler.types.NoxParam
 import nox.compiler.types.TypeRef
+import nox.plugin.annotations.NoxDefault
 import nox.plugin.annotations.NoxFunction
 import nox.plugin.annotations.NoxModule
 import nox.plugin.annotations.NoxType
@@ -78,7 +80,7 @@ class LibraryRegistry {
         // Array methods (work on any T[])
         if (targetType.isArray && methodName in arrayMethodNames) {
             return when (methodName) {
-                "push" -> CallTarget("__arr_push", listOf("item" to targetType.elementType()), TypeRef.VOID)
+                "push" -> CallTarget("__arr_push", listOf(NoxParam("item", targetType.elementType())), TypeRef.VOID)
                 "pop" -> CallTarget("__arr_pop", emptyList(), targetType.elementType())
                 "length" -> CallTarget("__arr_length", emptyList(), TypeRef.INT)
                 else -> null
@@ -158,9 +160,30 @@ class LibraryRegistry {
         for (func in manifest.functions) {
             val params =
                 func.paramTypes.mapIndexed { i, tag ->
-                    "arg$i" to typeTagToTypeRef(tag)
+                    NoxParam("arg$i", typeTagToTypeRef(tag))
                 }
             funcMap[func.name] = CallTarget(func.name, params, typeTagToTypeRef(func.returnType))
+        }
+    }
+
+    /**
+     * Validates that optional parameters (those with `@NoxDefault`) come after all
+     * required parameters, mirroring the rule enforced for user-defined functions.
+     */
+    private fun validateParamOrder(
+        scallName: String,
+        params: List<NoxParam>,
+    ) {
+        var optionalSeen = false
+        for (p in params) {
+            if (p.defaultLiteral != null) {
+                optionalSeen = true
+            } else if (optionalSeen) {
+                throw IllegalArgumentException(
+                    "Plugin function '$scallName': required parameter '${p.name}' " +
+                        "must come before optional parameters",
+                )
+            }
         }
     }
 
@@ -174,6 +197,7 @@ class LibraryRegistry {
         val params = buildParamList(func)
         val returnType = resolveReturnType(func)
         val scallName = "${namespace}__$noxName"
+        validateParamOrder(scallName, params)
 
         val funcMap = namespaceFunctions.getOrPut(namespace) { mutableMapOf() }
         funcMap[noxName] = CallTarget(scallName, params, returnType)
@@ -205,6 +229,7 @@ class LibraryRegistry {
 
         // Generate internal SCALL name: __<type>_<method>
         val scallName = "__${targetType}_$noxName"
+        validateParamOrder(scallName, noxVisibleParams)
 
         // Determine which map to use:
         // builtinMethods: for methods on built-in types (string.upper, json.size, etc.)
@@ -233,13 +258,15 @@ class LibraryRegistry {
      * Build the Nox-visible parameter list from a Kotlin function.
      *
      * Skips `RuntimeContext` parameters (auto-injected by VM).
+     * Detects `@NoxDefault` annotations to populate [NoxParam.defaultLiteral].
      */
-    private fun buildParamList(func: KFunction<*>): List<Pair<String, TypeRef>> =
+    private fun buildParamList(func: KFunction<*>): List<NoxParam> =
         func.valueParameters
             .filter { !isRuntimeContext(it) }
             .map { p ->
                 val noxType = resolveParamType(p)
-                (p.name ?: "arg") to noxType
+                val default = p.findAnnotation<NoxDefault>()?.value
+                NoxParam(p.name ?: "arg", noxType, default)
             }
 
     /** Resolve a Kotlin parameter to its Nox TypeRef. */

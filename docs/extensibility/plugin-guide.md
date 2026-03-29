@@ -99,7 +99,48 @@ The linker automatically maps between NSL types and Kotlin/JVM types:
 | Any array | `List<*>` | `rMem` |
 
 The same mapping applies for return types. The linker generates code to place the return value in the correct register bank.
- 
+
+### Optional Parameters: `@NoxDefault`
+
+Plugin parameters are required by default. To make a parameter optional, annotate it with `@NoxDefault` and provide a literal default value. This follows the same rule as user-defined functions: **optional parameters must come after all required parameters**.
+
+```kotlin
+@NoxModule(namespace = "Json")
+object JsonModule {
+
+    @NoxFunction(name = "stringify")
+    @JvmStatic
+    fun stringify(
+        @NoxType("json") value: Any?,
+        @NoxDefault("true") pretty: Boolean = true,
+    ): String = NoxJsonWriter(prettyPrint = pretty).write(value)
+}
+```
+
+**NSL usage:**
+
+```c
+json data = Json.parse("{\"name\": \"Alice\"}");
+string pretty = Json.stringify(data);         // pretty-printed (default)
+string compact = Json.stringify(data, false);  // compact
+```
+
+**How it works:** The VM has no concept of default parameters. The compiler handles defaults entirely, when a call omits an optional argument, the compiler injects the default literal into the bytecode at the call site. The linker and SCALL instruction remain unchanged.
+
+**Supported literal forms:**
+
+| Literal | Example | NSL Type |
+|---|---|---|
+| `"true"` / `"false"` | `@NoxDefault("true")` | `boolean` |
+| Integer | `@NoxDefault("42")` | `int` |
+| Decimal | `@NoxDefault("3.14")` | `double` |
+| Quoted string | `@NoxDefault("\"hello\"")` | `string` |
+| `"null"` | `@NoxDefault("null")` | any reference type |
+
+**Rules:**
+- Optional parameters must come after all required parameters (validated at registration time)
+- The Kotlin parameter should also declare a matching default (`= true`, `= 42`, etc.) so the function works correctly when called directly from Kotlin tests
+
 ### Accessing the Runtime Context
 
 Plugins that need to interact with the sandbox (check permissions, charge gas, access metadata) can accept a `RuntimeContext` as their **first parameter**.

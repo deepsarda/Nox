@@ -163,12 +163,12 @@ yield `Operation took ${elapsed}ms`;
  
 ### `Json` -- JSON Parsing & Serialization
 
-> **No permissions required.** 
+> **No permissions required.**
 
 | Function | Signature | Description |
 |---|---|---|
 | `Json.parse` | `json Json.parse(string text)` | Parse a JSON string into a json value |
-| `Json.stringify` | `string Json.stringify(json value)` | Serialize a json value to a JSON string |
+| `Json.stringify` | `string Json.stringify(json value, boolean pretty = true)` | Serialize a json value to a JSON string |
 
 #### Example
 
@@ -178,8 +178,19 @@ json data = Json.parse(raw);
 string name = data.getString("name", "unknown");
 
 json response = {status: "ok", count: 42};
+
+// Pretty-printed by default
 string body = Json.stringify(response);
-Http.post("https://api.example.com/submit", body);
+// {
+//   "status": "ok",
+//   "count": 42
+// }
+
+// Compact output
+string compact = Json.stringify(response, false);
+// {"status":"ok","count":42}
+
+Http.post("https://api.example.com/submit", compact);
 ```
 
 #### Round-Trip Behavior

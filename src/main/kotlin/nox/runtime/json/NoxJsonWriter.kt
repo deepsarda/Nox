@@ -11,6 +11,7 @@ package nox.runtime.json
  */
 class NoxJsonWriter(
     private val maxDepth: Int = NoxJsonLimits.DEFAULT_DEPTH,
+    private val prettyPrint: Boolean = true,
 ) {
     fun write(value: Any?): String {
         val sb = StringBuilder()
@@ -83,16 +84,33 @@ class NoxJsonWriter(
             sb.append("null")
             return
         }
-        sb.append('{')
-        var first = true
-        for ((key, value) in map) {
-            if (!first) sb.append(',')
-            first = false
-            writeString(sb, key)
-            sb.append(':')
-            writeValue(sb, value, depth + 1)
+        if (!prettyPrint || map.isEmpty()) {
+            sb.append('{')
+            var first = true
+            for ((key, value) in map) {
+                if (!first) sb.append(',')
+                first = false
+                writeString(sb, key)
+                sb.append(':')
+                writeValue(sb, value, depth + 1)
+            }
+            sb.append('}')
+        } else {
+            sb.append('{')
+            var first = true
+            for ((key, value) in map) {
+                if (!first) sb.append(',')
+                first = false
+                sb.append('\n')
+                indent(sb, depth + 1)
+                writeString(sb, key)
+                sb.append(": ")
+                writeValue(sb, value, depth + 1)
+            }
+            sb.append('\n')
+            indent(sb, depth)
+            sb.append('}')
         }
-        sb.append('}')
     }
 
     private fun writeArray(
@@ -104,11 +122,35 @@ class NoxJsonWriter(
             sb.append("null")
             return
         }
-        sb.append('[')
-        for (i in list.indices) {
-            if (i > 0) sb.append(',')
-            writeValue(sb, list[i], depth + 1)
+        if (!prettyPrint || list.isEmpty()) {
+            sb.append('[')
+            for (i in list.indices) {
+                if (i > 0) sb.append(',')
+                writeValue(sb, list[i], depth + 1)
+            }
+            sb.append(']')
+        } else {
+            sb.append('[')
+            for (i in list.indices) {
+                if (i > 0) sb.append(',')
+                sb.append('\n')
+                indent(sb, depth + 1)
+                writeValue(sb, list[i], depth + 1)
+            }
+            sb.append('\n')
+            indent(sb, depth)
+            sb.append(']')
         }
-        sb.append(']')
+    }
+
+    private fun indent(
+        sb: StringBuilder,
+        depth: Int,
+    ) {
+        repeat(depth) { sb.append(INDENT) }
+    }
+
+    companion object {
+        private const val INDENT = "  "
     }
 }

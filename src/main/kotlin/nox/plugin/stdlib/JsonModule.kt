@@ -1,5 +1,6 @@
 package nox.plugin.stdlib
 
+import nox.plugin.annotations.NoxDefault
 import nox.plugin.annotations.NoxFunction
 import nox.plugin.annotations.NoxModule
 import nox.plugin.annotations.NoxType
@@ -38,11 +39,13 @@ object JsonModule {
     /**
      * Serialize a Nox json value to a JSON string.
      *
+     * Pretty-prints by default. Pass `false` for compact output.
      * `NaN` and `Infinity` serialize as `null` per the JSON specification.
      */
     @NoxFunction(name = "stringify")
     @JvmStatic
     fun stringify(
         @NoxType("json") value: Any?,
-    ): String = NoxJsonWriter().write(value)
+        @NoxDefault("true") pretty: Boolean = true,
+    ): String = NoxJsonWriter(prettyPrint = pretty).write(value)
 }
