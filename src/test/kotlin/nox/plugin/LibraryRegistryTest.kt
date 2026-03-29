@@ -135,7 +135,7 @@ class LibraryRegistryTest :
             push.shouldNotBeNull()
             push.name shouldBe "__arr_push"
             push.params.size shouldBe 1
-            push.params[0].second shouldBe TypeRef.INT // element type
+            push.params[0].type shouldBe TypeRef.INT // element type
 
             val pop = registry.lookupBuiltinMethod(intArray, "pop")
             pop.shouldNotBeNull()
@@ -151,7 +151,7 @@ class LibraryRegistryTest :
             val strArray = TypeRef("string", 1)
             val push = registry.lookupBuiltinMethod(strArray, "push")
             push.shouldNotBeNull()
-            push.params[0].second shouldBe TypeRef.STRING
+            push.params[0].type shouldBe TypeRef.STRING
         }
 
         test("lookupBuiltinMethod returns null for non-existent method") {
@@ -196,9 +196,9 @@ class LibraryRegistryTest :
             val spawn = registry.lookupNamespaceFunc("GameAPI", "spawn")
             spawn.shouldNotBeNull()
             spawn.params.size shouldBe 3
-            spawn.params[0].second shouldBe TypeRef.STRING
-            spawn.params[1].second shouldBe TypeRef.DOUBLE
-            spawn.params[2].second shouldBe TypeRef.DOUBLE
+            spawn.params[0].type shouldBe TypeRef.STRING
+            spawn.params[1].type shouldBe TypeRef.DOUBLE
+            spawn.params[2].type shouldBe TypeRef.DOUBLE
             spawn.returnType shouldBe TypeRef.INT
 
             val destroy = registry.lookupNamespaceFunc("GameAPI", "destroy")
@@ -233,7 +233,7 @@ class LibraryRegistryTest :
             val read = registry.lookupNamespaceFunc("File", "read")
             read.shouldNotBeNull()
             read.params.size shouldBe 1
-            read.params[0].second shouldBe TypeRef.STRING
+            read.params[0].type shouldBe TypeRef.STRING
         }
 
         test("@NoxType annotation overrides return type") {
@@ -259,7 +259,7 @@ class LibraryRegistryTest :
             val sqrt = registry.lookupNamespaceFunc("Math", "sqrt")
             sqrt.shouldNotBeNull()
             sqrt.params.size shouldBe 1
-            sqrt.params[0].second shouldBe TypeRef.DOUBLE
+            sqrt.params[0].type shouldBe TypeRef.DOUBLE
             sqrt.returnType shouldBe TypeRef.DOUBLE
             sqrt.name shouldContain "Math__sqrt"
         }

@@ -390,7 +390,7 @@ class ExpressionResolver(
                     val callTarget =
                         CallTarget(
                             name = importedFunc.name,
-                            params = importedFunc.params.map { it.name to it.type },
+                            params = importedFunc.params.map { NoxParam(it.name, it.type) },
                             returnType = importedFunc.returnType,
                             astNode = importedFunc,
                         )
@@ -482,7 +482,7 @@ class ExpressionResolver(
             val ufcsTarget =
                 CallTarget(
                     name = ufcsFunc.name,
-                    params = ufcsFunc.params.map { it.name to it.type },
+                    params = ufcsFunc.params.map { NoxParam(it.name, it.type) },
                     returnType = ufcsFunc.returnType,
                     astNode = ufcsFunc.astNode,
                 )
@@ -871,7 +871,7 @@ class ExpressionResolver(
     private fun paramSpecs(params: List<ParamSymbol>): List<ArgSpec> =
         params.map { ArgSpec(it.name, it.type, it.defaultValue != null, it.isVarargs) }
 
-    /** Convert built-in params to [ArgSpec] (all required). */
-    private fun builtinSpecs(params: List<Pair<String, TypeRef>>): List<ArgSpec> =
-        params.map { (name, type) -> ArgSpec(name, type, hasDefault = false) }
+    /** Convert built-in params to [ArgSpec], propagating defaults from [NoxParam]. */
+    private fun builtinSpecs(params: List<NoxParam>): List<ArgSpec> =
+        params.map { ArgSpec(it.name, it.type, hasDefault = it.defaultLiteral != null) }
 }

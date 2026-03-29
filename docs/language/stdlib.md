@@ -161,6 +161,44 @@ int elapsed = Date.now() - start;
 yield `Operation took ${elapsed}ms`;
 ```
  
+### `Json` -- JSON Parsing & Serialization
+
+> **No permissions required.**
+
+| Function | Signature | Description |
+|---|---|---|
+| `Json.parse` | `json Json.parse(string text)` | Parse a JSON string into a json value |
+| `Json.stringify` | `string Json.stringify(json value, boolean pretty = true)` | Serialize a json value to a JSON string |
+
+#### Example
+
+```nsl
+string raw = Http.get("https://api.example.com/data");
+json data = Json.parse(raw);
+string name = data.getString("name", "unknown");
+
+json response = {status: "ok", count: 42};
+
+// Pretty-printed by default
+string body = Json.stringify(response);
+// {
+//   "status": "ok",
+//   "count": 42
+// }
+
+// Compact output
+string compact = Json.stringify(response, false);
+// {"status":"ok","count":42}
+
+Http.post("https://api.example.com/submit", compact);
+```
+
+#### Round-Trip Behavior
+
+- Integers without decimals parse as `int`, with decimals as `double`
+- `Json.stringify` preserves this distinction (`42` vs `42.0`)
+- `NaN` and `Infinity` serialize as `null` (per JSON spec)
+
 ## Built-in Type Methods
 
 Primitive types and arrays have "methods" available through [UFCS](functions.md#unified-function-call-syntax-ufcs). These are defined in the Library Registry and linked to specific types rather than namespaces.

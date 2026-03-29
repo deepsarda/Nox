@@ -8,6 +8,7 @@ import nox.plugin.annotations.NoxType
 import nox.runtime.PermissionRequest
 import nox.runtime.PermissionResponse
 import nox.runtime.RuntimeContext
+import nox.runtime.json.NoxJsonParser
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -53,7 +54,6 @@ object HttpModule {
     @NoxFunction(name = "getJson")
     @NoxType("json")
     @JvmStatic
-    // TODO: implement JSON
     suspend fun getJson(
         ctx: RuntimeContext,
         url: String,
@@ -67,7 +67,8 @@ object HttpModule {
             withContext(Dispatchers.IO) {
                 client.send(request, HttpResponse.BodyHandlers.ofString()).body()
             }
-        return enforceMaxResponseSize(grant, body)
+        enforceMaxResponseSizeStrict(grant, body)
+        return NoxJsonParser(body).parse()
     }
 
     @NoxFunction(name = "post")
@@ -204,5 +205,17 @@ object HttpModule {
             return body.substring(0, max.toInt())
         }
         return body
+    }
+
+    private fun enforceMaxResponseSizeStrict(
+        grant: PermissionResponse.Granted.HttpGrant?,
+        body: String,
+    ) {
+        val max = grant?.maxResponseSize ?: return
+        if (body.length > max) {
+            throw SecurityException(
+                "Response body (${body.length} bytes) exceeds maximum allowed size ($max bytes)",
+            )
+        }
     }
 }

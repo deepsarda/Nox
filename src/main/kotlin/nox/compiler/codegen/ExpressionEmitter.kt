@@ -508,6 +508,7 @@ class ExpressionEmitter(
             for ((i, arg) in expr.args.withIndex()) {
                 emitExpr(arg, argStart + i, line)
             }
+            emitDefaultArgs(target.params, expr.args.size, argStart, line)
             val funcIdx = ctx.pool.add(target.name)
             ctx.emit(Opcode.SCALL, 0, dest, funcIdx, argStart, line)
             ctx.allocator.freeTempPrim(argStart)
@@ -523,6 +524,8 @@ class ExpressionEmitter(
         val argStart = ctx.allocator.allocTempPrim()
         emitExpr(expr.target, argStart, line)
         for ((i, arg) in expr.args.withIndex()) emitExpr(arg, argStart + i + 1, line)
+        // +1 offset because slot 0 is the receiver
+        emitDefaultArgs(target.params, expr.args.size, argStart + 1, line)
         val funcIdx = ctx.pool.add(target.name)
         ctx.emit(Opcode.SCALL, 0, dest, funcIdx, argStart, line)
         ctx.allocator.freeTempPrim(argStart)
@@ -555,6 +558,66 @@ class ExpressionEmitter(
         }
 
         ctx.allocator.freeTempPrim(argStart)
+    }
+
+    // Default argument injection for plugin optional params
+
+    /**
+     * Emits default values for any omitted optional arguments in a plugin (SCALL) call.
+     *
+     * @param params   the full parameter list from the [CallTarget]
+     * @param provided number of arguments the caller actually supplied
+     * @param argStart register base for arguments
+     * @param line     source line for diagnostics
+     */
+    private fun emitDefaultArgs(
+        params: List<NoxParam>,
+        provided: Int,
+        argStart: Int,
+        line: Int,
+    ) {
+        for (i in provided until params.size) {
+            val literal = params[i].defaultLiteral ?: continue
+            emitDefaultLiteral(literal, params[i].type, argStart + i, line)
+        }
+    }
+
+    private fun emitDefaultLiteral(
+        literal: String,
+        type: TypeRef,
+        dest: Int,
+        line: Int,
+    ) {
+        when {
+            literal == "true" -> ctx.emit(Opcode.LDI, 0, dest, 1, 0, line)
+            literal == "false" -> ctx.emit(Opcode.LDI, 0, dest, 0, 0, line)
+            literal == "null" -> ctx.emit(Opcode.KILL_REF, 0, dest, 0, 0, line)
+            type == TypeRef.INT || type == TypeRef.BOOLEAN -> {
+                val v = literal.toLong()
+                if (v in 0..0xFFFF) {
+                    ctx.emit(Opcode.LDI, 0, dest, v.toInt(), 0, line)
+                } else {
+                    val idx = ctx.pool.add(v)
+                    ctx.emit(Opcode.LDC, 0, dest, idx, 0, line)
+                }
+            }
+            type == TypeRef.DOUBLE -> {
+                val idx = ctx.pool.add(literal.toDouble())
+                ctx.emit(Opcode.LDC, 0, dest, idx, 0, line)
+            }
+            type == TypeRef.STRING -> {
+                // Strip surrounding quotes if present
+                val str =
+                    if (literal.startsWith("\"") && literal.endsWith("\"")) {
+                        literal.substring(1, literal.length - 1)
+                    } else {
+                        literal
+                    }
+                val idx = ctx.pool.add(str)
+                ctx.emit(Opcode.LDC, 0, dest, idx, 0, line)
+            }
+            else -> ctx.emit(Opcode.KILL_REF, 0, dest, 0, 0, line)
+        }
     }
 
     // Composite literals
