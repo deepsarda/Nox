@@ -285,7 +285,7 @@ class NoxJsonParserTest : FunSpec({
     test("depth limit allows exactly maxDepth") {
         val json = "[".repeat(3) + "1" + "]".repeat(3)
         val result = NoxJsonParser(json, NoxJsonLimits(maxDepth = 3)).parse()
-        // Should succeed since its exactly 3 levels deep
+        // Should succeed since it's exactly 3 levels deep
         result.shouldBeInstanceOf<List<*>>()
     }
 
