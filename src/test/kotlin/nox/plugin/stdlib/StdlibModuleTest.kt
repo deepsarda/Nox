@@ -161,6 +161,62 @@ class StdlibModuleTest :
             JsonMethods.keys(null) shouldBe emptyList()
         }
 
+        test("json.setString sets a string value") {
+            val obj = linkedMapOf<String, Any?>()
+            JsonMethods.setString(obj, "name", "Alice")
+            obj["name"] shouldBe "Alice"
+        }
+
+        test("json.setInt sets an int value") {
+            val obj = linkedMapOf<String, Any?>()
+            JsonMethods.setInt(obj, "count", 42L)
+            obj["count"] shouldBe 42L
+        }
+
+        test("json.setBool sets a boolean value") {
+            val obj = linkedMapOf<String, Any?>()
+            JsonMethods.setBool(obj, "active", true)
+            obj["active"] shouldBe true
+        }
+
+        test("json.setDouble sets a double value") {
+            val obj = linkedMapOf<String, Any?>()
+            JsonMethods.setDouble(obj, "score", 3.14)
+            obj["score"] shouldBe 3.14
+        }
+
+        test("json.setJson sets a nested json value") {
+            val obj = linkedMapOf<String, Any?>()
+            val nested = linkedMapOf<String, Any?>("x" to 1L)
+            JsonMethods.setJson(obj, "meta", nested)
+            obj["meta"] shouldBe nested
+        }
+
+        test("json.setString overwrites existing value") {
+            val obj = linkedMapOf<String, Any?>("name" to "Alice")
+            JsonMethods.setString(obj, "name", "Bob")
+            obj["name"] shouldBe "Bob"
+        }
+
+        test("json.remove removes a key") {
+            val obj = linkedMapOf<String, Any?>("a" to 1L, "b" to 2L)
+            JsonMethods.remove(obj, "a")
+            JsonMethods.has(obj, "a") shouldBe false
+            JsonMethods.has(obj, "b") shouldBe true
+        }
+
+        test("json setters throw on null receiver") {
+            shouldThrow<IllegalArgumentException> {
+                JsonMethods.setString(null, "key", "value")
+            }
+        }
+
+        test("json.remove on non-existent key is a no-op") {
+            val obj = linkedMapOf<String, Any?>("a" to 1L)
+            JsonMethods.remove(obj, "missing")
+            obj.size shouldBe 1
+        }
+
         // ArrayMethods
 
         test("array.push appends element") {

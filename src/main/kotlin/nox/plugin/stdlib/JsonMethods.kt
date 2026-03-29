@@ -121,6 +121,75 @@ object JsonMethods {
             else -> 0L
         }
 
+    // Setters
+
+    @NoxTypeMethod(targetType = "json", name = "setString")
+    @JvmStatic
+    fun setString(
+        obj: Any?,
+        key: String,
+        value: String,
+    ) {
+        val map = obj as? MutableMap<String, Any?> ?: throw IllegalArgumentException("Cannot set property on non-object json value")
+        map[key] = value
+    }
+
+    @NoxTypeMethod(targetType = "json", name = "setInt")
+    @JvmStatic
+    fun setInt(
+        obj: Any?,
+        key: String,
+        value: Long,
+    ) {
+        val map = obj as? MutableMap<String, Any?> ?: throw IllegalArgumentException("Cannot set property on non-object json value")
+        map[key] = value
+    }
+
+    @NoxTypeMethod(targetType = "json", name = "setBool")
+    @JvmStatic
+    fun setBool(
+        obj: Any?,
+        key: String,
+        value: Boolean,
+    ) {
+        val map = obj as? MutableMap<String, Any?> ?: throw IllegalArgumentException("Cannot set property on non-object json value")
+        map[key] = value
+    }
+
+    @NoxTypeMethod(targetType = "json", name = "setDouble")
+    @JvmStatic
+    fun setDouble(
+        obj: Any?,
+        key: String,
+        value: Double,
+    ) {
+        val map = obj as? MutableMap<String, Any?> ?: throw IllegalArgumentException("Cannot set property on non-object json value")
+        map[key] = value
+    }
+
+    @NoxTypeMethod(targetType = "json", name = "setJson")
+    @JvmStatic
+    fun setJson(
+        obj: Any?,
+        key: String,
+        @NoxType("json") value: Any?,
+    ) {
+        val map = obj as? MutableMap<String, Any?> ?: throw IllegalArgumentException("Cannot set property on non-object json value")
+        map[key] = value
+    }
+
+    @NoxTypeMethod(targetType = "json", name = "remove")
+    @JvmStatic
+    fun remove(
+        obj: Any?,
+        key: String,
+    ) {
+        val map = obj as? MutableMap<String, Any?> ?: throw IllegalArgumentException("Cannot remove property on non-object json value")
+        map.remove(key)
+    }
+
+    // Typed array getters
+
     @NoxTypeMethod(targetType = "json", name = "getIntArray")
     @NoxType("int[]")
     @JvmStatic

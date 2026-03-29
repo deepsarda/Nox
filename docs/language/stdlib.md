@@ -258,10 +258,35 @@ See [Type System, The `json` Type](type-system.md#the-json-type-generic-object) 
 | `.has(key)` | `boolean` | Check if key exists |
 | `.keys()` | `string[]` | Get all top-level keys |
 | `.size()` | `int` | Number of keys (object) or elements (array) |
+| `.setString(key, value)` | `void` | Set a string value |
+| `.setInt(key, value)` | `void` | Set an integer value |
+| `.setBool(key, value)` | `void` | Set a boolean value |
+| `.setDouble(key, value)` | `void` | Set a double value |
+| `.setJson(key, value)` | `void` | Set a nested json value |
+| `.remove(key)` | `void` | Remove a key from the object |
 | `.getIntArray(key, default)` | `int[]` | Extract typed integer array or default |
 | `.getStringArray(key, default)` | `string[]` | Extract typed string array or default |
 | `.getDoubleArray(key, default)` | `double[]` | Extract typed double array or default |
 | `.getArray(key, Type, default)` | `Type[]` | Extract and cast each element to struct type |
+
+#### Mutation
+
+```c
+json response = {};
+response.setString("status", "ok");
+response.setInt("count", 42);
+response.setBool("active", true);
+
+json meta = {};
+meta.setDouble("score", 3.14);
+response.setJson("meta", meta);
+
+// Serialize: {"status": "ok", "count": 42, "active": true, "meta": {"score": 3.14}}
+string body = Json.stringify(response, false);
+
+// Remove a key
+response.remove("active");
+```
 
 #### Typed Array Extraction
 
