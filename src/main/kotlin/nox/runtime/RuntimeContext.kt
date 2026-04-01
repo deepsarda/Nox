@@ -36,4 +36,15 @@ interface RuntimeContext {
      * @return the Host's decision, potentially with constraints
      */
     suspend fun requestPermission(request: PermissionRequest): PermissionResponse
+
+    /**
+     * Request resource limit extension when a guard trips.
+     *
+     * This is a **suspending** call and the sandbox's coroutine suspends
+     * while the Host evaluates whether to grant more resources.
+     *
+     * @param request the specific resource limit that was exceeded
+     * @return the Host's decision: grant a new limit or deny
+     */
+    suspend fun requestResourceExtension(request: ResourceRequest): ResourceResponse
 }

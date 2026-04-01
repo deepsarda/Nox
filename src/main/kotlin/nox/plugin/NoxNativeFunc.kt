@@ -1,5 +1,7 @@
 package nox.plugin
 
+import nox.runtime.RuntimeContext
+
 /**
  * The runtime adapter interface for all linked plugin functions.
  *
@@ -15,6 +17,7 @@ fun interface NoxNativeFunc {
     /**
      * Execute the native function.
      *
+     * @param context  the runtime context
      * @param pMem     the primitive register bank
      * @param rMem     the reference register bank
      * @param bp       base pointer for primitives (current frame start)
@@ -24,6 +27,7 @@ fun interface NoxNativeFunc {
      */
     @Throws(Throwable::class)
     fun invoke(
+        context: RuntimeContext,
         pMem: LongArray,
         rMem: Array<Any?>,
         bp: Int,

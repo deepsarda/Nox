@@ -108,10 +108,10 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int i = 0; 
-                i++; 
-                return "ok"; 
+            main() {
+                int i = 0;
+                i++;
+                return "ok";
             }
         """,
                 )
@@ -122,10 +122,10 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int i = 10; 
-                i--; 
-                return "ok"; 
+            main() {
+                int i = 10;
+                i--;
+                return "ok";
             }
         """,
                 )
@@ -136,11 +136,11 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int x = 0; 
-                int y = 5; 
-                x += y; 
-                return "ok"; 
+            main() {
+                int x = 0;
+                int y = 5;
+                x += y;
+                return "ok";
             }
         """,
                 )
@@ -162,10 +162,10 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                string s = "hello"; 
-                boolean b = s == "hello"; 
-                return "ok"; 
+            main() {
+                string s = "hello";
+                boolean b = s == "hello";
+                return "ok";
             }
         """,
                 )
@@ -176,10 +176,10 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                string s = "hello"; 
-                boolean b = s != "world"; 
-                return "ok"; 
+            main() {
+                string s = "hello";
+                boolean b = s != "world";
+                return "ok";
             }
         """,
                 )
@@ -234,9 +234,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                boolean b = true || false; 
-                return "ok"; 
+            main() {
+                boolean b = true || false;
+                return "ok";
             }
         """,
                 )
@@ -247,9 +247,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int x = 1 << 4; 
-                return "ok"; 
+            main() {
+                int x = 1 << 4;
+                return "ok";
             }
         """,
                 )
@@ -260,9 +260,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int x = 3 | 12; 
-                return "ok"; 
+            main() {
+                int x = 3 | 12;
+                return "ok";
             }
         """,
                 )
@@ -273,9 +273,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int x = 5 ^ 3; 
-                return "ok"; 
+            main() {
+                int x = 5 ^ 3;
+                return "ok";
             }
         """,
                 )
@@ -289,10 +289,10 @@ class CodeGeneratorTest :
                 compileOk(
                     """
             type Point { int x; int y; }
-            main() { 
-                Point p = { x: 1, y: 2 }; 
-                int v = p.x; 
-                return "ok"; 
+            main() {
+                Point p = { x: 1, y: 2 };
+                int v = p.x;
+                return "ok";
             }
         """,
                 )
@@ -304,10 +304,10 @@ class CodeGeneratorTest :
                 compileOk(
                     """
             type Point { int x; int y; }
-            main() { 
-                Point p = { x: 1, y: 2 }; 
-                p.x = 10; 
-                return "ok"; 
+            main() {
+                Point p = { x: 1, y: 2 };
+                p.x = 10;
+                return "ok";
             }
         """,
                 )
@@ -318,10 +318,10 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                string s = "hello"; 
-                string u = s.upper(); 
-                return "ok"; 
+            main() {
+                string s = "hello";
+                string u = s.upper();
+                return "ok";
             }
         """,
                 )
@@ -334,10 +334,10 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                json config = null; 
-                json sub = config.server.db; 
-                return "ok"; 
+            main() {
+                json config = null;
+                json sub = config.server.db;
+                return "ok";
             }
         """,
                 )
@@ -350,12 +350,12 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                boolean b = true; 
-                if (b) { 
-                    int x = 1; 
-                } 
-                return "ok"; 
+            main() {
+                boolean b = true;
+                if (b) {
+                    int x = 1;
+                }
+                return "ok";
             }
         """,
                 )
@@ -366,14 +366,14 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                boolean b = true; 
-                if (b) { 
-                    int x = 1; 
-                } else { 
-                    int x = 2; 
-                } 
-                return "ok"; 
+            main() {
+                boolean b = true;
+                if (b) {
+                    int x = 1;
+                } else {
+                    int x = 2;
+                }
+                return "ok";
             }
         """,
                 )
@@ -385,12 +385,12 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int i = 0; 
-                while (i < 10) { 
-                    i++; 
-                } 
-                return "ok"; 
+            main() {
+                int i = 0;
+                while (i < 10) {
+                    i++;
+                }
+                return "ok";
             }
         """,
                 )
@@ -402,10 +402,10 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                for (int i = 0; i < 10; i++) { 
-                } 
-                return "ok"; 
+            main() {
+                for (int i = 0; i < 10; i++) {
+                }
+                return "ok";
             }
         """,
                 )
@@ -419,11 +419,11 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int[] arr = [1, 2, 3]; 
-                foreach (int x in arr) { 
-                } 
-                return "ok"; 
+            main() {
+                int[] arr = [1, 2, 3];
+                foreach (int x in arr) {
+                }
+                return "ok";
             }
         """,
                 )
@@ -480,9 +480,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int x = 42; 
-                return "ok"; 
+            main() {
+                int x = 42;
+                return "ok";
             }
         """,
                 )
@@ -494,9 +494,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int x = 100000; 
-                return "ok"; 
+            main() {
+                int x = 100000;
+                return "ok";
             }
         """,
                 )
@@ -507,9 +507,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                string s = "hello world"; 
-                return "ok"; 
+            main() {
+                string s = "hello world";
+                return "ok";
             }
         """,
                 )
@@ -523,10 +523,10 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                string a = "hello"; 
-                string b = "hello"; 
-                return "ok"; 
+            main() {
+                string a = "hello";
+                string b = "hello";
+                return "ok";
             }
         """,
                 )
@@ -542,9 +542,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                double[] arr = [20.1, 10, 32.34]; 
-                return "ok"; 
+            main() {
+                double[] arr = [20.1, 10, 32.34];
+                return "ok";
             }
         """,
                 )
@@ -624,9 +624,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int x = 42; 
-                return "ok"; 
+            main() {
+                int x = 42;
+                return "ok";
             }
         """,
                 )
@@ -639,12 +639,12 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
+            main() {
                 int i = 0;
-                while (i < 10) { 
-                    i++; 
-                } 
-                return "ok"; 
+                while (i < 10) {
+                    i++;
+                }
+                return "ok";
             }
         """,
                 )
@@ -671,9 +671,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                string s = "hello"; 
-                return "ok"; 
+            main() {
+                string s = "hello";
+                return "ok";
             }
         """,
                 )
@@ -686,9 +686,9 @@ class CodeGeneratorTest :
                 compileOk(
                     """
             main() {
-                try { 
-                    int x = 1; 
-                } catch (err) { 
+                try {
+                    int x = 1;
+                } catch (err) {
                 }
                 return "ok";
             }
@@ -770,7 +770,7 @@ class CodeGeneratorTest :
             cp.totalGlobalReferenceSlots shouldBe 1
         }
 
-        test("globalInitEmitsGSTORE") {
+        test("globalInitUsesGlobalFlag") {
             val result =
                 compileOk(
                     """
@@ -778,7 +778,8 @@ class CodeGeneratorTest :
             main() { return "ok"; }
         """,
                 )
-            result.hasOpcode(Opcode.GSTORE) shouldBe true
+            // Global init now writes directly via [G] flag on LDI dest operand
+            result.hasOpcode(Opcode.LDI) shouldBe true
         }
 
         // Unary operators
@@ -787,9 +788,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                double x = -3.14; 
-                return "ok"; 
+            main() {
+                double x = -3.14;
+                return "ok";
             }
         """,
                 )
@@ -800,8 +801,8 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                boolean b = !true; 
+            main() {
+                boolean b = !true;
                 return "ok";
             }
         """,
@@ -813,9 +814,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int x = ~0; 
-                return "ok"; 
+            main() {
+                int x = ~0;
+                return "ok";
             }
         """,
                 )
@@ -829,10 +830,10 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int n = 42; 
+            main() {
+                int n = 42;
                 string s = `value=$dollar{n}`;
-                return "ok"; 
+                return "ok";
             }
         """,
                 )
@@ -844,10 +845,10 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                double d = 3.14; 
+            main() {
+                double d = 3.14;
                 string s = `val=$dollar{d}`;
-                return "ok"; 
+                return "ok";
             }
         """,
                 )
@@ -859,10 +860,10 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
+            main() {
                 boolean flag = true;
-                string s = `flag=$dollar{flag}`; 
-                return "ok"; 
+                string s = `flag=$dollar{flag}`;
+                return "ok";
             }
         """,
                 )
@@ -876,10 +877,10 @@ class CodeGeneratorTest :
                 compileOk(
                     """
             type Config { string name; }
-            main() { 
-                json j = null; 
+            main() {
+                json j = null;
                 Config c = j as Config;
-                return "ok"; 
+                return "ok";
             }
         """,
                 )
@@ -890,14 +891,14 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            type Config { 
-                string name; 
-                int count; 
+            type Config {
+                string name;
+                int count;
             }
-            main() { 
-                json j = null; 
+            main() {
+                json j = null;
                 Config c = j as Config;
-                return "ok"; 
+                return "ok";
             }
         """,
                 )
@@ -913,14 +914,14 @@ class CodeGeneratorTest :
                 compileOk(
                     """
             type Address { string city; }
-            type User { 
-                string name; 
-                Address addr; 
+            type User {
+                string name;
+                Address addr;
             }
-            main() { 
-                json j = null; 
-                User u = j as User; 
-                return "ok"; 
+            main() {
+                json j = null;
+                User u = j as User;
+                return "ok";
             }
         """,
                 )
@@ -937,14 +938,14 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            type TreeNode { 
-                string value; 
-                TreeNode left; 
+            type TreeNode {
+                string value;
+                TreeNode left;
             }
-            main() { 
-                json j = null; 
-                TreeNode t = j as TreeNode; 
-                return "ok"; 
+            main() {
+                json j = null;
+                TreeNode t = j as TreeNode;
+                return "ok";
             }
         """,
                 )
@@ -961,10 +962,10 @@ class CodeGeneratorTest :
                 compileOk(
                     """
             type Item { string name; }
-            main() { 
-                json j = null; 
-                Item[] items = j as Item[]; 
-                return "ok"; 
+            main() {
+                json j = null;
+                Item[] items = j as Item[];
+                return "ok";
             }
         """,
                 )
@@ -981,10 +982,10 @@ class CodeGeneratorTest :
                 compileOk(
                     """
             type Config { string name; }
-            main() { 
-                json j = null; 
-                Config c = j as Config; 
-                return "ok"; 
+            main() {
+                json j = null;
+                Config c = j as Config;
+                return "ok";
             }
         """,
                 )
@@ -996,10 +997,10 @@ class CodeGeneratorTest :
                 compileOk(
                     """
             type Config { string name; }
-            main() { 
-                json j = null; 
-                Config c = j as Config; 
-                return "ok"; 
+            main() {
+                json j = null;
+                Config c = j as Config;
+                return "ok";
             }
         """,
                 )
@@ -1008,32 +1009,34 @@ class CodeGeneratorTest :
 
         // Global variable load
 
-        test("globalPrimVarLoadEmitsGLOAD") {
+        test("globalPrimVarLoadEmitsMOVWithGlobalFlag") {
             val result =
                 compileOk(
                     """
             int counter = 5;
-            main() { 
-                int x = counter; 
-                return "ok"; 
+            main() {
+                int x = counter;
+                return "ok";
             }
         """,
                 )
-            result.hasOpcode(Opcode.GLOAD) shouldBe true
+            // Global loads now use MOV with [G] flag (bit 15) on the source operand
+            result.hasOpcode(Opcode.MOV) shouldBe true
         }
 
-        test("globalRefVarLoadEmitsGLOADR") {
+        test("globalRefVarLoadEmitsMOVRWithGlobalFlag") {
             val result =
                 compileOk(
                     """
             string label = "hi";
-            main() { 
-                string s = label; 
-                return "ok"; 
+            main() {
+                string s = label;
+                return "ok";
             }
         """,
                 )
-            result.hasOpcode(Opcode.GLOADR) shouldBe true
+            // Global loads now use MOVR with [G] flag (bit 15) on the source operand
+            result.hasOpcode(Opcode.MOVR) shouldBe true
         }
 
         // .length property
@@ -1042,9 +1045,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                string s = "hello"; 
-                int n = s.length(); 
+            main() {
+                string s = "hello";
+                int n = s.length();
                 return "ok";
             }
         """,
@@ -1056,10 +1059,10 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int[] arr = [1, 2, 3]; 
-                int n = arr.length(); 
-                return "ok"; 
+            main() {
+                int[] arr = [1, 2, 3];
+                int n = arr.length();
+                return "ok";
             }
         """,
                 )
@@ -1072,10 +1075,10 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int[] arr = [10, 20, 30]; 
-                int x = arr[1]; 
-                return "ok"; 
+            main() {
+                int[] arr = [10, 20, 30];
+                int x = arr[1];
+                return "ok";
             }
         """,
                 )
@@ -1084,28 +1087,29 @@ class CodeGeneratorTest :
 
         // Assignment forms
 
-        test("simpleAssignToGlobalEmitsGSTORE") {
+        test("simpleAssignToGlobalUsesGlobalFlag") {
             val result =
                 compileOk(
                     """
             int counter = 0;
-            main() { 
-                counter = 42; 
-                return "ok"; 
+            main() {
+                counter = 42;
+                return "ok";
             }
         """,
                 )
-            result.hasOpcode(Opcode.GSTORE) shouldBe true
+            // Global assignment now writes directly via [G] flag on LDI dest operand
+            result.hasOpcode(Opcode.LDI) shouldBe true
         }
 
         test("indexAssignEmitsASET_IDX") {
             val result =
                 compileOk(
                     """
-            main() { 
-                int[] arr = [1, 2, 3]; 
-                arr[0] = 99; 
-                return "ok"; 
+            main() {
+                int[] arr = [1, 2, 3];
+                arr[0] = 99;
+                return "ok";
             }
         """,
                 )
@@ -1116,11 +1120,11 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int x = 10; 
-                int y = 3; 
-                x -= y; 
-                return "ok"; 
+            main() {
+                int x = 10;
+                int y = 3;
+                x -= y;
+                return "ok";
             }
         """,
                 )
@@ -1131,11 +1135,11 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int x = 4; 
-                int y = 3; 
-                x *= y; 
-                return "ok"; 
+            main() {
+                int x = 4;
+                int y = 3;
+                x *= y;
+                return "ok";
             }
         """,
                 )
@@ -1146,11 +1150,11 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                double x = 1.0; 
-                double y = 2.0; 
-                x += y; 
-                return "ok"; 
+            main() {
+                double x = 1.0;
+                double y = 2.0;
+                x += y;
+                return "ok";
             }
         """,
                 )
@@ -1161,11 +1165,11 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                double x = 1.0; 
-                double y = 2.0; 
-                x -= y; 
-                return "ok"; 
+            main() {
+                double x = 1.0;
+                double y = 2.0;
+                x -= y;
+                return "ok";
             }
         """,
                 )
@@ -1178,10 +1182,10 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                double d = 1.0; 
-                d++; 
-                return "ok"; 
+            main() {
+                double d = 1.0;
+                d++;
+                return "ok";
             }
         """,
                 )
@@ -1192,10 +1196,10 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                double d = 5.0; 
-                d--; 
-                return "ok"; 
+            main() {
+                double d = 5.0;
+                d--;
+                return "ok";
             }
         """,
                 )
@@ -1208,13 +1212,13 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            type Point { 
-                int x; 
-                int y; 
+            type Point {
+                int x;
+                int y;
             }
-            main() { 
-                Point p = { x: 1, y: 2 }; 
-                return "ok"; 
+            main() {
+                Point p = { x: 1, y: 2 };
+                return "ok";
             }
         """,
                 )
@@ -1225,13 +1229,13 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            type Point { 
-                int x; 
-                int y; 
+            type Point {
+                int x;
+                int y;
             }
-            main() { 
-                Point p = { x: 1, y: 2 }; 
-                return "ok"; 
+            main() {
+                Point p = { x: 1, y: 2 };
+                return "ok";
             }
         """,
                 )
@@ -1242,10 +1246,10 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                int[] arr = [1, 2]; 
-                arr.push(3); 
-                return "ok"; 
+            main() {
+                int[] arr = [1, 2];
+                arr.push(3);
+                return "ok";
             }
         """,
                 )
@@ -1258,17 +1262,17 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            type Point { 
-                int x; 
-                int y; 
+            type Point {
+                int x;
+                int y;
             }
-            int getX(Point p) { 
-                return p.x; 
+            int getX(Point p) {
+                return p.x;
             }
-            main() { 
-                Point p = { x: 5, y: 3 }; 
-                int x = p.getX(); 
-                return "ok"; 
+            main() {
+                Point p = { x: 5, y: 3 };
+                int x = p.getX();
+                return "ok";
             }
         """,
                 )
@@ -1281,9 +1285,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                double x = Math.sqrt(4.0); 
-                return "ok"; 
+            main() {
+                double x = Math.sqrt(4.0);
+                return "ok";
             }
         """,
                 )
@@ -1296,11 +1300,11 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                while (true) { 
-                    break; 
-                } 
-                return "ok"; 
+            main() {
+                while (true) {
+                    break;
+                }
+                return "ok";
             }
         """,
                 )
@@ -1328,9 +1332,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            main() { 
-                yield "hello"; 
-                return "ok"; 
+            main() {
+                yield "hello";
+                return "ok";
             }
         """,
                 )
@@ -1344,8 +1348,8 @@ class CodeGeneratorTest :
                 compileOk(
                     """
             main() {
-                try { 
-                    throw "oops"; 
+                try {
+                    throw "oops";
                 } catch (err) { }
                 return "ok";
             }
@@ -1361,10 +1365,10 @@ class CodeGeneratorTest :
                 compileOk(
                     """
             main() {
-                try { 
-                    int x = 1; 
-                } catch (TypeError e) { 
-                    string m = e; 
+                try {
+                    int x = 1;
+                } catch (TypeError e) {
+                    string m = e;
                 }
                 return "ok";
             }
@@ -1372,6 +1376,23 @@ class CodeGeneratorTest :
                 )
             val cp = result.compiledProgram!!
             cp.exceptionTable.any { it.exceptionType == "TypeError" } shouldBe true
+        }
+
+        test("resourceGuardCatchEmitsKILL") {
+            val result =
+                compileOk(
+                    """
+            main() {
+                try {
+                    int x = 1;
+                } catch (QuotaExceededError e) {
+                    string m = e;
+                }
+                return "ok";
+            }
+        """,
+                )
+            result.hasOpcode(Opcode.KILL) shouldBe true
         }
 
         // Return forms
@@ -1394,7 +1415,7 @@ class CodeGeneratorTest :
                     .take(doWorkMeta.sourceLines.size)
                     .firstOrNull { Instruction.opcode(it) == Opcode.RET }
             retInstr shouldNotBe null
-            Instruction.opA(retInstr!!) shouldBe 0
+            Instruction.opA(retInstr!!) shouldBe 1
         }
 
         test("intReturnEmitsRETWithA") {
@@ -1446,9 +1467,9 @@ class CodeGeneratorTest :
         """
             val mainSrc = """
             import "helper.nox" as helper;
-            main() { 
-                int v = helper.twice(5); 
-                return "ok"; 
+            main() {
+                int v = helper.twice(5);
+                return "ok";
             }
         """
             val result = compileWithImports(mainSrc, mapOf("helper.nox" to helperSrc))
@@ -1465,9 +1486,9 @@ class CodeGeneratorTest :
         """
             val mainSrc = """
             import "helper.nox" as helper;
-            main() { 
-                int v = helper.square(4); 
-                return "ok"; 
+            main() {
+                int v = helper.square(4);
+                return "ok";
             }
         """
             val result = compileWithImports(mainSrc, mapOf("helper.nox" to helperSrc))
@@ -1483,9 +1504,9 @@ class CodeGeneratorTest :
         """
             val mainSrc = """
             import "helper.nox" as helper;
-            main() { 
-                int v = helper.add(3, 4); 
-                return "ok"; 
+            main() {
+                int v = helper.add(3, 4);
+                return "ok";
             }
         """
             val result = compileWithImports(mainSrc, mapOf("helper.nox" to helperSrc))
@@ -1617,11 +1638,11 @@ class CodeGeneratorTest :
 
             int x1 = 10;
             int y1 = 20;
-            
-            main() { 
-                int x = a.fa(1) + x1; 
-                int y = b.fb(x) + y1; 
-                return "ok"; 
+
+            main() {
+                int x = a.fa(1) + x1;
+                int y = b.fb(x) + y1;
+                return "ok";
             }
         """
             val result = compileWithImports(mainSrc, mapOf("a.nox" to aSrc, "b.nox" to bSrc))

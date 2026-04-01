@@ -130,7 +130,9 @@ object JsonMethods {
         key: String,
         value: String,
     ) {
-        val map = obj as? MutableMap<String, Any?> ?: throw IllegalArgumentException("Cannot set property on non-object json value")
+        val map =
+            obj as? MutableMap<String, Any?>
+                ?: throw IllegalArgumentException("Cannot set property on non-object json value")
         map[key] = value
     }
 
@@ -141,7 +143,9 @@ object JsonMethods {
         key: String,
         value: Long,
     ) {
-        val map = obj as? MutableMap<String, Any?> ?: throw IllegalArgumentException("Cannot set property on non-object json value")
+        val map =
+            obj as? MutableMap<String, Any?>
+                ?: throw IllegalArgumentException("Cannot set property on non-object json value")
         map[key] = value
     }
 
@@ -152,7 +156,9 @@ object JsonMethods {
         key: String,
         value: Boolean,
     ) {
-        val map = obj as? MutableMap<String, Any?> ?: throw IllegalArgumentException("Cannot set property on non-object json value")
+        val map =
+            obj as? MutableMap<String, Any?>
+                ?: throw IllegalArgumentException("Cannot set property on non-object json value")
         map[key] = value
     }
 
@@ -163,7 +169,9 @@ object JsonMethods {
         key: String,
         value: Double,
     ) {
-        val map = obj as? MutableMap<String, Any?> ?: throw IllegalArgumentException("Cannot set property on non-object json value")
+        val map =
+            obj as? MutableMap<String, Any?>
+                ?: throw IllegalArgumentException("Cannot set property on non-object json value")
         map[key] = value
     }
 
@@ -174,7 +182,9 @@ object JsonMethods {
         key: String,
         @NoxType("json") value: Any?,
     ) {
-        val map = obj as? MutableMap<String, Any?> ?: throw IllegalArgumentException("Cannot set property on non-object json value")
+        val map =
+            obj as? MutableMap<String, Any?>
+                ?: throw IllegalArgumentException("Cannot set property on non-object json value")
         map[key] = value
     }
 
@@ -184,7 +194,9 @@ object JsonMethods {
         obj: Any?,
         key: String,
     ) {
-        val map = obj as? MutableMap<String, Any?> ?: throw IllegalArgumentException("Cannot remove property on non-object json value")
+        val map =
+            obj as? MutableMap<String, Any?>
+                ?: throw IllegalArgumentException("Cannot remove property on non-object json value")
         map.remove(key)
     }
 

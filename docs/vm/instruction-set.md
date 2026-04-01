@@ -99,7 +99,7 @@ Each operand can carry flags to modify its interpretation:
 | `JIF` | `JIF A, target` | Jump if false: `if (pMem[A] == 0) pc = target` |
 | `JIT` | `JIT A, target` | Jump if true: `if (pMem[A] != 0) pc = target` |
 | `CALL` | `CALL funcId, argStart` | Push frame, slide `bp`, jump to function |
-| `RET` | `RET A` | Return value in `A`, pop frame, restore `bp` and `pc` |
+| `RET` | `RET isVoid, reg` | Returns from function. If `isVoid=0`, copies `reg` to the caller's result slot. |
 
 ### System Calls
 

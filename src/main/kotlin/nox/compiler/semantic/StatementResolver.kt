@@ -409,10 +409,9 @@ class StatementResolver(
 
         for (cc in stmt.catchClauses) {
             val catchScope = scope.child()
-            catchScope.define(
-                cc.variableName,
-                VarSymbol(cc.variableName, TypeRef.STRING, catchScope.depth),
-            )
+            val sym = VarSymbol(cc.variableName, TypeRef.STRING, catchScope.depth)
+            catchScope.define(cc.variableName, sym)
+            cc.resolvedSymbol = sym
             resolveBlock(catchScope, cc.body, expectedReturn)
         }
     }

@@ -51,6 +51,9 @@ object Linker {
         val javaMethod =
             function.javaMethod
                 ?: throw IllegalArgumentException("Cannot link ${function.name}: no backing Java method")
+        val isStatic =
+            java.lang.reflect.Modifier
+                .isStatic(javaMethod.modifiers)
 
         // Use privateLookupIn so unreflect succeeds for package-private/protected methods,
         // not just public ones. publicLookup() would fail for any non-public target.
@@ -74,7 +77,7 @@ object Linker {
         val returnDesc = ReturnDescriptor.from(function)
 
         // Build the NoxNativeFunc adapter
-        val adapter = buildAdapter(handle, instance, paramDescriptors, returnDesc)
+        val adapter = buildAdapter(handle, instance, isStatic, paramDescriptors, returnDesc)
 
         return LinkedFunc(scallName, adapter)
     }
@@ -82,23 +85,24 @@ object Linker {
     /**
      * Build a NoxNativeFunc that:
      * 1. Extracts arguments from pMem/rMem based on their types
-     * 2. Injects RuntimeContext if needed. TODO: Implement this
+     * 2. Injects RuntimeContext if needed.
      * 3. Calls the target method via MethodHandle
      * 4. Stores the result in the correct register bank
      */
     private fun buildAdapter(
         handle: java.lang.invoke.MethodHandle,
         instance: Any?,
+        isStatic: Boolean,
         params: List<ParamDescriptor>,
         returnDesc: ReturnDescriptor,
     ): NoxNativeFunc {
         // Count only the VM-visible args (skip RuntimeContext injection)
         val vmParams = params.filter { !it.isContextInjection }
 
-        return NoxNativeFunc { pMem, rMem, bp, bpRef, argStart, destReg ->
+        return NoxNativeFunc { context, pMem, rMem, bp, bpRef, argStart, destReg ->
             // Build the argument array
             val args = mutableListOf<Any?>()
-            if (instance != null) args.add(instance)
+            if (instance != null && !isStatic) args.add(instance)
 
             var primArgIdx = 0
             var refArgIdx = 0
@@ -106,8 +110,7 @@ object Linker {
             for (param in params) {
                 if (param.isContextInjection) {
                     // RuntimeContext injection
-                    // TODO: Implement this
-                    args.add(null)
+                    args.add(context)
                     continue
                 }
 

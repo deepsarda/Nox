@@ -9,7 +9,6 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import nox.compiler.CompilerErrors
 import nox.compiler.parsing.NoxParsing
 import nox.compiler.types.*
-import nox.compiler.types.TypeRef
 
 /**
  * Tests for [DeclarationCollector] (Pass 1).

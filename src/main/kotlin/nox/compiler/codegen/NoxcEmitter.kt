@@ -302,18 +302,27 @@ class NoxcEmitter {
         primNames: Map<Int, String> = emptyMap(),
         refNames: Map<Int, String> = emptyMap(),
     ): Pair<String, String> {
-        fun pr(r: Int) = "p$r"
+        val gFlag = BytecodeEmitter.GLOBAL_FLAG
+        val sMask = 0x7FFF
 
-        fun rr(r: Int) = "r$r"
+        fun pr(r: Int) = if (r and gFlag != 0) "g${r and sMask}" else "p$r"
+
+        fun rr(r: Int) = if (r and gFlag != 0) "gr${r and sMask}" else "r$r"
 
         // Named variants for comments, shows "name:pN" when known, else just "pN"
-        fun pn(r: Int) = primNames[r]?.let { "$it:p$r" } ?: "p$r"
+        fun pn(r: Int) =
+            if (r and gFlag != 0) {
+                "g${r and sMask}"
+            } else {
+                primNames[r]?.let { "$it:p$r" } ?: "p$r"
+            }
 
-        fun rn(r: Int) = refNames[r]?.let { "$it:r$r" } ?: "r$r"
-
-        fun gr(r: Int) = "g$r"
-
-        fun grr(r: Int) = "gr$r"
+        fun rn(r: Int) =
+            if (r and gFlag != 0) {
+                "gr${r and sMask}"
+            } else {
+                refNames[r]?.let { "$it:r$r" } ?: "r$r"
+            }
 
         fun pool(idx: Int) = "#$idx"
 
@@ -370,8 +379,8 @@ class NoxcEmitter {
             Opcode.D2I -> "${pr(a)}, ${pr(b)}" to "${pn(a)} = (int)${pn(b)}"
 
             Opcode.JMP -> {
-                val lbl = labels[b]
-                "@%04d".format(b) to "-> ${lbl ?: "@%04d".format(b)}"
+                val lbl = labels[a]
+                "@%04d".format(a) to "-> ${lbl ?: "@%04d".format(a)}"
             }
 
             Opcode.JIF -> {
@@ -390,10 +399,10 @@ class NoxcEmitter {
             }
 
             Opcode.RET -> {
-                if (a == 0) {
+                if (a == 1) {
                     "" to "return (void)"
                 } else {
-                    pr(a) to "return ${pn(a)}"
+                    pr(b) to "return ${pn(b)}"
                 }
             }
 
@@ -437,20 +446,23 @@ class NoxcEmitter {
             Opcode.DINCN -> "${pr(a)}, ${pr(b)}" to "${pn(a)} = ${pn(a)} + ${pn(b)}"
             Opcode.DDECN -> "${pr(a)}, ${pr(b)}" to "${pn(a)} = ${pn(a)} - ${pn(b)}"
 
-            Opcode.GLOAD -> "${pr(a)}, ${gr(b)}" to "${pn(a)} = ${gr(b)}"
-            Opcode.GSTORE -> "${gr(a)}, ${pr(b)}" to "${gr(a)} = ${pn(b)}"
-            Opcode.GLOADR -> "${rr(a)}, ${grr(b)}" to "${rn(a)} = ${grr(b)}"
-            Opcode.GSTORER -> "${grr(a)}, ${rr(b)}" to "${grr(a)} = ${rn(b)}"
-
             Opcode.THROW -> rr(a) to "throw ${rn(a)}"
             Opcode.KILL -> "" to "KILL (terminate)"
 
             Opcode.NEW_ARRAY -> rr(a) to "${rn(a)} = []"
-            Opcode.ARR_PUSH -> "${rr(a)}, ${pr(b)}" to "${rn(a)}.push(${pn(b)})"
+            Opcode.ARR_PUSH -> {
+                val tag = SubOp.name(subOp)
+                val valStr = if (subOp == SubOp.SET_STR || subOp == SubOp.SET_OBJ) rr(c) else pr(c)
+                val valComment = if (subOp == SubOp.SET_STR || subOp == SubOp.SET_OBJ) rn(c) else pn(c)
+                "$tag, ${rr(a)}, $valStr" to "${rn(a)}.push($valComment)"
+            }
             Opcode.NEW_OBJ -> rr(a) to "${rn(a)} = {}"
             Opcode.OBJ_SET -> {
                 val key = pool.getOrNull(b) as? String ?: "#$b"
-                "${rr(a)}, \"$key\", ${pr(c)}" to "${rn(a)}.$key = ${pn(c)}"
+                val tag = SubOp.name(subOp)
+                val valStr = if (subOp == SubOp.SET_STR || subOp == SubOp.SET_OBJ) rr(c) else pr(c)
+                val valComment = if (subOp == SubOp.SET_STR || subOp == SubOp.SET_OBJ) rn(c) else pn(c)
+                "$tag, ${rr(a)}, \"$key\", $valStr" to "${rn(a)}.$key = $valComment"
             }
 
             Opcode.CAST_STRUCT -> {

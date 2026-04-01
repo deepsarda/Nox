@@ -66,18 +66,43 @@ Each `yield` counts as an instruction. The loop condition check counts. The jump
 Scripts that are stuck waiting (e.g., on a slow network call), or scripts that circumvent the instruction counter through long-running system calls.
 
 ### Mechanism
-The Host tracks the wall-clock time of each Sandbox coroutine. If a Sandbox exceeds the maximum duration, the Host cancels it.
+The timeout runs as a **separate watchdog coroutine** alongside the VM loop, using Kotlin structured concurrency. This ensures the timer fires even during a blocking `SCALL` (e.g., `Http.get()` downloading a large file).
 
+```kotlin
+coroutineScope {
+    val vmJob = async { runVM() }
+
+    val watchdog = launch {
+        var timeoutMs = config.maxExecutionTime.toMillis()
+        while (true) {
+            delay(timeoutMs)
+            // Timeout hit so we ask Host for extension via resource protocol
+            val response = context.requestResourceExtension(
+                ResourceRequest.ExecutionTimeout(elapsed, timeoutMs)
+            )
+            when (response) {
+                is ResourceResponse.Granted -> timeoutMs = response.newLimit
+                is ResourceResponse.Denied -> {
+                    vmJob.cancel(CancellationException(response.reason))
+                    return@launch
+                }
+            }
+        }
+    }
+
+    vmJob.await()
+    watchdog.cancel()
+}
 ```
-Host:
-  workerStartTime = System.nanoTime()
-  
-  // Periodic check (or scheduled task):
-  if (now - workerStartTime > MAX_DURATION) {
-      worker.interrupt();
-      reportTimeout(workerId);
-  }
-```
+
+### Why Not In-Loop?
+
+A naïve approach checks the clock inside the VM loop (e.g., every 1024 instructions). This fails when:
+- A blocking `SCALL` stalls the loop on a single instruction
+- The timer check never fires during the stall
+- The resource extension protocol can't trigger when it matters most
+
+The watchdog coroutine runs on the coroutine dispatcher **independently** of the VM loop. `delay()` is non-blocking and fires on schedule regardless of what the VM is doing.
 
 ### Configuration
 
@@ -89,7 +114,7 @@ Host:
 
 - **Complementary:** Catches cases the instruction counter cannot (e.g., a blocking `SCALL` that takes forever).
 - **Non-deterministic:** Results may vary based on host system load.
-- **Coarse-grained:** Checks happen at intervals, not per-instruction.
+- **Event-driven:** No busy-polling or `System.nanoTime()` in the hot path.
  
 ## Guard 3: Memory Cap
 
@@ -213,7 +238,57 @@ A script that exceeds these limits receives a `CompilationError` before any code
 └────────────────────────────────────────────┘
 ```
 
-All guards are **independent**, a failure in any single guard triggers program termination regardless of the state of other guards.
+All guards are **independent**. A failure in any single guard triggers program termination regardless of the state of other guards.
+
+## Resource Extension Protocol
+
+Resource limits are **mutable at runtime**. When a guard trips, instead of immediately throwing, the VM suspends and asks the Host whether to extend the limit. This allows Hosts to implement dynamic policies (e.g., auto-grant up to 5M instructions, then deny).
+
+### Flow
+
+```
+  VM                                          Host
+   │                                           │
+   │── instructionCount > limit ──────────────▶│
+   │   ResourceRequest.InstructionQuota(       │
+   │     used=500000, currentLimit=500000)     │
+   │                                           │
+   │   (VM coroutine suspends)                 │── Evaluate policy
+   │                                           │
+   │◀── ResourceResponse.Granted(1000000) ─────│
+   │   maxInstructions = 1000000               │
+   │   (VM resumes execution)                  │
+   │                                           │
+   │── instructionCount > 1000000 ────────────▶│
+   │   ResourceRequest.InstructionQuota(...)   │
+   │◀── ResourceResponse.Denied("Hard limit") ─│
+   │   throw QuotaExceededError                │
+```
+
+### Interface
+
+```kotlin
+interface RuntimeContext {
+    suspend fun requestResourceExtension(request: ResourceRequest): ResourceResponse
+}
+
+sealed class ResourceRequest {
+    data class InstructionQuota(val used: Long, val currentLimit: Long) : ResourceRequest()
+    data class ExecutionTimeout(val elapsedMs: Long, val currentLimitMs: Long) : ResourceRequest()
+    data class CallDepth(val current: Int, val currentLimit: Int) : ResourceRequest()
+}
+
+sealed class ResourceResponse {
+    data class Granted(val newLimit: Long) : ResourceResponse()
+    data class Denied(val reason: String? = null) : ResourceResponse()
+}
+```
+
+### Guard Exceptions Are Catchable
+
+`QuotaExceededError`, `TimeoutError`, and `StackOverflowError` are catchable by user code via `try/catch` (but ignored by catch-all `catch (err)` handlers to prevent accidental infinite loops). 
+
+To ensure the VM doesn't immediately crash again while trying to execute the `catch` block, resource quotas are automatically granted a "grace period" upon denial using a capped exponential backoff. For example, if an instruction limit of `200` is denied, the limit is bumped to `400` (+200). For large limits, the increment is capped (e.g., `+10000` instructions). This provides enough headroom for the catch block to perform cleanup and execute the compiler-emitted `KILL` instruction, ensuring the program terminates gracefully.
  
 ## Error Reporting
 

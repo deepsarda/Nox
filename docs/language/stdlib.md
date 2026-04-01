@@ -315,9 +315,9 @@ for (int i = 0; i < rows.size(); i++) {
 | `File.*` | Yes | `PermissionRequest.File.*` |
 | `Http.*` | Yes | `PermissionRequest.Http.*` |
 | `Env.*` | Yes | `PermissionRequest.Env.*` |
-| `Math.*` | No | — |
-| `Date.*` | No | — |
-| Built-in methods | No | — |
+| `Math.*` | No | -- |
+| `Date.*` | No | -- |
+| Built-in methods | No | -- |
  
 ## Type-Bound Conversion Methods
 

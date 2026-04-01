@@ -157,7 +157,6 @@ class ExpressionEmitter(
 
         val lReg =
             if (lResolved != null && !lNeedsWide) {
-                ctx.freeNodeRegisters(expr.left)
                 lResolved
             } else {
                 val r = ctx.alloc(leftType)
@@ -167,7 +166,6 @@ class ExpressionEmitter(
 
         val rReg =
             if (rResolved != null && !rNeedsWide) {
-                ctx.freeNodeRegisters(expr.right)
                 rResolved
             } else if (lReg != dest && rightType == resultType) {
                 emitExpr(expr.right, dest, line)
@@ -204,6 +202,10 @@ class ExpressionEmitter(
         if (rWide != rReg) ctx.freep(rWide)
         if (lReg != lResolved) ctx.free(leftType, lReg)
         if (rReg != rResolved && rReg != dest) ctx.free(rightType, rReg)
+
+        // Always check for variable frees at these nodes AFTER instruction emission
+        ctx.freeNodeRegisters(expr.left)
+        ctx.freeNodeRegisters(expr.right)
     }
 
     private fun emitUnary(
@@ -216,7 +218,6 @@ class ExpressionEmitter(
         val opResolved = ctx.resolveRegister(expr.operand)
         val opReg =
             if (opResolved != null) {
-                ctx.freeNodeRegisters(expr.operand)
                 opResolved
             } else {
                 val r = ctx.alloc(operandType)
@@ -237,6 +238,7 @@ class ExpressionEmitter(
             UnaryOp.BIT_NOT -> ctx.emit(Opcode.BNOT, 0, dest, opReg, 0, line)
         }
         if (opReg != opResolved) ctx.free(operandType, opReg)
+        ctx.freeNodeRegisters(expr.operand)
     }
 
     private fun emitPostfix(
@@ -295,10 +297,11 @@ class ExpressionEmitter(
         val line = expr.loc.line
         when (val sym = expr.resolvedSymbol) {
             is GlobalSymbol -> {
+                val gReg = BytecodeEmitter.GLOBAL_FLAG or sym.globalSlot
                 if (sym.type.isPrimitive()) {
-                    ctx.emit(Opcode.GLOAD, 0, dest, sym.globalSlot, 0, line)
+                    ctx.emit(Opcode.MOV, 0, dest, gReg, 0, line)
                 } else {
-                    ctx.emit(Opcode.GLOADR, 0, dest, sym.globalSlot, 0, line)
+                    ctx.emit(Opcode.MOVR, 0, dest, gReg, 0, line)
                 }
             }
 
@@ -402,7 +405,6 @@ class ExpressionEmitter(
         val tResolved = ctx.resolveRegister(expr.target)
         val tReg =
             if (tResolved != null) {
-                ctx.freeNodeRegisters(expr.target)
                 tResolved
             } else {
                 val r = ctx.alloc(targetType)
@@ -414,7 +416,6 @@ class ExpressionEmitter(
         val iResolved = ctx.resolveRegister(expr.index)
         val iReg =
             if (iResolved != null) {
-                ctx.freeNodeRegisters(expr.index)
                 iResolved
             } else {
                 val r = ctx.alloc(idxType)
@@ -425,6 +426,9 @@ class ExpressionEmitter(
         ctx.emit(Opcode.AGET_IDX, 0, dest, tReg, iReg, line)
         if (iReg != iResolved) ctx.free(idxType, iReg)
         if (tReg != tResolved) ctx.free(targetType, tReg)
+
+        ctx.freeNodeRegisters(expr.index)
+        ctx.freeNodeRegisters(expr.target)
     }
 
     private fun emitFuncCall(
@@ -649,10 +653,11 @@ class ExpressionEmitter(
 
                 val dblTmp = ctx.allocator.allocTempPrim()
                 ctx.emit(Opcode.I2D, 0, dblTmp, intTmp, 0, line)
-                ctx.emit(Opcode.ARR_PUSH, 0, dest, dblTmp, 0, line)
+                ctx.emit(Opcode.ARR_PUSH, SubOp.SET_DBL, dest, 0, dblTmp, line)
 
                 ctx.allocator.freeTempPrim(dblTmp)
                 if (intTmp != eResolved) ctx.allocator.freeTempPrim(intTmp)
+                ctx.freeNodeRegisters(elem)
             } else {
                 val eResolved = ctx.resolveRegister(elem)
 
@@ -666,9 +671,10 @@ class ExpressionEmitter(
                         r
                     }
 
-                ctx.emit(Opcode.ARR_PUSH, 0, dest, tmp, 0, line)
+                ctx.emit(Opcode.ARR_PUSH, setSubOpFor(elemType), dest, 0, tmp, line)
 
                 if (tmp != eResolved) ctx.free(elemType, tmp)
+                ctx.freeNodeRegisters(elem)
             }
         }
     }
@@ -686,7 +692,6 @@ class ExpressionEmitter(
 
             val tmp =
                 if (fResolved != null) {
-                    ctx.freeNodeRegisters(field.value)
                     fResolved
                 } else {
                     val r = ctx.alloc(fieldType)
@@ -695,9 +700,26 @@ class ExpressionEmitter(
                 }
 
             val keyIdx = ctx.pool.add(field.name)
-            ctx.emit(Opcode.OBJ_SET, 0, dest, keyIdx, tmp, line)
+            ctx.emit(Opcode.OBJ_SET, setSubOpFor(fieldType), dest, keyIdx, tmp, line)
 
             if (tmp != fResolved) ctx.free(fieldType, tmp)
+            ctx.freeNodeRegisters(field.value)
         }
+    }
+
+    companion object {
+        /**
+         * Map a [TypeRef] to the corresponding `SubOp.SET_*` constant.
+         * Used by OBJ_SET and ARR_PUSH to tell the VM which register bank
+         * holds the value operand.
+         */
+        fun setSubOpFor(type: TypeRef): Int =
+            when (type.name) {
+                "int" -> SubOp.SET_INT
+                "double" -> SubOp.SET_DBL
+                "string" -> SubOp.SET_STR
+                "boolean" -> SubOp.SET_BOOL
+                else -> SubOp.SET_OBJ
+            }
     }
 }

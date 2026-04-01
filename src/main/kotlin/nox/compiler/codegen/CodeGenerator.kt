@@ -126,17 +126,8 @@ class CodeGenerator(
         for (global in program.globals) {
             val init = global.initializer ?: continue
             val line = global.loc.line
-            if (global.type.isPrimitive()) {
-                val tmp = allocator.allocTempPrim()
-                emitter.emitExpr(init, tmp, line)
-                emitter.emit(Opcode.GSTORE, 0, global.globalSlot, tmp, 0, line)
-                allocator.freeTempPrim(tmp)
-            } else {
-                val tmp = allocator.allocTempRef()
-                emitter.emitExpr(init, tmp, line)
-                emitter.emit(Opcode.GSTORER, 0, global.globalSlot, tmp, 0, line)
-                allocator.freeTempRef(tmp)
-            }
+            val gDest = BytecodeEmitter.GLOBAL_FLAG or global.globalSlot
+            emitter.emitExpr(init, gDest, line)
         }
         emitter.emit(Opcode.RET, 0, 0, 0, 0)
 

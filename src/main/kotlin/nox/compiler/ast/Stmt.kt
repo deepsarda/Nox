@@ -168,7 +168,10 @@ data class CatchClause(
     val variableName: String,
     val body: Block,
     val loc: SourceLocation,
-)
+) {
+    var resolvedSymbol: Symbol? = null
+    var register: Int = -1
+}
 
 // Expression Statement
 

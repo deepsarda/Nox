@@ -89,22 +89,8 @@ class StatementEmitter(
             is IdentifierExpr -> {
                 when (val sym = target.resolvedSymbol) {
                     is GlobalSymbol -> {
-                        val valResolved = ctx.resolveRegister(stmt.value)
-                        val valReg =
-                            if (valResolved != null) {
-                                ctx.freeNodeRegisters(stmt.value)
-                                valResolved
-                            } else {
-                                val r = ctx.alloc(targetType)
-                                ctx.emitExpr(stmt.value, r, line)
-                                r
-                            }
-                        if (sym.type.isPrimitive()) {
-                            ctx.emit(Opcode.GSTORE, 0, sym.globalSlot, valReg, 0, line)
-                        } else {
-                            ctx.emit(Opcode.GSTORER, 0, sym.globalSlot, valReg, 0, line)
-                        }
-                        if (valReg != valResolved) ctx.free(targetType, valReg)
+                        val gReg = BytecodeEmitter.GLOBAL_FLAG or sym.globalSlot
+                        ctx.emitExpr(stmt.value, gReg, line)
                     }
 
                     else -> {
@@ -434,24 +420,37 @@ class StatementEmitter(
     private fun emitReturn(stmt: ReturnStmt) {
         val line = stmt.loc.line
 
-        // Emit KILL_REF for all live rMem registers before returning.
-        for (reg in ctx.allocator.allRefRegs.sorted()) {
-            ctx.emit(Opcode.KILL_REF, 0, reg, 0, 0, line)
-        }
-
         if (stmt.value == null) {
-            ctx.emit(Opcode.RET, 0, 0, 0, 0, line)
+            // Emit KILL_REF for all live rMem registers before returning.
+            for (reg in ctx.allocator.allRefRegs.sorted()) {
+                ctx.emit(Opcode.KILL_REF, 0, reg, 0, 0, line)
+            }
+            ctx.emit(Opcode.RET, 0, 1, 0, 0, line)
         } else {
             val type = stmt.value.resolvedType ?: TypeRef.INT
             val reg = ctx.resolveRegister(stmt.value)
+            val retReg =
+                if (reg != null) {
+                    reg
+                } else {
+                    val tmp = ctx.alloc(type)
+                    ctx.emitExpr(stmt.value, tmp, line)
+                    tmp
+                }
+
+            // Emit KILL_REF for all live rMem registers EXCEPT the return register.
+            for (r in ctx.allocator.allRefRegs.sorted()) {
+                if (r != retReg) {
+                    ctx.emit(Opcode.KILL_REF, 0, r, 0, 0, line)
+                }
+            }
+
+            ctx.emit(Opcode.RET, 0, 0, retReg, 0, line)
+
             if (reg != null) {
                 ctx.freeNodeRegisters(stmt.value)
-                ctx.emit(Opcode.RET, 0, reg, 0, 0, line)
             } else {
-                val tmp = ctx.alloc(type)
-                ctx.emitExpr(stmt.value, tmp, line)
-                ctx.emit(Opcode.RET, 0, tmp, 0, 0, line)
-                ctx.free(type, tmp)
+                ctx.free(type, retReg)
             }
         }
     }
@@ -498,14 +497,35 @@ class StatementEmitter(
         for (clause in stmt.catchClauses) {
             val handlerPc = ctx.pc
             ctx.addLabel(if (clause.exceptionType != null) "catch_${clause.exceptionType}" else "catch_all")
-            val msgReg = ctx.allocr()
+
+            // Allocate the local variable register for the exception so the body can access it.
+            val msgReg = ctx.allocator.allocCatchVar(clause)
+            ctx.regNameEvents.add(RegNameEvent(ctx.pc, false, msgReg, clause.variableName))
+
             ctx.exceptionEntries.add(ExEntry(tryStart, tryEnd, clause.exceptionType, handlerPc, msgReg))
 
             ctx.emitBlock(clause.body)
-            // patch: jEnd target filled in later
-            val jEnd = ctx.emit(Opcode.JMP, 0, 0, 0, 0)
-            catchEndJumps.add(jEnd)
-            ctx.freer(msgReg)
+
+            // If this is a resource guard catch block, we MUST emit KILL to terminate execution
+            val isResourceGuard =
+                clause.exceptionType in
+                    setOf(
+                        "QuotaExceededError",
+                        "TimeoutError",
+                        "MemoryLimitError",
+                        "StackOverflowError",
+                    )
+
+            if (isResourceGuard) {
+                ctx.emit(Opcode.KILL, 0, 0, 0, 0)
+            } else {
+                // patch: jEnd target filled in later
+                val jEnd = ctx.emit(Opcode.JMP, 0, 0, 0, 0)
+                catchEndJumps.add(jEnd)
+            }
+
+            // Free the variable register
+            ctx.allocator.freeVar(clause.resolvedSymbol!!)
         }
 
         ctx.addLabel("end")

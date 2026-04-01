@@ -230,7 +230,9 @@ These are thrown by standard library functions (via `SCALL`) when external opera
 
 ### Resource Guard Exceptions
 
-These are thrown by the VM's watchdog system when execution exceeds configured limits. They are **catchable** but intended to terminate execution. The program will terminate the moment the catch block finishes. Such catch blocks are automatically terminated with a special `KILL` instruction.
+These are thrown by the VM's watchdog system when execution exceeds configured limits. They are **catchable** (except by catch-all `catch (err)` blocks) but intended to terminate execution. 
+
+When a limit is reached and denied, the VM temporarily bumps the quota by a small "grace period" (using a capped exponential backoff, e.g., `new_quota = old_quota + min(old_quota, 10000)`). This allows the VM to transition to the catch block and perform cleanup. The program will terminate the moment the catch block finishes, as such catch blocks are automatically terminated with a special `KILL` instruction.
 
 | Type | Thrown When | Default Limit |
 |---|---|---|

@@ -76,6 +76,17 @@ class RegisterAllocator(
     }
 
     /**
+     * Allocate a register for the exception variable in a [CatchClause].
+     * Sets both [CatchClause.register] and [VarSymbol.register].
+     */
+    fun allocCatchVar(clause: CatchClause): Int {
+        val reg = allocRef() // Exception is always string (or object later)
+        clause.register = reg
+        (clause.resolvedSymbol as? VarSymbol)?.register = reg
+        return reg
+    }
+
+    /**
      * Write pre-allocated param registers into [ParamSymbol.register] for each param.
      * Call this after constructing the allocator, before emitting the function body.
      */
