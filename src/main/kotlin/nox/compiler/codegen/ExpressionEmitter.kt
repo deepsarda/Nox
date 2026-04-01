@@ -1,7 +1,14 @@
 package nox.compiler.codegen
 
 import nox.compiler.ast.*
-import nox.compiler.types.*
+import nox.compiler.types.GlobalSymbol
+import nox.compiler.types.NoxParam
+import nox.compiler.types.ParamSymbol
+import nox.compiler.types.PostfixOp
+import nox.compiler.types.TypeRef
+import nox.compiler.types.UnaryOp
+import nox.compiler.types.VarSymbol
+
 
 /**
  * Emits bytecode for all expression AST nodes.

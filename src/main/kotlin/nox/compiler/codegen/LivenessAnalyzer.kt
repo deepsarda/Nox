@@ -1,7 +1,10 @@
 package nox.compiler.codegen
 
 import nox.compiler.ast.*
-import nox.compiler.types.*
+import nox.compiler.types.AssignOp
+import nox.compiler.types.ParamSymbol
+import nox.compiler.types.Symbol
+import nox.compiler.types.VarSymbol
 
 /**
  * Performs a backward dataflow scan over the AST to compute fine-grained

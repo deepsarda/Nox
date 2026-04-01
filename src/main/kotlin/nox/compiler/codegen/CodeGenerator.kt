@@ -2,7 +2,7 @@ package nox.compiler.codegen
 
 import nox.compiler.ast.*
 import nox.compiler.semantic.ResolvedModule
-import nox.compiler.types.*
+import nox.compiler.types.TypeRef
 import nox.plugin.LibraryRegistry
 
 /**

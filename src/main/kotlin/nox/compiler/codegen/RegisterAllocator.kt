@@ -1,7 +1,13 @@
 package nox.compiler.codegen
 
-import nox.compiler.ast.*
-import nox.compiler.types.*
+import nox.compiler.ast.CatchClause
+import nox.compiler.ast.ForEachStmt
+import nox.compiler.ast.Param
+import nox.compiler.ast.VarDeclStmt
+import nox.compiler.types.ParamSymbol
+import nox.compiler.types.Symbol
+import nox.compiler.types.TypeRef
+import nox.compiler.types.VarSymbol
 
 /**
  * Dual-bank register allocator for a single function or init block.
