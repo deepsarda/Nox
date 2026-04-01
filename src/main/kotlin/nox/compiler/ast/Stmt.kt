@@ -2,7 +2,6 @@ package nox.compiler.ast
 
 import nox.compiler.types.*
 
-
 /**
  * Base class for all statement nodes.
  *

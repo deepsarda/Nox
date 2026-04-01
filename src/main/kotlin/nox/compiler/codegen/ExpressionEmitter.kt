@@ -9,7 +9,6 @@ import nox.compiler.types.TypeRef
 import nox.compiler.types.UnaryOp
 import nox.compiler.types.VarSymbol
 
-
 /**
  * Emits bytecode for all expression AST nodes.
  *
