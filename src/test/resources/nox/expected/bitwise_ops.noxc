@@ -1,0 +1,77 @@
+;  Nox Bytecode Disassembly
+;  Source:   bitwise_ops.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  (none)
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=8  rMem=0
+
+.func main
+  ;
+  ; line 3  int a = 15;
+  0000:  LDI       p0, 15                      ; a:p0 = 15
+  ;
+  ; line 4  int b = 240;
+  0001:  LDI       p1, 240                     ; b:p1 = 240
+  ;
+  ; line 5  int c = a | b;
+  0002:  BOR       p2, p0, p1                  ; c:p2 = a:p0 | b:p1
+  ;
+  ; line 6  int d = c & 255;
+  0003:  LDI       p3, 255                     ; d:p3 = 255
+  0004:  BAND      p3, p2, p3                  ; d:p3 = c:p2 & d:p3
+  ;
+  ; line 7  int e = a ^ b;
+  0005:  BXOR      p4, p0, p1                  ; e:p4 = a:p0 ^ b:p1
+  ;
+  ; line 8  int f = ~0;
+  0006:  LDI       p0, 0                       ; a:p0 = 0
+  0007:  BNOT      p1, p0                      ; f:p1 = -a:p0
+  ;
+  ; line 9  int g = 1 << 8;
+  0008:  LDI       p5, 1                       ; p5 = 1
+  0009:  LDI       p0, 8                       ; g:p0 = 8
+  0010:  SHL       p0, p5, p0                  ; g:p0 = p5 << g:p0
+  ;
+  ; line 10  int h = 510 >> 1;
+  0011:  LDI       p6, 510                     ; p6 = 510
+  0012:  LDI       p5, 1                       ; h:p5 = 1
+  0013:  SHR       p5, p6, p5                  ; h:p5 = p6 >> h:p5
+  ;
+  ; line 11  int i = 510 >>> 1;
+  0014:  LDI       p7, 510                     ; p7 = 510
+  0015:  LDI       p6, 1                       ; i:p6 = 1
+  0016:  USHR      p6, p7, p6                  ; i:p6 = p7 >>> i:p6
+  ;
+  ; line 12  return c;
+  0017:  RET       p2                          ; return c:p2
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 18
+  constants:    0
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     144 bytes

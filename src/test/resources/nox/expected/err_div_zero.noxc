@@ -1,0 +1,45 @@
+;  Nox Bytecode Disassembly
+;  Source:   err_div_zero.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  (none)
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=2  rMem=0
+
+.func main
+  ;
+  ; line 3  return 1 / 0;
+  0000:  LDI       p1, 1                       ; p1 = 1
+  0001:  LDI       p0, 0                       ; p0 = 0
+  0002:  IDIV      p0, p1, p0                  ; p0 = p1 / p0
+  0003:  RET       p0                          ; return p0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 4
+  constants:    0
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     32 bytes

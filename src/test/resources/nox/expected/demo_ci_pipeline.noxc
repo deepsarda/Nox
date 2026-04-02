@@ -1,0 +1,85 @@
+;  Nox Bytecode Disassembly
+;  Source:   demo_ci_pipeline.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "CI"
+  #1   str   "Env__get"
+  #2   str   "building"
+  #3   str   "testing"
+  #4   str   "missing.log"
+  #5   str   "File__read"
+  #6   str   "failed"
+  #7   str   "ok"
+  #8   str   "error"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=1  rMem=4
+
+.func main
+  ;
+  ; line 5  string env = Env.get("CI");
+  0000:  LDC       r0, #0                      ; env:r0 = "CI"
+  0001:  SCALL     p0, Env__get, p0            ; p0 = Env__get(p0...)
+  ;
+  ; line 7  yield "building";
+  0002:  LDC       r1, #2                      ; r1 = "building"
+  0003:  YIELD     r1                          ; yield r1
+  ;
+  ; line 8  yield "testing";
+  0004:  LDC       r1, #3                      ; r1 = "testing"
+  0005:  YIELD     r1                          ; yield r1
+  ;
+  ; line 11  string file = File.read("missing.log");
+  0006:  LDC       r0, #4                      ; env:r0 = "missing.log"
+  0007:  SCALL     p1, File__read, p0          ; p1 = File__read(p0...)
+  0008:  JMP       @0017                       ; -> end
+  ;
+  ; line 13  yield "failed";
+  .catch_all:
+  0009:  LDC       r3, #6                      ; r3 = "failed"
+  0010:  YIELD     r3                          ; yield r3
+  ;
+  ; line 14  return "ok";
+  0011:  LDC       r3, #7                      ; r3 = "ok"
+  0012:  KILL_REF  r0                          ; env:r0 = null (GC)
+  0013:  KILL_REF  r1                          ; file:r1 = null (GC)
+  0014:  KILL_REF  r2                          ; err:r2 = null (GC)
+  0015:  RET       r3                          ; return r3
+  0016:  JMP       @0017                       ; -> end
+  ;
+  ; line 17  return "error";
+  .end:
+  0017:  LDC       r2, #8                      ; err:r2 = "error"
+  0018:  KILL_REF  r0                          ; env:r0 = null (GC)
+  0019:  KILL_REF  r1                          ; file:r1 = null (GC)
+  0020:  KILL_REF  r3                          ; r3 = null (GC)
+  0021:  RET       r2                          ; return err:r2
+
+
+; Exception Table
+
+.exceptions
+  [0006..0008] ANY                  -> @0009  msg=r2
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 22
+  constants:    9
+  exceptions:   1
+  globals:      0p + 0r
+  bytecode:     176 bytes

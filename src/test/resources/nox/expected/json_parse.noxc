@@ -1,0 +1,54 @@
+;  Nox Bytecode Disassembly
+;  Source:   json_parse.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "{\"status\":\"ok\"}"
+  #1   str   "Json__parse"
+  #2   str   "status"
+  #3   str   ""
+  #4   str   "__json_getString"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=1  rMem=2
+
+.func main
+  ;
+  ; line 3  json j = Json.parse("{\"status\":\"ok\"}");
+  0000:  LDC       r0, #0                      ; j:r0 = "{\"status\":\"ok\"}"
+  0001:  SCALL     p0, Json__parse, p0         ; p0 = Json__parse(p0...)
+  ;
+  ; line 4  return j.getString("status", "");
+  0002:  LDC       r1, #2                      ; r1 = "status"
+  0003:  LDC       r2, #3                      ; r2 = ""
+  0004:  SCALL     p1, __json_getString, p0    ; p1 = __json_getString(p0...)
+  0005:  KILL_REF  r0                          ; j:r0 = null (GC)
+  0006:  RET       r1                          ; return r1
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 7
+  constants:    5
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     56 bytes

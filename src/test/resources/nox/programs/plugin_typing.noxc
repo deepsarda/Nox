@@ -1,0 +1,167 @@
+;  Nox Bytecode Disassembly
+;  Source:   plugin_typing.nox
+;  Program:  "plugin_typing"
+;  Compiled: 2026-04-02T03:08:25.695613+05:30
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "__any[]_push"
+  #1   str   "__any[]_pop"
+  #2   str   "__any[]_length"
+  #3   str   "ints"
+  #4   str   "a"
+  #5   str   "b"
+  #6   str   "strings"
+  #7   str   "__json_getIntArray"
+  #8   str   "__json_getStringArray"
+  #9   str   "x"
+  #10  str   "y"
+  #11  str   "n: "
+  #12  str   ", len: "
+  #13  str   ", ja[0]: "
+  #14  str   ", sa[0]: "
+  #15  str   ", nested_len: "
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=19  rMem=19
+
+.func main
+  ;
+  ; line 6  int[] nums = [1, 2];
+  0000:  NEW_ARRAY r0                          ; nums:r0 = []
+  0001:  LDI       p0, 1                       ; p0 = 1
+  0002:  ARR_PUSH  SET_INT, r0, p0             ; nums:r0.push(p0)
+  0003:  LDI       p0, 2                       ; p0 = 2
+  0004:  ARR_PUSH  SET_INT, r0, p0             ; nums:r0.push(p0)
+  ;
+  ; line 7  nums.push(3);
+  0005:  MOVR      r2, r0                      ; r2 = nums:r0
+  0006:  LDI       p3, 3                       ; p3 = 3
+  0007:  SCALL     p1, __any[]_push, p2        ; p1 = __any[]_push(p2...)
+  ;
+  ; line 8  int n = nums.pop();
+  0008:  MOVR      r4, r0                      ; r4 = nums:r0
+  0009:  SCALL     p0, __any[]_pop, p4         ; n:p0 = __any[]_pop(p4...)
+  ;
+  ; line 9  int len = nums.length();
+  0010:  MOVR      r6, r0                      ; r6 = nums:r0
+  0011:  SCALL     p5, __any[]_length, p6      ; len:p5 = __any[]_length(p6...)
+  ;
+  ; line 12  json data = {ints: [10, 20], strings: ["a", "b"]};
+  0012:  NEW_OBJ   r0                          ; data:r0 = {}
+  0013:  NEW_ARRAY r1                          ; r1 = []
+  0014:  LDI       p7, 10                      ; p7 = 10
+  0015:  ARR_PUSH  SET_INT, r1, p7             ; r1.push(p7)
+  0016:  LDI       p7, 20                      ; p7 = 20
+  0017:  ARR_PUSH  SET_INT, r1, p7             ; r1.push(p7)
+  0018:  OBJ_SET   SET_INT, r0, "ints", p1     ; data:r0.ints = p1
+  0019:  NEW_ARRAY r1                          ; r1 = []
+  0020:  LDC       r7, #4                      ; r7 = "a"
+  0021:  ARR_PUSH  SET_STR, r1, r7             ; r1.push(r7)
+  0022:  LDC       r7, #5                      ; r7 = "b"
+  0023:  ARR_PUSH  SET_STR, r1, r7             ; r1.push(r7)
+  0024:  OBJ_SET   SET_STR, r0, "strings", r1  ; data:r0.strings = r1
+  ;
+  ; line 13  int[] ja = data.getIntArray("ints", []);
+  0025:  MOVR      r8, r0                      ; r8 = data:r0
+  0026:  LDC       r9, #3                      ; r9 = "ints"
+  0027:  NEW_ARRAY r10                         ; r10 = []
+  0028:  SCALL     p1, __json_getIntArray, p8  ; p1 = __json_getIntArray(p8...)
+  ;
+  ; line 14  string[] sa = data.getStringArray("strings", []);
+  0029:  MOVR      r11, r0                     ; r11 = data:r0
+  0030:  LDC       r12, #6                     ; r12 = "strings"
+  0031:  NEW_ARRAY r13                         ; r13 = []
+  0032:  SCALL     p7, __json_getStringArray, p11; p7 = __json_getStringArray(p11...)
+  ;
+  ; line 17  json[] nested = [{x: 1}];
+  0033:  NEW_ARRAY r0                          ; nested:r0 = []
+  0034:  NEW_OBJ   r14                         ; r14 = {}
+  0035:  LDI       p7, 1                       ; p7 = 1
+  0036:  OBJ_SET   SET_INT, r14, "x", p7       ; r14.x = p7
+  0037:  ARR_PUSH  SET_OBJ, r0, r14            ; nested:r0.push(r14)
+  ;
+  ; line 18  json item = {y: 2};
+  0038:  NEW_OBJ   r14                         ; item:r14 = {}
+  0039:  LDI       p7, 2                       ; p7 = 2
+  0040:  OBJ_SET   SET_INT, r14, "y", p7       ; item:r14.y = p7
+  ;
+  ; line 19  nested.push(item);
+  0041:  MOVR      r16, r0                     ; r16 = nested:r0
+  0042:  MOVR      r17, r14                    ; r17 = item:r14
+  0043:  SCALL     p15, __any[]_push, p16      ; p15 = __any[]_push(p16...)
+  ;
+  ; line 20  int nested_len = nested.length();
+  0044:  MOVR      r18, r0                     ; r18 = nested:r0
+  0045:  SCALL     p7, __any[]_length, p18     ; nested_len:p7 = __any[]_length(p18...)
+  ;
+  ; line 22  return `n: ${n}, len: ${len}, ja[0]: ${ja[0]}, sa[0]: ${sa[0]}, nested_len: ${nested_len}`;
+  0046:  LDC       r15, #11                    ; r15 = "n: "
+  0047:  MOVR      r0, r15                     ; nested:r0 = r15
+  0048:  I2S       r15, p0                     ; r15 = toString(n:p0)
+  0049:  SCONCAT   r0, r0, r15                 ; nested:r0 = nested:r0 + r15
+  0050:  LDC       r15, #12                    ; r15 = ", len: "
+  0051:  SCONCAT   r0, r0, r15                 ; nested:r0 = nested:r0 + r15
+  0052:  I2S       r15, p5                     ; r15 = toString(len:p5)
+  0053:  SCONCAT   r0, r0, r15                 ; nested:r0 = nested:r0 + r15
+  0054:  LDC       r15, #13                    ; r15 = ", ja[0]: "
+  0055:  SCONCAT   r0, r0, r15                 ; nested:r0 = nested:r0 + r15
+  0056:  LDI       p0, 0                       ; n:p0 = 0
+  0057:  AGET_IDX  r5, r1, p0                  ; r5 = ja:r1[n:p0]
+  0058:  I2S       r1, p5                      ; ja:r1 = toString(len:p5)
+  0059:  SCONCAT   r0, r0, r1                  ; nested:r0 = nested:r0 + ja:r1
+  0060:  LDC       r1, #14                     ; ja:r1 = ", sa[0]: "
+  0061:  SCONCAT   r0, r0, r1                  ; nested:r0 = nested:r0 + ja:r1
+  0062:  LDI       p5, 0                       ; len:p5 = 0
+  0063:  AGET_IDX  r1, r7, p5                  ; ja:r1 = sa:r7[len:p5]
+  0064:  MOVR      r7, r1                      ; sa:r7 = ja:r1
+  0065:  SCONCAT   r0, r0, r7                  ; nested:r0 = nested:r0 + sa:r7
+  0066:  LDC       r7, #15                     ; sa:r7 = ", nested_len: "
+  0067:  SCONCAT   r0, r0, r7                  ; nested:r0 = nested:r0 + sa:r7
+  0068:  I2S       r7, p7                      ; sa:r7 = toString(nested_len:p7)
+  0069:  SCONCAT   r0, r0, r7                  ; nested:r0 = nested:r0 + sa:r7
+  0070:  KILL_REF  r1                          ; ja:r1 = null (GC)
+  0071:  KILL_REF  r2                          ; r2 = null (GC)
+  0072:  KILL_REF  r3                          ; r3 = null (GC)
+  0073:  KILL_REF  r4                          ; r4 = null (GC)
+  0074:  KILL_REF  r6                          ; r6 = null (GC)
+  0075:  KILL_REF  r7                          ; sa:r7 = null (GC)
+  0076:  KILL_REF  r8                          ; r8 = null (GC)
+  0077:  KILL_REF  r9                          ; r9 = null (GC)
+  0078:  KILL_REF  r10                         ; r10 = null (GC)
+  0079:  KILL_REF  r11                         ; r11 = null (GC)
+  0080:  KILL_REF  r12                         ; r12 = null (GC)
+  0081:  KILL_REF  r13                         ; r13 = null (GC)
+  0082:  KILL_REF  r14                         ; item:r14 = null (GC)
+  0083:  KILL_REF  r15                         ; r15 = null (GC)
+  0084:  KILL_REF  r16                         ; r16 = null (GC)
+  0085:  KILL_REF  r17                         ; r17 = null (GC)
+  0086:  KILL_REF  r18                         ; r18 = null (GC)
+  0087:  RET       r0                          ; return nested:r0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 88
+  constants:    16
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     704 bytes

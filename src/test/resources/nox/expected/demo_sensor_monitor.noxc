@@ -1,0 +1,99 @@
+;  Nox Bytecode Disassembly
+;  Source:   demo_sensor_monitor.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "{\"temp\": 45.5, \"battery\": 10}"
+  #1   str   "Json__parse"
+  #2   type  Sensor { temp: double, battery: int }
+  #3   str   "temp"
+  #4   dbl   40
+  #5   str   "battery"
+  #6   str   "alert"
+  #7   str   "ok"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=4  rMem=2
+
+.func main
+  ;
+  ; line 10  int i = 0;
+  0000:  LDI       p0, 0                       ; i:p0 = 0
+  ;
+  ; line 11  while (i < 3) {
+  .loop_start_1:
+  0001:  LDI       p2, 3                       ; p2 = 3
+  0002:  ILT       p1, p0, p2                  ; p1 = i:p0 < p2
+  0003:  JIF       p1, @0028                   ; if p1==0 -> loop_exit_1
+  ;
+  ; line 12  json raw = Json.parse("{\"temp\": 45.5, \"battery\": 10}");
+  0004:  LDC       r1, #0                      ; r1 = "{\"temp\": 45.5, \"battery\": 10}"
+  0005:  SCALL     p0, Json__parse, p1         ; i:p0 = Json__parse(p1...)
+  ;
+  ; line 13  Sensor s = raw as Sensor;
+  0006:  CAST_STRUCTr1, r0, #2                  ; s:r1 = raw:r0 as Sensor
+  ;
+  ; line 15  if (s.temp > 40.0) {
+  0007:  HACC      GET_DBL, r2, r1, "temp"     ; r2 = s:r1.temp
+  0008:  LDC       p3, #4                      ; p3 = 40.0
+  0009:  DGT       p1, p2, p3                  ; p1 = p2 > p3
+  0010:  JIF       p1, @0023                   ; if p1==0 -> @0023
+  ;
+  ; line 16  if (s.battery < 20) {
+  0011:  HACC      GET_INT, r3, r1, "battery"  ; r3 = s:r1.battery
+  0012:  LDI       p2, 20                      ; p2 = 20
+  0013:  ILT       p1, p3, p2                  ; p1 = p3 < p2
+  0014:  JIF       p1, @0022                   ; if p1==0 -> @0022
+  ;
+  ; line 17  if (i == 1) {
+  0015:  LDI       p2, 1                       ; p2 = 1
+  0016:  IEQ       p1, p0, p2                  ; p1 = i:p0 == p2
+  0017:  JIF       p1, @0021                   ; if p1==0 -> @0021
+  ;
+  ; line 18  yield "alert";
+  0018:  LDC       r1, #6                      ; s:r1 = "alert"
+  0019:  YIELD     r1                          ; yield s:r1
+  0020:  JMP       @0021                       ; -> @0021
+  0021:  JMP       @0022                       ; -> @0022
+  0022:  JMP       @0023                       ; -> @0023
+  ;
+  ; line 22  i = i + 1;
+  0023:  LDI       p1, 1                       ; p1 = 1
+  0024:  IADD      p0, p0, p1                  ; i:p0 = i:p0 + p1
+  0025:  KILL_REF  r0                          ; raw:r0 = null (GC)
+  0026:  KILL_REF  r1                          ; s:r1 = null (GC)
+  0027:  JMP       @0001                       ; -> loop_start_1
+  ;
+  ; line 25  return "ok";
+  .loop_exit_1:
+  0028:  LDC       r1, #7                      ; s:r1 = "ok"
+  0029:  KILL_REF  r0                          ; raw:r0 = null (GC)
+  0030:  RET       r1                          ; return s:r1
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 31
+  constants:    8
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     248 bytes

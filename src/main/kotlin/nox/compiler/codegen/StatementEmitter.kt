@@ -373,7 +373,14 @@ class StatementEmitter(
         // patch: jumpToExit target filled in later
         val jumpToExit = ctx.emit(Opcode.JIF, 0, condReg, 0, 0, line)
 
-        ctx.emit(Opcode.AGET_IDX, 0, elemReg, arrReg, idxReg, line) // elem = arr[idx]
+        ctx.emit(
+            Opcode.AGET_IDX,
+            ExpressionEmitter.getSubOpFor(stmt.elementType),
+            elemReg,
+            arrReg,
+            idxReg,
+            line,
+        ) // elem = arr[idx]
 
         val loopCtx = LoopContext(loopStart, -1)
         loopStack.addLast(loopCtx)
@@ -428,9 +435,11 @@ class StatementEmitter(
             for (reg in ctx.allocator.allRefRegs.sorted()) {
                 ctx.emit(Opcode.KILL_REF, 0, reg, 0, 0, line)
             }
-            ctx.emit(Opcode.RET, 0, 1, 0, 0, line)
+            ctx.emit(Opcode.RET, 0, 1, 0, 0, line) // A=1 (void)
         } else {
-            val type = stmt.value.resolvedType ?: TypeRef.INT
+            val type = stmt.value.resolvedType
+                ?: throw Exception("UNKNOWN TYPE FOR RETURN") // TODO: Make this a compiler error
+
             val reg = ctx.resolveRegister(stmt.value)
             val retReg =
                 if (reg != null) {
@@ -441,6 +450,13 @@ class StatementEmitter(
                     tmp
                 }
 
+            val typeTag = when {
+                type == TypeRef.INT -> 0
+                type == TypeRef.DOUBLE -> 1
+                type == TypeRef.BOOLEAN -> 2
+                else -> 3 // Reference types (string, json, struct, array)
+            }
+
             // Emit KILL_REF for all live rMem registers EXCEPT the return register.
             for (r in ctx.allocator.allRefRegs.sorted()) {
                 if (r != retReg) {
@@ -448,7 +464,7 @@ class StatementEmitter(
                 }
             }
 
-            ctx.emit(Opcode.RET, 0, 0, retReg, 0, line)
+            ctx.emit(Opcode.RET, 0, 0, typeTag, retReg, line)
 
             if (reg != null) {
                 ctx.freeNodeRegisters(stmt.value)
@@ -462,13 +478,21 @@ class StatementEmitter(
         val line = stmt.loc.line
         val type = stmt.value.resolvedType ?: TypeRef.STRING
         val reg = ctx.resolveRegister(stmt.value)
+
+        val typeTag = when {
+            type == TypeRef.INT -> 0
+            type == TypeRef.DOUBLE -> 1
+            type == TypeRef.BOOLEAN -> 2
+            else -> 3 // Reference types (string, json, struct, array)
+        }
+
         if (reg != null) {
             ctx.freeNodeRegisters(stmt.value)
-            ctx.emit(Opcode.YIELD, 0, reg, 0, 0, line)
+            ctx.emit(Opcode.YIELD, 0, reg, typeTag, 0, line)
         } else {
             val tmp = ctx.alloc(type)
             ctx.emitExpr(stmt.value, tmp, line)
-            ctx.emit(Opcode.YIELD, 0, tmp, 0, 0, line)
+            ctx.emit(Opcode.YIELD, 0, tmp, typeTag, 0, line)
             ctx.free(type, tmp)
         }
     }

@@ -1,0 +1,45 @@
+;  Nox Bytecode Disassembly
+;  Source:   err_quota.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  (none)
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=1  rMem=0
+
+.func main
+  ;
+  ; line 3  while (true) {}
+  .loop_start_1:
+  0000:  LDI       p0, 1                       ; p0 = 1
+  0001:  JIF       p0, @0003                   ; if p0==0 -> loop_exit_1
+  0002:  JMP       @0000                       ; -> loop_start_1
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 3
+  constants:    0
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     24 bytes

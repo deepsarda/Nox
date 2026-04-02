@@ -1,0 +1,52 @@
+;  Nox Bytecode Disassembly
+;  Source:   json_stringify.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "v"
+  #1   str   "k"
+  #2   str   "Json__stringify"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=1  rMem=2
+
+.func main
+  ;
+  ; line 3  json j = { k: "v" };
+  0000:  NEW_OBJ   r0                          ; j:r0 = {}
+  0001:  LDC       r1, #0                      ; r1 = "v"
+  0002:  OBJ_SET   SET_STR, r0, "k", r1        ; j:r0.k = r1
+  ;
+  ; line 4  return Json.stringify(j);
+  0003:  LDI       p1, 1                       ; p1 = 1
+  0004:  SCALL     p1, Json__stringify, p0     ; p1 = Json__stringify(p0...)
+  0005:  KILL_REF  r0                          ; j:r0 = null (GC)
+  0006:  RET       r1                          ; return r1
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 7
+  constants:    3
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     56 bytes

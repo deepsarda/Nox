@@ -1,0 +1,99 @@
+;  Nox Bytecode Disassembly
+;  Source:   demo_template_engine.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "Hello {{name}}, welcome to {{place}}!"
+  #1   str   "{\"name\": \"Alice\", \"place\": \"Wonderland\"}"
+  #2   str   "Json__parse"
+  #3   str   "{{name}}"
+  #4   str   "__string_contains"
+  #5   str   "__string_split"
+  #6   str   "{{place}}"
+  #7   str   "Hello Alice, welcome to Wonderland!"
+  #8   str   "ok"
+  #9   str   "error"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=2  rMem=5
+
+.func main
+  ;
+  ; line 4  string template = "Hello {{name}}, welcome to {{place}}!";
+  0000:  LDC       r0, #0                      ; template:r0 = "Hello {{name}}, welcome to {{place}}!"
+  ;
+  ; line 5  json data = Json.parse("{\"name\": \"Alice\", \"place\": \"Wonderland\"}");
+  0001:  LDC       r0, #1                      ; template:r0 = "{\"name\": \"Alice\", \"place\": \"Wonderland\"}"
+  0002:  SCALL     p1, Json__parse, p0         ; p1 = Json__parse(p0...)
+  ;
+  ; line 7  if (template.contains("{{name}}")) {
+  0003:  MOVR      r1, r0                      ; data:r1 = template:r0
+  0004:  LDC       r2, #3                      ; r2 = "{{name}}"
+  0005:  SCALL     p0, __string_contains, p1   ; p0 = __string_contains(p1...)
+  0006:  JIF       p0, @0011                   ; if p0==0 -> @0011
+  ;
+  ; line 8  string[] p1 = template.split("{{name}}");
+  0007:  LDC       r1, #3                      ; data:r1 = "{{name}}"
+  0008:  SCALL     p2, __string_split, p0      ; p2 = __string_split(p0...)
+  0009:  KILL_REF  r2                          ; p1:r2 = null (GC)
+  0010:  JMP       @0011                       ; -> @0011
+  ;
+  ; line 12  if (template.contains("{{place}}")) {
+  0011:  LDC       r2, #6                      ; p1:r2 = "{{place}}"
+  0012:  SCALL     p0, __string_contains, p1   ; p0 = __string_contains(p1...)
+  0013:  JIF       p0, @0017                   ; if p0==0 -> @0017
+  ;
+  ; line 13  string[] p2 = template.split("{{place}}");
+  0014:  LDC       r1, #6                      ; data:r1 = "{{place}}"
+  0015:  SCALL     p0, __string_split, p0      ; p0 = __string_split(p0...)
+  0016:  JMP       @0017                       ; -> @0017
+  ;
+  ; line 17  if (template == "Hello Alice, welcome to Wonderland!") {
+  0017:  LDC       r4, #7                      ; r4 = "Hello Alice, welcome to Wonderland!"
+  0018:  SEQ       p0, r3, r4                  ; p0 = r3 == r4
+  0019:  JIF       p0, @0027                   ; if p0==0 -> @0027
+  ;
+  ; line 18  return "ok";
+  0020:  LDC       r4, #8                      ; r4 = "ok"
+  0021:  KILL_REF  r0                          ; p2:r0 = null (GC)
+  0022:  KILL_REF  r1                          ; data:r1 = null (GC)
+  0023:  KILL_REF  r2                          ; p1:r2 = null (GC)
+  0024:  KILL_REF  r3                          ; r3 = null (GC)
+  0025:  RET       r4                          ; return r4
+  0026:  JMP       @0027                       ; -> @0027
+  ;
+  ; line 20  return "error";
+  0027:  LDC       r4, #9                      ; r4 = "error"
+  0028:  KILL_REF  r0                          ; p2:r0 = null (GC)
+  0029:  KILL_REF  r1                          ; data:r1 = null (GC)
+  0030:  KILL_REF  r2                          ; p1:r2 = null (GC)
+  0031:  KILL_REF  r3                          ; r3 = null (GC)
+  0032:  RET       r4                          ; return r4
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 33
+  constants:    10
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     264 bytes

@@ -1,0 +1,62 @@
+;  Nox Bytecode Disassembly
+;  Source:   type_convert.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "42"
+  #1   str   "__string_toInt"
+  #2   str   "__int_toDouble"
+  #3   str   "__double_toInt"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=3  rMem=1
+
+.func main
+  ;
+  ; line 3  string s = "42";
+  0000:  LDC       r0, #0                      ; s:r0 = "42"
+  ;
+  ; line 4  int a = s.toInt(0);
+  0001:  MOVR      r1, r0                      ; r1 = s:r0
+  0002:  LDI       p2, 0                       ; p2 = 0
+  0003:  SCALL     p0, __string_toInt, p1      ; a:p0 = __string_toInt(p1...)
+  ;
+  ; line 5  double d = a.toDouble();
+  0004:  MOV       p2, p0                      ; p2 = a:p0
+  0005:  SCALL     p1, __int_toDouble, p2      ; d:p1 = __int_toDouble(p2...)
+  ;
+  ; line 6  int b = d.toInt();
+  0006:  MOV       p0, p1                      ; a:p0 = d:p1
+  0007:  SCALL     p2, __double_toInt, p0      ; b:p2 = __double_toInt(a:p0...)
+  ;
+  ; line 7  return b;
+  0008:  KILL_REF  r0                          ; s:r0 = null (GC)
+  0009:  RET       p2                          ; return b:p2
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 10
+  constants:    4
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     80 bytes

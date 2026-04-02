@@ -1,0 +1,9 @@
+// @test:result "42"
+main() {
+    int a = 20 + 22;
+    int b = 100 - 58;
+    int c = 6 * 7;
+    int d = 84 / 2;
+    int e = 142 % 100;
+    return c;
+}

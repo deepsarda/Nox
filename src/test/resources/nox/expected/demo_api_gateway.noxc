@@ -1,0 +1,104 @@
+;  Nox Bytecode Disassembly
+;  Source:   demo_api_gateway.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "{\"user\": \"bob\", \"action\": 1}"
+  #1   str   "Json__parse"
+  #2   type  Request { user: string, action: int }
+  #3   str   "action"
+  #4   str   "{}"
+  #5   str   "status"
+  #6   str   "accepted"
+  #7   str   "__json_setString"
+  #8   str   "timestamp"
+  #9   str   "__json_setInt"
+  #10  str   "Json__stringify"
+  #11  str   "ok"
+  #12  str   "error"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=4  rMem=2
+
+.func main
+  ;
+  ; line 10  string raw = "{\"user\": \"bob\", \"action\": 1}";
+  0000:  LDC       r0, #0                      ; raw:r0 = "{\"user\": \"bob\", \"action\": 1}"
+  ;
+  ; line 11  json payload = Json.parse(raw);
+  0001:  SCALL     p1, Json__parse, p0         ; p1 = Json__parse(p0...)
+  ;
+  ; line 13  Request req = payload as Request;
+  0002:  CAST_STRUCTr0, r1, #2                  ; req:r0 = payload:r1 as Request
+  ;
+  ; line 14  int ts = 123;
+  0003:  LDI       p0, 123                     ; ts:p0 = 123
+  ;
+  ; line 16  if (req.action > 0) {
+  0004:  HACC      GET_INT, r2, r0, "action"   ; r2 = req:r0.action
+  0005:  LDI       p3, 0                       ; p3 = 0
+  0006:  IGT       p1, p2, p3                  ; p1 = p2 > p3
+  0007:  JIF       p1, @0026                   ; if p1==0 -> @0026
+  ;
+  ; line 17  json resp = Json.parse("{}");
+  0008:  LDC       r1, #4                      ; payload:r1 = "{}"
+  0009:  SCALL     p0, Json__parse, p1         ; ts:p0 = Json__parse(p1...)
+  ;
+  ; line 18  resp.setString("status", "accepted");
+  0010:  MOVR      r1, r0                      ; payload:r1 = resp:r0
+  0011:  LDC       r2, #5                      ; r2 = "status"
+  0012:  LDC       r3, #6                      ; r3 = "accepted"
+  0013:  SCALL     p1, __json_setString, p1    ; p1 = __json_setString(p1...)
+  ;
+  ; line 19  resp.setInt("timestamp", ts);
+  0014:  MOVR      r1, r0                      ; payload:r1 = resp:r0
+  0015:  LDC       r2, #8                      ; r2 = "timestamp"
+  0016:  MOV       p3, p0                      ; p3 = ts:p0
+  0017:  SCALL     p1, __json_setInt, p1       ; p1 = __json_setInt(p1...)
+  ;
+  ; line 21  string out = Json.stringify(resp);
+  0018:  MOVR      r1, r0                      ; out:r1 = resp:r0
+  0019:  LDI       p2, 1                       ; p2 = 1
+  0020:  SCALL     p1, Json__stringify, p1     ; p1 = Json__stringify(p1...)
+  ;
+  ; line 22  yield out;
+  0021:  YIELD     r1                          ; yield out:r1
+  ;
+  ; line 23  return "ok";
+  0022:  LDC       r1, #11                     ; out:r1 = "ok"
+  0023:  KILL_REF  r0                          ; resp:r0 = null (GC)
+  0024:  RET       r1                          ; return out:r1
+  0025:  JMP       @0026                       ; -> @0026
+  ;
+  ; line 25  return "error";
+  0026:  LDC       r1, #12                     ; out:r1 = "error"
+  0027:  KILL_REF  r0                          ; resp:r0 = null (GC)
+  0028:  RET       r1                          ; return out:r1
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 29
+  constants:    13
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     232 bytes

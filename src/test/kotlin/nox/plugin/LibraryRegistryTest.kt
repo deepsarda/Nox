@@ -128,12 +128,12 @@ class LibraryRegistryTest :
         // Type-Bound Method Query API
 
         test("array methods return correct CallTargets") {
-            val registry = LibraryRegistry()
+            val registry = LibraryRegistry.createDefault()
             val intArray = TypeRef("int", 1)
 
             val push = registry.lookupBuiltinMethod(intArray, "push")
             push.shouldNotBeNull()
-            push.name shouldBe "__arr_push"
+            push.name shouldBe "__T[]_push!int"
             push.params.size shouldBe 1
             push.params[0].type shouldBe TypeRef.INT // element type
 
@@ -147,7 +147,7 @@ class LibraryRegistryTest :
         }
 
         test("string array push expects string elements") {
-            val registry = LibraryRegistry()
+            val registry = LibraryRegistry.createDefault()
             val strArray = TypeRef("string", 1)
             val push = registry.lookupBuiltinMethod(strArray, "push")
             push.shouldNotBeNull()
@@ -155,20 +155,66 @@ class LibraryRegistryTest :
         }
 
         test("lookupBuiltinMethod returns null for non-existent method") {
-            val registry = LibraryRegistry()
+            val registry = LibraryRegistry.createDefault()
             registry.lookupBuiltinMethod(TypeRef.STRING, "nonexistent").shouldBeNull()
         }
 
         test("getBuiltinMethodNames includes array methods for arrays") {
-            val registry = LibraryRegistry()
+            val registry = LibraryRegistry.createDefault()
             val names = registry.getBuiltinMethodNames(TypeRef("int", 1))
             names.shouldNotBeNull()
             names shouldContainAll setOf("push", "pop", "length")
         }
 
         test("getBuiltinMethodNames returns null for type with no methods") {
-            val registry = LibraryRegistry()
+            val registry = LibraryRegistry.createDefault()
             registry.getBuiltinMethodNames(TypeRef.BOOLEAN).shouldBeNull()
+        }
+
+        // Generics Template System
+
+        test("lookupBuiltinMethod generates mangled name for generic template") {
+            val registry = LibraryRegistry.createDefault()
+            val targetType = TypeRef("int", 2) // int[][]
+            val callTarget = registry.lookupBuiltinMethod(targetType, "push")
+            
+            callTarget.shouldNotBeNull()
+            callTarget.name shouldBe "__T[]_push!int[]"
+            callTarget.params.size shouldBe 1
+            callTarget.params[0].type shouldBe TypeRef("int", 1) // parameter is T, so int[]
+            callTarget.returnType shouldBe TypeRef.VOID
+        }
+
+        test("lookupBuiltinMethod generates mangled name for complex generic mappings") {
+            val registry = LibraryRegistry.createDefault()
+            val targetType = TypeRef("string", 3) // string[][][]
+            val callTarget = registry.lookupBuiltinMethod(targetType, "pop")
+            
+            callTarget.shouldNotBeNull()
+            callTarget.name shouldBe "__T[]_pop!string[][]"
+            callTarget.params.size shouldBe 0
+            callTarget.returnType shouldBe TypeRef("string", 2) // returns T, so string[][]
+        }
+
+        test("lookupNativeFunc caches and returns correctly linked adapter for generic JIT requests") {
+            val registry = LibraryRegistry.createDefault()
+            val scallName = "__T[]_push!double"
+            
+            // First lookup misses cache and triggers JIT linkage
+            val func1 = registry.lookupNativeFunc(scallName)
+            func1.shouldNotBeNull()
+
+            // Second lookup hits cache directly
+            val func2 = registry.lookupNativeFunc(scallName)
+            func1 shouldBe func2
+        }
+
+        test("lookupNativeFunc parses multidimensional JIT generic requests") {
+            val registry = LibraryRegistry.createDefault()
+            val scallName = "__T[]_pop!json[][]"
+            
+            val func = registry.lookupNativeFunc(scallName)
+            func.shouldNotBeNull()
         }
 
         // Tier 1 External Plugin Registration

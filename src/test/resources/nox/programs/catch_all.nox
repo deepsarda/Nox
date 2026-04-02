@@ -1,0 +1,8 @@
+// @test:result "caught all"
+main() {
+    try {
+        throw "anything";
+    } catch (err) {
+        return "caught all";
+    }
+}

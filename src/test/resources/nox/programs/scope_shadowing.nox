@@ -1,0 +1,9 @@
+// @test:result "1"
+main() {
+    int x = 0;
+    {
+        int x = 1;
+        return x;
+    }
+    return x;
+}

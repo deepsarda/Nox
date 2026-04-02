@@ -1,0 +1,18 @@
+// @test:yields ["building", "testing", "failed"]
+// @test:result "ok"
+
+main() {
+    string env = Env.get("CI");
+    
+    yield "building";
+    yield "testing";
+    
+    try {
+        string file = File.read("missing.log");
+    } catch (err) {
+        yield "failed";
+        return "ok";
+    }
+    
+    return "error";
+}

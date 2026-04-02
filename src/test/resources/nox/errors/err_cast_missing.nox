@@ -1,0 +1,7 @@
+// @test:error "CastError"
+type Point { int x; int y; }
+main() {
+    json j = {};
+    Point p = j as Point;
+    return p.x;
+}

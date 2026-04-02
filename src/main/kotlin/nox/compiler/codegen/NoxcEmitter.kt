@@ -402,7 +402,9 @@ class NoxcEmitter {
                 if (a == 1) {
                     "" to "return (void)"
                 } else {
-                    pr(b) to "return ${pn(b)}"
+                    if (b < 3)
+                        pr(c) to "return ${pn(c)}"
+                    else rr(c) to "return ${rn(c)}"
                 }
             }
 
@@ -435,7 +437,10 @@ class NoxcEmitter {
 
             Opcode.ASET_IDX -> "${rr(a)}, ${pr(b)}, ${pr(c)}" to "${rn(a)}[${pn(b)}] = ${pn(c)}"
 
-            Opcode.YIELD -> rr(a) to "yield ${rn(a)}"
+            Opcode.YIELD -> {
+                if (b < 3) pr(a) to "yield ${pn(a)}"
+                else rr(a) to "yield ${rn(a)}"
+            }
 
             Opcode.IINC -> pr(a) to "${pn(a)} = ${pn(a)} + 1"
             Opcode.IDEC -> pr(a) to "${pn(a)} = ${pn(a)} - 1"

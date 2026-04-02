@@ -1,0 +1,9 @@
+// @test:result "6"
+main() {
+    int[] arr = [1, 2, 3];
+    int sum = 0;
+    foreach (int x in arr) {
+        sum = sum + x;
+    }
+    return sum;
+}

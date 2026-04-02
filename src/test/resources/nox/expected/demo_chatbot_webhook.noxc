@@ -1,0 +1,98 @@
+;  Nox Bytecode Disassembly
+;  Source:   demo_chatbot_webhook.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "{\"user\": \"U1\", \"message\": {\"id\": \"M1\", \"text\": \"hello\"}}"
+  #1   str   "Json__parse"
+  #2   type  Webhook { message: Struct(#3), user: string }
+  #3   type  MsgData { id: string, text: string }
+  #4   str   "message.text"
+  #5   str   "hello"
+  #6   str   "Hello "
+  #7   str   "user"
+  #8   str   ", your id is "
+  #9   str   "message.id"
+  #10  str   "Hello U1, your id is M1"
+  #11  str   "ok"
+  #12  str   "error"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=1  rMem=5
+
+.func main
+  ;
+  ; line 14  json payload = Json.parse("{\"user\": \"U1\", \"message\": {\"id\": \"M1\", \"text\": \"hello\"}}");
+  0000:  LDC       r0, #0                      ; payload:r0 = "{\"user\": \"U1\", \"message\": {\"id\": \"M1\", \"text\": \"hello\"}}"
+  0001:  SCALL     p0, Json__parse, p0         ; p0 = Json__parse(p0...)
+  ;
+  ; line 15  Webhook hook = payload as Webhook;
+  0002:  CAST_STRUCTr1, r0, #2                  ; hook:r1 = payload:r0 as Webhook
+  ;
+  ; line 17  if (hook.message.text == "hello") {
+  0003:  AGET_PATH r0, r1, "message.text"      ; payload:r0 = hook:r1.message.text
+  0004:  LDC       r2, #5                      ; r2 = "hello"
+  0005:  SEQ       p0, r0, r2                  ; p0 = payload:r0 == r2
+  0006:  JIF       p0, @0027                   ; if p0==0 -> @0027
+  ;
+  ; line 18  string resp = "Hello " + hook.user + ", your id is " + hook.message.id;
+  0007:  LDC       r4, #6                      ; r4 = "Hello "
+  0008:  HACC      GET_STR, r3, r1, "user"     ; r3 = hook:r1.user
+  0009:  SCONCAT   r3, r4, r3                  ; r3 = r4 + r3
+  0010:  LDC       r0, #8                      ; payload:r0 = ", your id is "
+  0011:  SCONCAT   r0, r3, r0                  ; payload:r0 = r3 + payload:r0
+  0012:  AGET_PATH r2, r1, "message.id"        ; resp:r2 = hook:r1.message.id
+  0013:  SCONCAT   r2, r0, r2                  ; resp:r2 = payload:r0 + resp:r2
+  ;
+  ; line 19  if (resp == "Hello U1, your id is M1") {
+  0014:  LDC       r0, #10                     ; payload:r0 = "Hello U1, your id is M1"
+  0015:  SEQ       p0, r2, r0                  ; p0 = resp:r2 == payload:r0
+  0016:  JIF       p0, @0024                   ; if p0==0 -> @0024
+  ;
+  ; line 20  return "ok";
+  0017:  LDC       r2, #11                     ; resp:r2 = "ok"
+  0018:  KILL_REF  r0                          ; payload:r0 = null (GC)
+  0019:  KILL_REF  r1                          ; hook:r1 = null (GC)
+  0020:  KILL_REF  r3                          ; r3 = null (GC)
+  0021:  KILL_REF  r4                          ; r4 = null (GC)
+  0022:  RET       r2                          ; return resp:r2
+  0023:  JMP       @0024                       ; -> @0024
+  0024:  KILL_REF  r3                          ; r3 = null (GC)
+  0025:  KILL_REF  r4                          ; r4 = null (GC)
+  0026:  JMP       @0027                       ; -> @0027
+  ;
+  ; line 23  return "error";
+  0027:  LDC       r2, #12                     ; resp:r2 = "error"
+  0028:  KILL_REF  r0                          ; payload:r0 = null (GC)
+  0029:  KILL_REF  r1                          ; hook:r1 = null (GC)
+  0030:  KILL_REF  r3                          ; r3 = null (GC)
+  0031:  KILL_REF  r4                          ; r4 = null (GC)
+  0032:  RET       r2                          ; return resp:r2
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 33
+  constants:    13
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     264 bytes

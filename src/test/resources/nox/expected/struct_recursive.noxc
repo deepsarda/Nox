@@ -1,0 +1,67 @@
+;  Nox Bytecode Disassembly
+;  Source:   struct_recursive.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "leaf"
+  #1   str   "value"
+  #2   str   "left"
+  #3   str   "right"
+  #4   str   "root"
+  #5   str   "left.value"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=0  rMem=3
+
+.func main
+  ;
+  ; line 8  Node leaf = { value: "leaf", left: null, right: null };
+  0000:  NEW_OBJ   r0                          ; leaf:r0 = {}
+  0001:  LDC       r1, #0                      ; r1 = "leaf"
+  0002:  OBJ_SET   SET_STR, r0, "value", r1    ; leaf:r0.value = r1
+  0003:  KILL_REF  r1                          ; r1 = null (GC)
+  0004:  OBJ_SET   SET_OBJ, r0, "left", r1     ; leaf:r0.left = r1
+  0005:  KILL_REF  r1                          ; r1 = null (GC)
+  0006:  OBJ_SET   SET_OBJ, r0, "right", r1    ; leaf:r0.right = r1
+  ;
+  ; line 9  Node root = { value: "root", left: leaf, right: null };
+  0007:  NEW_OBJ   r1                          ; root:r1 = {}
+  0008:  LDC       r2, #4                      ; r2 = "root"
+  0009:  OBJ_SET   SET_STR, r1, "value", r2    ; root:r1.value = r2
+  0010:  OBJ_SET   SET_OBJ, r1, "left", r0     ; root:r1.left = leaf:r0
+  0011:  KILL_REF  r0                          ; leaf:r0 = null (GC)
+  0012:  OBJ_SET   SET_OBJ, r1, "right", r0    ; root:r1.right = leaf:r0
+  ;
+  ; line 10  return root.left.value;
+  0013:  AGET_PATH r0, r1, "left.value"        ; leaf:r0 = root:r1.left.value
+  0014:  KILL_REF  r1                          ; root:r1 = null (GC)
+  0015:  KILL_REF  r2                          ; r2 = null (GC)
+  0016:  RET       r0                          ; return leaf:r0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 17
+  constants:    6
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     136 bytes

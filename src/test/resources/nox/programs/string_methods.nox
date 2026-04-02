@@ -1,0 +1,5 @@
+// @test:result "HELLO"
+main() {
+    string s = "hello";
+    return s.upper();
+}

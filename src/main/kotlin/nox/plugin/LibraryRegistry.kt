@@ -5,6 +5,7 @@ import nox.compiler.types.NoxParam
 import nox.compiler.types.TypeRef
 import nox.plugin.annotations.NoxDefault
 import nox.plugin.annotations.NoxFunction
+import nox.plugin.annotations.NoxGeneric
 import nox.plugin.annotations.NoxModule
 import nox.plugin.annotations.NoxType
 import nox.plugin.annotations.NoxTypeMethod
@@ -47,6 +48,17 @@ class LibraryRegistry {
     private val typeMethods = mutableMapOf<String, MutableMap<String, CallTarget>>()
     private val arrayMethodNames = mutableSetOf("push", "pop", "length")
 
+    private data class TemplateSignature(
+        val genericParams: List<String>,
+        val baseScallName: String,
+        val kotlinMethod: KFunction<*>,
+        val instance: Any,
+        val targetTypeStr: String?,
+        val methodName: String,
+        val namespace: String?,
+    )
+    private val templates = mutableListOf<TemplateSignature>()
+
     // Runtime data (NoxNativeFuncs for VM SCALL dispatch)
     private val nativeFuncs = mutableMapOf<String, NoxNativeFunc>()
 
@@ -66,31 +78,44 @@ class LibraryRegistry {
     fun lookupNamespaceFunc(
         namespace: String,
         funcName: String,
-    ): CallTarget? = namespaceFunctions[namespace]?.get(funcName)
+    ): CallTarget? {
+        namespaceFunctions[namespace]?.get(funcName)?.let { return it }
+
+        // Template match
+        for (template in templates) {
+            if (template.namespace == namespace && template.methodName == funcName) {
+                // Not yet fully supported for standalone namespace generics unless type inferences exist
+                // but we can return null for now if they aren't instantiated explicitly.
+            }
+        }
+        return null
+    }
 
     /**
      * Look up a built-in method on [targetType] (e.g. `string.upper()`, `arr.length()`).
-     *
-     * For array types, recognizes `push`, `pop`, and `length`.
      */
     fun lookupBuiltinMethod(
         targetType: TypeRef,
         methodName: String,
     ): CallTarget? {
-        // Array methods (work on any T[])
-        if (targetType.isArray && methodName in arrayMethodNames) {
-            return when (methodName) {
-                "push" -> CallTarget("__arr_push", listOf(NoxParam("item", targetType.elementType())), TypeRef.VOID)
-                "pop" -> CallTarget("__arr_pop", emptyList(), targetType.elementType())
-                "length" -> CallTarget("__arr_length", emptyList(), TypeRef.INT)
-                else -> null
-            }
-        }
         // Direct type match (e.g. string.upper(), json.size())
         builtinMethods[targetType.name]?.get(methodName)?.let { return it }
         // Struct types can call json methods (implicit upcast)
         if (targetType.isStructType()) {
             builtinMethods["json"]?.get(methodName)?.let { return it }
+        }
+
+        // Template match
+        for (template in templates) {
+            if (template.targetTypeStr != null && template.methodName == methodName) {
+                val mapping = targetType.match(template.targetTypeStr)
+                if (mapping != null) {
+                    val scallName = template.baseScallName + "!" + template.genericParams.joinToString("!") { mapping[it]?.toString() ?: "unknown" }
+                    val returnType = resolveInstantiatedReturnType(template.kotlinMethod, mapping)
+                    val params = buildInstantiatedParams(template.kotlinMethod, mapping).drop(1)
+                    return CallTarget(scallName, params, returnType)
+                }
+            }
         }
         return null
     }
@@ -104,9 +129,13 @@ class LibraryRegistry {
     /** All built-in method names for [targetType] (for diagnostics). */
     fun getBuiltinMethodNames(targetType: TypeRef): Set<String>? {
         val names = mutableSetOf<String>()
-        if (targetType.isArray) names.addAll(arrayMethodNames)
         builtinMethods[targetType.name]?.keys?.let { names.addAll(it) }
         if (targetType.isStructType()) builtinMethods["json"]?.keys?.let { names.addAll(it) }
+        for (template in templates) {
+            if (template.targetTypeStr != null && targetType.match(template.targetTypeStr) != null) {
+                names.add(template.methodName)
+            }
+        }
         return names.ifEmpty { null }
     }
 
@@ -114,7 +143,20 @@ class LibraryRegistry {
     fun getTypeMethodNames(targetType: TypeRef): Set<String>? = typeMethods[targetType.name]?.keys
 
     /** Look up a linked native function by SCALL name (for VM dispatch). */
-    fun lookupNativeFunc(scallName: String): NoxNativeFunc? = nativeFuncs[scallName]
+    fun lookupNativeFunc(scallName: String): NoxNativeFunc? {
+        nativeFuncs[scallName]?.let { return it }
+        if (!scallName.contains("!")) return null
+        
+        // JIT Linking for Generics
+        val parts = scallName.split("!")
+        val baseName = parts[0]
+        val template = templates.find { it.baseScallName == baseName } ?: return null
+        val mapping = template.genericParams.zip(parts.drop(1).map { parseTypeRefString(it) }).toMap()
+        
+        val linked = Linker.link(template.kotlinMethod, template.instance, scallName, mapping)
+        nativeFuncs[scallName] = linked.nativeFunc
+        return linked.nativeFunc
+    }
 
     /**
      * Register a Tier 0 (Kotlin) plugin module.
@@ -139,10 +181,33 @@ class LibraryRegistry {
         for (func in klass.declaredFunctions) {
             val noxFunc = func.findAnnotation<NoxFunction>()
             val noxTypeMethod = func.findAnnotation<NoxTypeMethod>()
+            val noxGeneric = func.findAnnotation<NoxGeneric>()
 
-            when {
-                noxFunc != null -> registerNamespaceFunction(namespace, func, instance, noxFunc)
-                noxTypeMethod != null -> registerTypeMethod(func, instance, noxTypeMethod)
+            if (noxGeneric != null) {
+                val genericParams = noxGeneric.params.toList()
+                if (noxFunc != null) {
+                    val noxName = noxFunc.name.ifBlank { func.name }
+                    val scallName = "${namespace}__$noxName"
+                    templates.add(
+                        TemplateSignature(
+                            genericParams, scallName, func, instance, null, noxName, namespace
+                        )
+                    )
+                } else if (noxTypeMethod != null) {
+                    val targetTypeStr = noxTypeMethod.targetType
+                    val noxName = noxTypeMethod.name.ifBlank { func.name }
+                    val scallName = "__${targetTypeStr}_$noxName"
+                    templates.add(
+                        TemplateSignature(
+                            genericParams, scallName, func, instance, targetTypeStr, noxName, null
+                        )
+                    )
+                }
+            } else {
+                when {
+                    noxFunc != null -> registerNamespaceFunction(namespace, func, instance, noxFunc)
+                    noxTypeMethod != null -> registerTypeMethod(func, instance, noxTypeMethod)
+                }
             }
         }
     }
@@ -284,6 +349,28 @@ class LibraryRegistry {
         return kotlinTypeToTypeRef(javaType)
     }
 
+    private fun buildInstantiatedParams(
+        func: KFunction<*>,
+        mapping: Map<String, TypeRef>,
+    ): List<NoxParam> =
+        func.valueParameters
+            .filter { !isRuntimeContext(it) }
+            .map { p ->
+                val noxType = p.findAnnotation<NoxType>()
+                val resolvedType =
+                    if (noxType != null) {
+                        mapping[noxType.value] ?: parseTypeRefString(noxType.value)
+                    } else {
+                        val javaType =
+                            p.type.classifier?.let {
+                                (it as? kotlin.reflect.KClass<*>)?.java
+                            } ?: Any::class.java
+                        kotlinTypeToTypeRef(javaType)
+                    }
+                val default = p.findAnnotation<NoxDefault>()?.value
+                NoxParam(p.name ?: "arg", resolvedType, default)
+            }
+
     /** Resolve a Kotlin function's return type to its Nox TypeRef. */
     private fun resolveReturnType(func: KFunction<*>): TypeRef {
         // Check for @NoxType annotation on function (return type override)
@@ -295,6 +382,21 @@ class LibraryRegistry {
                 (it as? kotlin.reflect.KClass<*>)?.java
             } ?: return TypeRef.VOID
 
+        return kotlinTypeToTypeRef(returnType)
+    }
+
+    private fun resolveInstantiatedReturnType(
+        func: KFunction<*>,
+        mapping: Map<String, TypeRef>,
+    ): TypeRef {
+        val noxType = func.findAnnotation<NoxType>()
+        if (noxType != null) {
+            return mapping[noxType.value] ?: parseTypeRefString(noxType.value)
+        }
+        val returnType =
+            func.returnType.classifier?.let {
+                (it as? kotlin.reflect.KClass<*>)?.java
+            } ?: return TypeRef.VOID
         return kotlinTypeToTypeRef(returnType)
     }
 

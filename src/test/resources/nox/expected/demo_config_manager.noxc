@@ -1,0 +1,93 @@
+;  Nox Bytecode Disassembly
+;  Source:   demo_config_manager.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "{\"port\": 8080}"
+  #1   str   "dummy_config.json"
+  #2   str   "File__read"
+  #3   str   "Json__parse"
+  #4   str   "USER"
+  #5   str   "Env__get"
+  #6   str   "dummy_out.json"
+  #7   str   "{\"updated\": true}"
+  #8   str   "File__write"
+  #9   str   "ok"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=1  rMem=4
+
+.func main
+  ;
+  ; line 4  string configStr = "{\"port\": 8080}";
+  0000:  LDC       r0, #0                      ; configStr:r0 = "{\"port\": 8080}"
+  ;
+  ; line 6  configStr = File.read("dummy_config.json");
+  0001:  LDC       r0, #1                      ; configStr:r0 = "dummy_config.json"
+  0002:  SCALL     p0, File__read, p0          ; p0 = File__read(p0...)
+  0003:  JMP       @0005                       ; -> end
+  .catch_all:
+  0004:  JMP       @0005                       ; -> end
+  ;
+  ; line 12  json conf = Json.parse(configStr);
+  .end:
+  0005:  SCALL     p1, Json__parse, p0         ; p1 = Json__parse(p0...)
+  ;
+  ; line 13  string envName = Env.get("USER");
+  0006:  LDC       r0, #4                      ; envName:r0 = "USER"
+  0007:  SCALL     p0, Env__get, p0            ; p0 = Env__get(p0...)
+  ;
+  ; line 15  File.write("dummy_out.json", "{\"updated\": true}");
+  0008:  LDC       r0, #6                      ; envName:r0 = "dummy_out.json"
+  0009:  LDC       r1, #7                      ; conf:r1 = "{\"updated\": true}"
+  0010:  SCALL     p2, File__write, p0         ; p2 = File__write(p0...)
+  ;
+  ; line 17  return "ok";
+  0011:  LDC       r2, #9                      ; r2 = "ok"
+  0012:  KILL_REF  r0                          ; envName:r0 = null (GC)
+  0013:  KILL_REF  r1                          ; conf:r1 = null (GC)
+  0014:  RET       r2                          ; return r2
+  0015:  JMP       @0022                       ; -> end
+  ;
+  ; line 19  return "ok";
+  .catch_all:
+  0016:  LDC       r3, #9                      ; r3 = "ok"
+  0017:  KILL_REF  r0                          ; envName:r0 = null (GC)
+  0018:  KILL_REF  r1                          ; conf:r1 = null (GC)
+  0019:  KILL_REF  r2                          ; err:r2 = null (GC)
+  0020:  RET       r3                          ; return r3
+  0021:  JMP       @0022                       ; -> end
+  .end:
+  0022:  KILL_REF  r0                          ; envName:r0 = null (GC)
+  0023:  KILL_REF  r1                          ; conf:r1 = null (GC)
+  0024:  KILL_REF  r2                          ; err:r2 = null (GC)
+  0025:  KILL_REF  r3                          ; r3 = null (GC)
+
+
+; Exception Table
+
+.exceptions
+  [0001..0003] ANY                  -> @0004  msg=r1
+  [0005..0015] ANY                  -> @0016  msg=r2
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 26
+  constants:    10
+  exceptions:   2
+  globals:      0p + 0r
+  bytecode:     208 bytes

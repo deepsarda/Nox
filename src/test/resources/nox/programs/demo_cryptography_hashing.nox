@@ -1,0 +1,18 @@
+// @test:result "ok"
+
+main() {
+    string[] chars = "a,b,c,d".split(",");
+    int hash = 5381;
+
+    foreach (string c in chars) {
+        hash = ((hash << 5) + hash) ^ 33;
+    }
+
+    double dhash = hash + 0.5;
+    int ihash = dhash.toInt();
+
+    if (ihash == hash) {
+        return "ok";
+    }
+    return "error";
+}

@@ -1,0 +1,5 @@
+// @test:result "42"
+main() {
+    json data = { "value": 42, "str": "hello", "arr": [1,2,3] };
+    return data.getInt("value", 0);
+}

@@ -1,0 +1,117 @@
+;  Nox Bytecode Disassembly
+;  Source:   demo_game_ai.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "score"
+  #1   str   "next"
+  #2   dbl   0
+  #3   str   "Math__sqrt"
+  #4   dbl   13
+  #5   str   "next.score"
+  #6   str   "ok"
+  #7   str   "wrong_score"
+  #8   str   "no_next"
+  #9   str   "error"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=7  rMem=2
+
+.func main
+  ;
+  ; line 9  State end = { score: 100, next: null };
+  0000:  NEW_OBJ   r0                          ; end:r0 = {}
+  0001:  LDI       p0, 100                     ; p0 = 100
+  0002:  OBJ_SET   SET_INT, r0, "score", p0    ; end:r0.score = p0
+  0003:  KILL_REF  r1                          ; r1 = null (GC)
+  0004:  OBJ_SET   SET_OBJ, r0, "next", r1     ; end:r0.next = r1
+  ;
+  ; line 10  State start = { score: 10, next: end };
+  0005:  NEW_OBJ   r1                          ; start:r1 = {}
+  0006:  LDI       p0, 10                      ; p0 = 10
+  0007:  OBJ_SET   SET_INT, r1, "score", p0    ; start:r1.score = p0
+  0008:  OBJ_SET   SET_OBJ, r1, "next", r0     ; start:r1.next = end:r0
+  ;
+  ; line 12  int dx = 5;
+  0009:  LDI       p0, 5                       ; dx:p0 = 5
+  ;
+  ; line 13  int dy = 12;
+  0010:  LDI       p1, 12                      ; dy:p1 = 12
+  ;
+  ; line 14  double dist = Math.sqrt(0.0 + (dx * dx) + (dy * dy));
+  0011:  LDC       p5, #2                      ; p5 = 0.0
+  0012:  IMUL      p6, p0, p0                  ; p6 = dx:p0 * dx:p0
+  0013:  I2D       p0, p6                      ; dx:p0 = (double)p6
+  0014:  DADD      p4, p5, p0                  ; p4 = p5 + dx:p0
+  0015:  IMUL      p6, p1, p1                  ; p6 = dy:p1 * dy:p1
+  0016:  I2D       p1, p6                      ; dy:p1 = (double)p6
+  0017:  DADD      p3, p4, p1                  ; p3 = p4 + dy:p1
+  0018:  SCALL     p2, Math__sqrt, p3          ; dist:p2 = Math__sqrt(p3...)
+  ;
+  ; line 16  if (dist == 13.0) {
+  0019:  LDC       p6, #4                      ; p6 = 13.0
+  0020:  DEQ       p3, p2, p6                  ; p3 = dist:p2 == p6
+  0021:  JIF       p3, @0042                   ; if p3==0 -> @0042
+  ;
+  ; line 17  if (start.next != null) {
+  0022:  HACC      GET_OBJ, r0, r1, "next"     ; end:r0 = start:r1.next
+  0023:  KILL_REF  r2                          ; r2 = null (GC)
+  0024:  SNE       p3, r0, r2                  ; p3 = end:r0 != r2
+  0025:  JIF       p3, @0038                   ; if p3==0 -> @0038
+  ;
+  ; line 18  if (start.next.score == 100) {
+  0026:  AGET_PATH r2, r1, "next.score"        ; r2 = start:r1.next.score
+  0027:  LDI       p6, 100                     ; p6 = 100
+  0028:  IEQ       p3, p2, p6                  ; p3 = dist:p2 == p6
+  0029:  JIF       p3, @0034                   ; if p3==0 -> @0034
+  ;
+  ; line 19  return "ok";
+  0030:  LDC       r1, #6                      ; start:r1 = "ok"
+  0031:  KILL_REF  r0                          ; end:r0 = null (GC)
+  0032:  RET       r1                          ; return start:r1
+  0033:  JMP       @0037                       ; -> @0037
+  ;
+  ; line 21  return "wrong_score";
+  0034:  LDC       r1, #7                      ; start:r1 = "wrong_score"
+  0035:  KILL_REF  r0                          ; end:r0 = null (GC)
+  0036:  RET       r1                          ; return start:r1
+  0037:  JMP       @0041                       ; -> @0041
+  ;
+  ; line 24  return "no_next";
+  0038:  LDC       r1, #8                      ; start:r1 = "no_next"
+  0039:  KILL_REF  r0                          ; end:r0 = null (GC)
+  0040:  RET       r1                          ; return start:r1
+  0041:  JMP       @0042                       ; -> @0042
+  ;
+  ; line 27  return "error";
+  0042:  LDC       r1, #9                      ; start:r1 = "error"
+  0043:  KILL_REF  r0                          ; end:r0 = null (GC)
+  0044:  RET       r1                          ; return start:r1
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 45
+  constants:    10
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     360 bytes

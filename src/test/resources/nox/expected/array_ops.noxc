@@ -1,0 +1,68 @@
+;  Nox Bytecode Disassembly
+;  Source:   array_ops.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "__T[]_push!int"
+  #1   str   "__T[]_pop!int"
+  #2   str   "__T[]_length!int"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=2  rMem=2
+
+.func main
+  ;
+  ; line 3  int[] arr = [1, 2, 3];
+  0000:  NEW_ARRAY r0                          ; arr:r0 = []
+  0001:  LDI       p0, 1                       ; p0 = 1
+  0002:  ARR_PUSH  SET_INT, r0, p0             ; arr:r0.push(p0)
+  0003:  LDI       p0, 2                       ; p0 = 2
+  0004:  ARR_PUSH  SET_INT, r0, p0             ; arr:r0.push(p0)
+  0005:  LDI       p0, 3                       ; p0 = 3
+  0006:  ARR_PUSH  SET_INT, r0, p0             ; arr:r0.push(p0)
+  ;
+  ; line 4  arr.push(4);
+  0007:  LDI       p1, 4                       ; p1 = 4
+  0008:  SCALL     p1, __T[]_push!int, p0      ; p1 = __T[]_push!int(p0...)
+  ;
+  ; line 5  arr.pop();
+  0009:  MOVR      r1, r0                      ; r1 = arr:r0
+  0010:  SCALL     p0, __T[]_pop!int, p1       ; p0 = __T[]_pop!int(p1...)
+  ;
+  ; line 6  arr.pop();
+  0011:  MOVR      r1, r0                      ; r1 = arr:r0
+  0012:  SCALL     p0, __T[]_pop!int, p1       ; p0 = __T[]_pop!int(p1...)
+  ;
+  ; line 7  return arr.length();
+  0013:  MOVR      r1, r0                      ; r1 = arr:r0
+  0014:  SCALL     p0, __T[]_length!int, p1    ; p0 = __T[]_length!int(p1...)
+  0015:  KILL_REF  r1                          ; r1 = null (GC)
+  0016:  RET       p0                          ; return p0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 17
+  constants:    3
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     136 bytes

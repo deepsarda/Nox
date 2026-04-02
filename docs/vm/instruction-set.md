@@ -100,6 +100,7 @@ Each operand can carry flags to modify its interpretation:
 | `JIT` | `JIT A, target` | Jump if true: `if (pMem[A] != 0) pc = target` |
 | `CALL` | `CALL funcId, argStart` | Push frame, slide `bp`, jump to function |
 | `RET` | `RET isVoid, reg` | Returns from function. If `isVoid=0`, copies `reg` to the caller's result slot. |
+| `RET` | `RET isVoid, typeTag, reg` | Returns from function. If `isVoid=0`, copies `reg` to caller's result slot. `typeTag` (0=INT, 1=DBL, 2=BOOL, 3=REF) used for conversion in `main`. |
 
 ### System Calls
 
@@ -132,7 +133,7 @@ Each operand can carry flags to modify its interpretation:
 
 | Opcode | Syntax | Description |
 |---|---|---|
-| `YIELD` | `YIELD A` | Send intermediate output via `RuntimeContext.yield()` |
+| `YIELD` | `YIELD A, typeTag` | Send intermediate output via `RuntimeContext.yield()`. `typeTag` used for string conversion. |
 
 ### Increment & Decrement
 

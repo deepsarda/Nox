@@ -23,6 +23,28 @@ data class TypeRef(
         val VOID = TypeRef("void")
     }
 
+    /**
+     * Matches this TypeRef against a pattern (e.g., "T[]").
+     * Returns a mapping of generic parameters to resolved types, or null if no match.
+     * For example, if this is `int[][]` and pattern is `T[]`, returns `{"T": int[]}`.
+     */
+    fun match(pattern: String): Map<String, TypeRef>? {
+        val patternDepth = pattern.count { it == '[' }
+        val patternBaseName = pattern.substringBefore("[")
+
+        if (this.arrayDepth < patternDepth) return null
+
+        if (patternBaseName == this.name) {
+            if (this.arrayDepth == patternDepth) return emptyMap()
+            return null
+        }
+
+        if (patternBaseName in BUILTIN_TYPE_NAMES) return null
+
+        val resolvedType = TypeRef(this.name, this.arrayDepth - patternDepth)
+        return mapOf(patternBaseName to resolvedType)
+    }
+
     /** Whether this is an array type (any depth). */
     val isArray: Boolean get() = arrayDepth > 0
 

@@ -1,0 +1,4 @@
+// @test:error "CompilationError"
+int foo() {
+    return 1;
+}

@@ -1,0 +1,45 @@
+;  Nox Bytecode Disassembly
+;  Source:   math_funcs.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   dbl   16
+  #1   str   "Math__sqrt"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=2  rMem=0
+
+.func main
+  ;
+  ; line 3  return Math.sqrt(16.0);
+  0000:  LDC       p1, #0                      ; p1 = 16.0
+  0001:  SCALL     p0, Math__sqrt, p1          ; p0 = Math__sqrt(p1...)
+  0002:  RET       p0                          ; return p0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 3
+  constants:    2
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     24 bytes

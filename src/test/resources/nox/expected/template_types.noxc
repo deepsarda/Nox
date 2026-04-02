@@ -1,0 +1,56 @@
+;  Nox Bytecode Disassembly
+;  Source:   template_types.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   dbl   3.14
+  #1   str   " "
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=2  rMem=2
+
+.func main
+  ;
+  ; line 3  int i = 42;
+  0000:  LDI       p0, 42                      ; i:p0 = 42
+  ;
+  ; line 4  double d = 3.14;
+  0001:  LDC       p1, #0                      ; d:p1 = 3.14
+  ;
+  ; line 5  return `${i} ${d}`;
+  0002:  I2S       r1, p0                      ; r1 = toString(i:p0)
+  0003:  MOVR      r0, r1                      ; r0 = r1
+  0004:  LDC       r1, #1                      ; r1 = " "
+  0005:  SCONCAT   r0, r0, r1                  ; r0 = r0 + r1
+  0006:  D2S       r1, p1                      ; r1 = toString(d:p1)
+  0007:  SCONCAT   r0, r0, r1                  ; r0 = r0 + r1
+  0008:  KILL_REF  r1                          ; r1 = null (GC)
+  0009:  RET       r0                          ; return r0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 10
+  constants:    2
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     80 bytes

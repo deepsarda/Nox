@@ -1,0 +1,48 @@
+;  Nox Bytecode Disassembly
+;  Source:   string_methods.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "hello"
+  #1   str   "__string_upper"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=1  rMem=2
+
+.func main
+  ;
+  ; line 3  string s = "hello";
+  0000:  LDC       r0, #0                      ; s:r0 = "hello"
+  ;
+  ; line 4  return s.upper();
+  0001:  SCALL     p1, __string_upper, p0      ; p1 = __string_upper(p0...)
+  0002:  KILL_REF  r0                          ; s:r0 = null (GC)
+  0003:  RET       r1                          ; return r1
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 4
+  constants:    2
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     32 bytes

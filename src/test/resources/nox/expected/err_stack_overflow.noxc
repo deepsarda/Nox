@@ -1,0 +1,56 @@
+;  Nox Bytecode Disassembly
+;  Source:   err_stack_overflow.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "recurse"
+
+
+; Functions
+
+;  Function: recurse
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=2  rMem=0
+
+.func recurse
+  ;
+  ; line 3  return recurse();
+  0000:  CALL      recurse, p1                 ; call recurse(p1...)
+  0001:  MOV       p0, p1                      ; p0 = p1
+  0002:  RET       p0                          ; return p0
+
+;  Function: main
+;    Entry PC:   3
+;    Params:     0
+;    Frame:      pMem=2  rMem=0
+
+.func main
+  ;
+  ; line 6  return recurse();
+  0003:  CALL      recurse, p1                 ; call recurse(p1...)
+  0004:  MOV       p0, p1                      ; p0 = p1
+  0005:  RET       p0                          ; return p0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    2
+  instructions: 6
+  constants:    1
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     48 bytes

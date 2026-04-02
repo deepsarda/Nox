@@ -1,0 +1,5 @@
+// @test:error "CompilationError"
+main() {
+    int x = "hi";
+    return x;
+}

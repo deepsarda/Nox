@@ -638,18 +638,40 @@ class NoxVM(
 
                 Opcode.RET -> {
                     val isVoid = Instruction.opA(inst) == 1
-                    val retReg = Instruction.opB(inst)
+                    val typeTag = Instruction.opB(inst)
+                    val isPrimitive = typeTag < 3
+                    val retReg = Instruction.opC(inst)
 
                     if (csp == 0) {
                         // Returning from main/init function so end execution
                         running = false
+
+                        if (!isVoid) {
+                            returnValue = if (isPrimitive) {
+                                val raw = readP(retReg)
+                                when (typeTag) {
+                                    0 -> raw.toInt().toString() // INT
+                                    1 -> longBitsToDouble(raw).toString() // DOUBLE
+                                    2 -> if (raw != 0L) "true" else "false" // BOOLEAN
+                                    else -> raw.toString()
+                                }
+                            } else {
+                                val obj = readR(retReg)
+                                if (typeTag == 3 && obj != null && obj !is String) {
+                                    nox.runtime.json.NoxJsonWriter(prettyPrint = false).write(obj)
+                                } else {
+                                    obj?.toString() ?: "null"
+                                }
+                            }
+                        }
                         return
                     }
 
                     // Copy return value to frame base (bp) before popping.
                     if (!isVoid) {
-                        writeP(0, readP(retReg))
-                        writeR(0, readR(retReg))
+                        if (isPrimitive)
+                            writeP(0, readP(retReg))
+                        else writeR(0, readR(retReg))
                     }
 
                     // Pop frame
@@ -777,10 +799,12 @@ class NoxVM(
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
+                    val subOp = Instruction.subOp(inst)
                     val container = readR(b)
-                    val index = readP(c).toInt()
-                    when (container) {
+                    
+                    val value = when (container) {
                         is List<*> -> {
+                            val index = readP(c).toInt()
                             if (index < 0 || index >= container.size) {
                                 throw NoxException(
                                     NoxError.IndexOutOfBoundsError,
@@ -788,13 +812,25 @@ class NoxVM(
                                     pc - 1,
                                 )
                             }
-                            writeR(a, container[index])
+                            container[index]
+                        }
+                        is Map<*, *> -> {
+                            val key = readR(c)
+                            container[key.toString()]
                         }
                         else -> throw NoxException(
                             NoxError.TypeError,
                             "Cannot index into ${container?.javaClass?.simpleName}",
                             pc - 1,
                         )
+                    }
+                    
+                    when (subOp) {
+                        SubOp.GET_INT -> writeP(a, (value as? Number)?.toLong() ?: 0L)
+                        SubOp.GET_DBL -> writeP(a, doubleToRawLongBits((value as? Number)?.toDouble() ?: 0.0))
+                        SubOp.GET_STR -> writeR(a, value as? String)
+                        SubOp.GET_BOOL -> writeP(a, if (value as? Boolean == true) 1L else 0L)
+                        else -> writeR(a, value)
                     }
                 }
 
@@ -879,7 +915,26 @@ class NoxVM(
 
                 Opcode.YIELD -> {
                     val a = Instruction.opA(inst)
-                    val value = readR(a) as? String ?: ""
+                    val typeTag = Instruction.opB(inst)
+                    val isPrimitive = typeTag < 3
+
+                    val value = if (isPrimitive) {
+                        val raw = readP(a)
+                        when (typeTag) {
+                            0 -> raw.toInt().toString()
+                            1 -> longBitsToDouble(raw).toString()
+                            2 -> if (raw != 0L) "true" else "false"
+                            else -> raw.toString()
+                        }
+                    } else {
+                        val obj = readR(a)
+                        if (typeTag == 3 && obj != null && obj !is String) {
+                            nox.runtime.json.NoxJsonWriter(prettyPrint = false).write(obj)
+                        } else {
+                            obj?.toString() ?: "null"
+                        }
+                    }
+                    
                     yields.add(value)
                     context.yield(value)
                 }

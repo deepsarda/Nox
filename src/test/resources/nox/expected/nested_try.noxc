@@ -1,0 +1,77 @@
+;  Nox Bytecode Disassembly
+;  Source:   nested_try.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "boom"
+  #1   str   "inner"
+  #2   str   "outer"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=0  rMem=2
+
+.func main
+  ;
+  ; line 5  throw "boom";
+  0000:  LDC       r0, #0                      ; r0 = "boom"
+  0001:  THROW     r0                          ; throw r0
+  0002:  KILL_REF  r0                          ; r0 = null (GC)
+  0003:  JMP       @0012                       ; -> end
+  ;
+  ; line 7  return "inner";
+  .catch_InnerError:
+  0004:  LDC       r1, #1                      ; r1 = "inner"
+  0005:  KILL_REF  r0                          ; e:r0 = null (GC)
+  0006:  RET       r1                          ; return r1
+  0007:  JMP       @0012                       ; -> end
+  ;
+  ; line 9  return "inner";
+  .catch_all:
+  0008:  LDC       r1, #1                      ; r1 = "inner"
+  0009:  KILL_REF  r0                          ; err:r0 = null (GC)
+  0010:  RET       r1                          ; return r1
+  0011:  JMP       @0012                       ; -> end
+  .end:
+  0012:  KILL_REF  r0                          ; err:r0 = null (GC)
+  0013:  KILL_REF  r1                          ; r1 = null (GC)
+  0014:  JMP       @0019                       ; -> end
+  ;
+  ; line 12  return "outer";
+  .catch_all:
+  0015:  LDC       r1, #2                      ; r1 = "outer"
+  0016:  KILL_REF  r0                          ; err:r0 = null (GC)
+  0017:  RET       r1                          ; return r1
+  0018:  JMP       @0019                       ; -> end
+  .end:
+  0019:  KILL_REF  r0                          ; err:r0 = null (GC)
+  0020:  KILL_REF  r1                          ; r1 = null (GC)
+
+
+; Exception Table
+
+.exceptions
+  [0000..0003] InnerError           -> @0004  msg=r0
+  [0000..0003] ANY                  -> @0008  msg=r0
+  [0000..0014] ANY                  -> @0015  msg=r0
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 21
+  constants:    3
+  exceptions:   3
+  globals:      0p + 0r
+  bytecode:     168 bytes

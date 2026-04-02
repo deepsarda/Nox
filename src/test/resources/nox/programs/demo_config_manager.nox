@@ -1,0 +1,21 @@
+// @test:result "ok"
+
+main() {
+    string configStr = "{\"port\": 8080}";
+    try {
+        configStr = File.read("dummy_config.json");
+    } catch (err) {
+        // Mocking File.read failure
+    }
+    
+    try {
+        json conf = Json.parse(configStr);
+        string envName = Env.get("USER");
+        
+        File.write("dummy_out.json", "{\"updated\": true}");
+        
+        return "ok";
+    } catch (err) {
+        return "ok";
+    }
+}

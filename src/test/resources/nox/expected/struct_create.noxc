@@ -1,0 +1,51 @@
+;  Nox Bytecode Disassembly
+;  Source:   struct_create.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "x"
+  #1   str   "y"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=1  rMem=1
+
+.func main
+  ;
+  ; line 7  Point p = { x: 10, y: 20 };
+  0000:  NEW_OBJ   r0                          ; p:r0 = {}
+  0001:  LDI       p0, 10                      ; p0 = 10
+  0002:  OBJ_SET   SET_INT, r0, "x", p0        ; p:r0.x = p0
+  0003:  LDI       p0, 20                      ; p0 = 20
+  0004:  OBJ_SET   SET_INT, r0, "y", p0        ; p:r0.y = p0
+  ;
+  ; line 8  return p.x;
+  0005:  HACC      GET_INT, r0, r0, "x"        ; p:r0 = p:r0.x
+  0006:  RET       p0                          ; return p0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 7
+  constants:    2
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     56 bytes

@@ -1,0 +1,10 @@
+// @test:result "1"
+type Point {
+    int x;
+    int y;
+}
+main() {
+    json j = {x: 1, y: 2};
+    Point p = j as Point;
+    return p.x;
+}

@@ -1,0 +1,153 @@
+;  Nox Bytecode Disassembly
+;  Source:   plugin_typing.nox
+;  Program:  "plugin_typing"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "__T[]_push!int"
+  #1   str   "__T[]_pop!int"
+  #2   str   "__T[]_length!int"
+  #3   str   "ints"
+  #4   str   "a"
+  #5   str   "b"
+  #6   str   "strings"
+  #7   str   "__json_getIntArray"
+  #8   str   "__json_getStringArray"
+  #9   str   "x"
+  #10  str   "y"
+  #11  str   "__T[]_push!json"
+  #12  str   "__T[]_length!json"
+  #13  str   "n: "
+  #14  str   ", len: "
+  #15  str   ", ja[0]: "
+  #16  str   ", sa[0]: "
+  #17  str   ", nested_len: "
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=4  rMem=5
+
+.func main
+  ;
+  ; line 6  int[] nums = [1, 2];
+  0000:  NEW_ARRAY r0                          ; nums:r0 = []
+  0001:  LDI       p0, 1                       ; p0 = 1
+  0002:  ARR_PUSH  SET_INT, r0, p0             ; nums:r0.push(p0)
+  0003:  LDI       p0, 2                       ; p0 = 2
+  0004:  ARR_PUSH  SET_INT, r0, p0             ; nums:r0.push(p0)
+  ;
+  ; line 7  nums.push(3);
+  0005:  LDI       p1, 3                       ; p1 = 3
+  0006:  SCALL     p1, __T[]_push!int, p0      ; p1 = __T[]_push!int(p0...)
+  ;
+  ; line 8  int n = nums.pop();
+  0007:  MOVR      r1, r0                      ; r1 = nums:r0
+  0008:  SCALL     p0, __T[]_pop!int, p1       ; n:p0 = __T[]_pop!int(p1...)
+  ;
+  ; line 9  int len = nums.length();
+  0009:  MOVR      r2, r0                      ; r2 = nums:r0
+  0010:  SCALL     p1, __T[]_length!int, p2    ; len:p1 = __T[]_length!int(p2...)
+  ;
+  ; line 12  json data = {ints: [10, 20], strings: ["a", "b"]};
+  0011:  NEW_OBJ   r0                          ; data:r0 = {}
+  0012:  NEW_ARRAY r1                          ; r1 = []
+  0013:  LDI       p2, 10                      ; p2 = 10
+  0014:  ARR_PUSH  SET_INT, r1, p2             ; r1.push(p2)
+  0015:  LDI       p2, 20                      ; p2 = 20
+  0016:  ARR_PUSH  SET_INT, r1, p2             ; r1.push(p2)
+  0017:  OBJ_SET   SET_INT, r0, "ints", p1     ; data:r0.ints = len:p1
+  0018:  NEW_ARRAY r1                          ; r1 = []
+  0019:  LDC       r2, #4                      ; r2 = "a"
+  0020:  ARR_PUSH  SET_STR, r1, r2             ; r1.push(r2)
+  0021:  LDC       r2, #5                      ; r2 = "b"
+  0022:  ARR_PUSH  SET_STR, r1, r2             ; r1.push(r2)
+  0023:  OBJ_SET   SET_STR, r0, "strings", r1  ; data:r0.strings = r1
+  ;
+  ; line 13  int[] ja = data.getIntArray("ints", []);
+  0024:  MOVR      r2, r0                      ; r2 = data:r0
+  0025:  LDC       r3, #3                      ; r3 = "ints"
+  0026:  NEW_ARRAY r4                          ; r4 = []
+  0027:  SCALL     p1, __json_getIntArray, p2  ; len:p1 = __json_getIntArray(p2...)
+  ;
+  ; line 14  string[] sa = data.getStringArray("strings", []);
+  0028:  MOVR      r2, r0                      ; sa:r2 = data:r0
+  0029:  LDC       r3, #6                      ; r3 = "strings"
+  0030:  NEW_ARRAY r4                          ; r4 = []
+  0031:  SCALL     p2, __json_getStringArray, p2; p2 = __json_getStringArray(p2...)
+  ;
+  ; line 17  json[] nested = [{x: 1}];
+  0032:  NEW_ARRAY r0                          ; nested:r0 = []
+  0033:  NEW_OBJ   r3                          ; r3 = {}
+  0034:  LDI       p2, 1                       ; p2 = 1
+  0035:  OBJ_SET   SET_INT, r3, "x", p2        ; r3.x = p2
+  0036:  ARR_PUSH  SET_OBJ, r0, r3             ; nested:r0.push(r3)
+  ;
+  ; line 18  json item = {y: 2};
+  0037:  NEW_OBJ   r3                          ; item:r3 = {}
+  0038:  LDI       p2, 2                       ; p2 = 2
+  0039:  OBJ_SET   SET_INT, r3, "y", p2        ; item:r3.y = p2
+  ;
+  ; line 19  nested.push(item);
+  0040:  MOVR      r2, r0                      ; sa:r2 = nested:r0
+  0041:  SCALL     p4, __T[]_push!json, p2     ; p4 = __T[]_push!json(p2...)
+  ;
+  ; line 20  int nested_len = nested.length();
+  0042:  MOVR      r3, r0                      ; item:r3 = nested:r0
+  0043:  SCALL     p2, __T[]_length!json, p3   ; nested_len:p2 = __T[]_length!json(p3...)
+  ;
+  ; line 22  return `n: ${n}, len: ${len}, ja[0]: ${ja[0]}, sa[0]: ${sa[0]}, nested_len: ${nested_len}`;
+  0044:  LDC       r4, #13                     ; r4 = "n: "
+  0045:  MOVR      r0, r4                      ; nested:r0 = r4
+  0046:  I2S       r4, p0                      ; r4 = toString(n:p0)
+  0047:  SCONCAT   r0, r0, r4                  ; nested:r0 = nested:r0 + r4
+  0048:  LDC       r4, #14                     ; r4 = ", len: "
+  0049:  SCONCAT   r0, r0, r4                  ; nested:r0 = nested:r0 + r4
+  0050:  I2S       r4, p1                      ; r4 = toString(len:p1)
+  0051:  SCONCAT   r0, r0, r4                  ; nested:r0 = nested:r0 + r4
+  0052:  LDC       r4, #15                     ; r4 = ", ja[0]: "
+  0053:  SCONCAT   r0, r0, r4                  ; nested:r0 = nested:r0 + r4
+  0054:  LDI       p0, 0                       ; n:p0 = 0
+  0055:  AGET_IDX  r1, r1, p0                  ; ja:r1 = ja:r1[n:p0]
+  0056:  I2S       r1, p1                      ; ja:r1 = toString(len:p1)
+  0057:  SCONCAT   r0, r0, r1                  ; nested:r0 = nested:r0 + ja:r1
+  0058:  LDC       r1, #16                     ; ja:r1 = ", sa[0]: "
+  0059:  SCONCAT   r0, r0, r1                  ; nested:r0 = nested:r0 + ja:r1
+  0060:  LDI       p1, 0                       ; len:p1 = 0
+  0061:  AGET_IDX  r1, r2, p1                  ; ja:r1 = sa:r2[len:p1]
+  0062:  MOVR      r2, r1                      ; sa:r2 = ja:r1
+  0063:  SCONCAT   r0, r0, r2                  ; nested:r0 = nested:r0 + sa:r2
+  0064:  LDC       r2, #17                     ; sa:r2 = ", nested_len: "
+  0065:  SCONCAT   r0, r0, r2                  ; nested:r0 = nested:r0 + sa:r2
+  0066:  I2S       r2, p2                      ; sa:r2 = toString(nested_len:p2)
+  0067:  SCONCAT   r0, r0, r2                  ; nested:r0 = nested:r0 + sa:r2
+  0068:  KILL_REF  r1                          ; ja:r1 = null (GC)
+  0069:  KILL_REF  r2                          ; sa:r2 = null (GC)
+  0070:  KILL_REF  r3                          ; item:r3 = null (GC)
+  0071:  KILL_REF  r4                          ; r4 = null (GC)
+  0072:  RET       r0                          ; return nested:r0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 73
+  constants:    18
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     584 bytes

@@ -1,0 +1,10 @@
+// @test:result "caught network"
+main() {
+    try {
+        throw "NetworkError";
+    } catch (NetworkError e) {
+        return "caught network";
+    } catch (err) {
+        return "other";
+    }
+}

@@ -1,0 +1,120 @@
+;  Nox Bytecode Disassembly
+;  Source:   demo_web_scraper.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "<html><body>Some Data</body></html>"
+  #1   str   "http://dummy"
+  #2   str   "dummy"
+  #3   str   "__string_contains"
+  #4   str   "NetworkError"
+  #5   str   "<body>"
+  #6   str   "__string_split"
+  #7   str   "__string_length"
+  #8   str   "Some Data"
+  #9   str   "__string_lower"
+  #10  str   "__string_upper"
+  #11  str   "SOME DATA"
+  #12  str   "ok"
+  #13  str   "error"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=3  rMem=2
+
+.func main
+  ;
+  ; line 4  string html = "<html><body>Some Data</body></html>";
+  0000:  LDC       r0, #0                      ; html:r0 = "<html><body>Some Data</body></html>"
+  ;
+  ; line 7  string url = "http://dummy";
+  0001:  LDC       r1, #1                      ; url:r1 = "http://dummy"
+  ;
+  ; line 8  if (url.contains("dummy")) {
+  0002:  LDC       r2, #2                      ; r2 = "dummy"
+  0003:  SCALL     p0, __string_contains, p1   ; p0 = __string_contains(p1...)
+  0004:  JIF       p0, @0008                   ; if p0==0 -> @0008
+  ;
+  ; line 9  throw "NetworkError";
+  0005:  LDC       r1, #4                      ; url:r1 = "NetworkError"
+  0006:  THROW     r1                          ; throw url:r1
+  0007:  JMP       @0008                       ; -> @0008
+  0008:  KILL_REF  r1                          ; url:r1 = null (GC)
+  0009:  JMP       @0011                       ; -> end
+  .catch_all:
+  0010:  JMP       @0011                       ; -> end
+  ;
+  ; line 15  string[] parts = html.split("<body>");
+  .end:
+  0011:  LDC       r1, #5                      ; parts:r1 = "<body>"
+  0012:  SCALL     p1, __string_split, p0      ; p1 = __string_split(p0...)
+  ;
+  ; line 16  if (parts.length() > 1) {
+  0013:  MOVR      r2, r1                      ; r2 = parts:r1
+  0014:  SCALL     p1, __string_length, p2     ; p1 = __string_length(p2...)
+  0015:  LDI       p2, 1                       ; p2 = 1
+  0016:  IGT       p0, p1, p2                  ; p0 = p1 > p2
+  0017:  JIF       p0, @0037                   ; if p0==0 -> @0037
+  ;
+  ; line 17  string body = parts[1];
+  0018:  LDI       p0, 1                       ; p0 = 1
+  0019:  AGET_IDX  r0, r1, p0                  ; body:r0 = parts:r1[p0]
+  ;
+  ; line 18  if (body.contains("Some Data")) {
+  0020:  MOVR      r2, r0                      ; r2 = body:r0
+  0021:  LDC       r3, #8                      ; r3 = "Some Data"
+  0022:  SCALL     p0, __string_contains, p2   ; p0 = __string_contains(p2...)
+  0023:  JIF       p0, @0036                   ; if p0==0 -> @0036
+  ;
+  ; line 19  string lower = body.lower();
+  0024:  SCALL     p1, __string_lower, p0      ; p1 = __string_lower(p0...)
+  ;
+  ; line 20  string upper = lower.upper();
+  0025:  MOVR      r0, r1                      ; upper:r0 = lower:r1
+  0026:  SCALL     p0, __string_upper, p0      ; p0 = __string_upper(p0...)
+  ;
+  ; line 21  if (upper.contains("SOME DATA")) {
+  0027:  MOVR      r2, r0                      ; r2 = upper:r0
+  0028:  LDC       r3, #11                     ; r3 = "SOME DATA"
+  0029:  SCALL     p0, __string_contains, p2   ; p0 = __string_contains(p2...)
+  0030:  JIF       p0, @0035                   ; if p0==0 -> @0035
+  ;
+  ; line 22  return "ok";
+  0031:  LDC       r0, #12                     ; upper:r0 = "ok"
+  0032:  KILL_REF  r1                          ; lower:r1 = null (GC)
+  0033:  RET       r0                          ; return upper:r0
+  0034:  JMP       @0035                       ; -> @0035
+  0035:  JMP       @0036                       ; -> @0036
+  0036:  JMP       @0037                       ; -> @0037
+  ;
+  ; line 27  return "error";
+  0037:  LDC       r0, #13                     ; upper:r0 = "error"
+  0038:  KILL_REF  r1                          ; lower:r1 = null (GC)
+  0039:  RET       r0                          ; return upper:r0
+
+
+; Exception Table
+
+.exceptions
+  [0001..0009] ANY                  -> @0010  msg=r1
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 40
+  constants:    14
+  exceptions:   1
+  globals:      0p + 0r
+  bytecode:     320 bytes

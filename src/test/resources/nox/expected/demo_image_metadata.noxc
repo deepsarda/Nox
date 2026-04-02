@@ -1,0 +1,111 @@
+;  Nox Bytecode Disassembly
+;  Source:   demo_image_metadata.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "[{\"flags\": 1, \"name\": \"a.png\"}, {\"flags\": 2, \"name\": \"b.png\"}, {\"flags\": 3, \"name\": \"c.png\"}]"
+  #1   str   "Json__parse"
+  #2   type  Meta { flags: int, name: string }
+  #3   str   "__T[]_length!Meta"
+  #4   str   "flags"
+  #5   str   "ok"
+  #6   str   "error"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=7  rMem=3
+
+.func main
+  ;
+  ; line 9  json arr = Json.parse("[{\"flags\": 1, \"name\": \"a.png\"}, {\"flags\": 2, \"name\": \"b.png\"}, {\"flags\": 3, \"name\": \"c.png\"}]");
+  0000:  LDC       r0, #0                      ; arr:r0 = "[{\"flags\": 1, \"name\": \"a.png\"}, {\"flags\": 2, \"name\": \"b.png\"}, {\"flags\": 3, \"name\": \"c.png\"}]"
+  0001:  SCALL     p0, Json__parse, p0         ; p0 = Json__parse(p0...)
+  ;
+  ; line 10  Meta[] images = arr as Meta[];
+  0002:  CAST_STRUCTr1, r0, #2                  ; images:r1 = arr:r0 as Meta[]
+  ;
+  ; line 12  int count = 0;
+  0003:  LDI       p0, 0                       ; count:p0 = 0
+  ;
+  ; line 13  foreach (Meta m in images) {
+  0004:  MOVR      r0, r1                      ; arr:r0 = images:r1
+  0005:  LDI       p1, 0                       ; p1 = 0
+  0006:  MOVR      r4, r0                      ; r4 = arr:r0
+  0007:  SCALL     p2, __T[]_length!Meta, p4   ; p2 = __T[]_length!Meta(p4...)
+  .loop_start_1:
+  0008:  ILT       p3, p1, p2                  ; p3 = p1 < p2
+  0009:  JIF       p3, @0029                   ; if p3==0 -> loop_exit_1
+  0010:  AGET_IDX  r1, r0, p1                  ; m:r1 = arr:r0[p1]
+  ;
+  ; line 14  if (m.flags == 2) {
+  0011:  HACC      GET_INT, r5, r2, "flags"    ; r5 = r2.flags
+  0012:  LDI       p6, 2                       ; p6 = 2
+  0013:  IEQ       p4, p5, p6                  ; p4 = p5 == p6
+  0014:  JIF       p4, @0017                   ; if p4==0 -> @0017
+  0015:  JMP       @0026                       ; -> loop_update_1
+  0016:  JMP       @0017                       ; -> @0017
+  ;
+  ; line 17  if (m.flags == 3) {
+  0017:  HACC      GET_INT, r6, r2, "flags"    ; r6 = r2.flags
+  0018:  LDI       p5, 3                       ; p5 = 3
+  0019:  IEQ       p4, p6, p5                  ; p4 = p6 == p5
+  0020:  JIF       p4, @0025                   ; if p4==0 -> @0025
+  ;
+  ; line 18  count = count + 1;
+  0021:  LDI       p4, 1                       ; p4 = 1
+  0022:  IADD      p0, p0, p4                  ; count:p0 = count:p0 + p4
+  0023:  JMP       @0029                       ; -> loop_exit_1
+  0024:  JMP       @0025                       ; -> @0025
+  0025:  KILL_REF  r2                          ; r2 = null (GC)
+  ;
+  ; line 13  foreach (Meta m in images) {
+  .loop_update_1:
+  0026:  KILL_REF  r1                          ; m:r1 = null (GC)
+  0027:  IINC      p1                          ; p1 = p1 + 1
+  0028:  JMP       @0008                       ; -> loop_start_1
+  ;
+  ; line 24  if (count == 2) {
+  .loop_exit_1:
+  0029:  LDI       p3, 2                       ; p3 = 2
+  0030:  IEQ       p1, p2, p3                  ; p1 = p2 == p3
+  0031:  JIF       p1, @0037                   ; if p1==0 -> @0037
+  ;
+  ; line 25  return "ok";
+  0032:  LDC       r0, #5                      ; arr:r0 = "ok"
+  0033:  KILL_REF  r1                          ; m:r1 = null (GC)
+  0034:  KILL_REF  r2                          ; r2 = null (GC)
+  0035:  RET       r0                          ; return arr:r0
+  0036:  JMP       @0037                       ; -> @0037
+  ;
+  ; line 27  return "error";
+  0037:  LDC       r0, #6                      ; arr:r0 = "error"
+  0038:  KILL_REF  r1                          ; m:r1 = null (GC)
+  0039:  KILL_REF  r2                          ; r2 = null (GC)
+  0040:  RET       r0                          ; return arr:r0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 41
+  constants:    7
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     328 bytes

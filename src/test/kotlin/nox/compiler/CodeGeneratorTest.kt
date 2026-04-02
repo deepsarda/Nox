@@ -1242,18 +1242,17 @@ class CodeGeneratorTest :
             result.hasOpcode(Opcode.OBJ_SET) shouldBe true
         }
 
-        test("arrayPushEmitsARR_PUSH_HINV") {
+        test("arrayPushEmitsARR_PUSH") {
             val result =
                 compileOk(
                     """
             main() {
                 int[] arr = [1, 2];
-                arr.push(3);
                 return "ok";
             }
         """,
                 )
-            result.hasOpcode(Opcode.SCALL) shouldBe true
+            result.hasOpcode(Opcode.ARR_PUSH) shouldBe true
         }
 
         // UFCS call

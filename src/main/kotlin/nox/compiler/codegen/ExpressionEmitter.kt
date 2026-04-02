@@ -407,8 +407,12 @@ class ExpressionEmitter(
     ) {
         val line = expr.loc.line
 
-        val targetType = expr.target.resolvedType ?: TypeRef.JSON
+        val targetType = expr.target.resolvedType
+
+        if (targetType == null) throw IllegalStateException("Unresolved target type in index access") //TODO: Make this a compiler error
+       
         val tResolved = ctx.resolveRegister(expr.target)
+
         val tReg =
             if (tResolved != null) {
                 tResolved
@@ -429,7 +433,14 @@ class ExpressionEmitter(
                 r
             }
 
-        ctx.emit(Opcode.AGET_IDX, 0, dest, tReg, iReg, line)
+        ctx.emit(
+            Opcode.AGET_IDX,
+            getSubOpFor(targetType),
+            dest,
+            tReg,
+            iReg,
+            line,
+        )
         if (iReg != iResolved) ctx.free(idxType, iReg)
         if (tReg != tResolved) ctx.free(targetType, tReg)
 
@@ -488,7 +499,7 @@ class ExpressionEmitter(
         }
     }
 
-    private fun emitNamespaceCall(
+     private fun emitNamespaceCall(
         expr: MethodCallExpr,
         dest: Int,
         line: Int,
@@ -539,7 +550,7 @@ class ExpressionEmitter(
         val funcIdx = ctx.pool.add(target.name)
         ctx.emit(Opcode.SCALL, 0, dest, funcIdx, argStart, line)
         ctx.allocator.freeTempPrim(argStart)
-    }
+    }   
 
     private fun emitUfcsCall(
         expr: MethodCallExpr,
@@ -714,6 +725,18 @@ class ExpressionEmitter(
     }
 
     companion object {
+        /**
+         * Returns the appropriate [SubOp] code for reading a value of [type].
+         */
+        fun getSubOpFor(type: TypeRef): Int =
+            when (type.name) {
+                "int" -> SubOp.GET_INT
+                "double" -> SubOp.GET_DBL
+                "string" -> SubOp.GET_STR
+                "boolean" -> SubOp.GET_BOOL
+                else -> SubOp.GET_OBJ
+            }
+
         /**
          * Map a [TypeRef] to the corresponding `SubOp.SET_*` constant.
          * Used by OBJ_SET and ARR_PUSH to tell the VM which register bank

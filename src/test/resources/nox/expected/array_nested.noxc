@@ -1,0 +1,57 @@
+;  Nox Bytecode Disassembly
+;  Source:   array_nested.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "value"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=2  rMem=2
+
+.func main
+  ;
+  ; line 6  Box[] boxes = [{ value: 5 }, { value: 10 }];
+  0000:  NEW_ARRAY r0                          ; boxes:r0 = []
+  0001:  NEW_OBJ   r1                          ; r1 = {}
+  0002:  LDI       p0, 5                       ; p0 = 5
+  0003:  OBJ_SET   SET_INT, r1, "value", p0    ; r1.value = p0
+  0004:  ARR_PUSH  SET_OBJ, r0, r1             ; boxes:r0.push(r1)
+  0005:  NEW_OBJ   r1                          ; r1 = {}
+  0006:  LDI       p0, 10                      ; p0 = 10
+  0007:  OBJ_SET   SET_INT, r1, "value", p0    ; r1.value = p0
+  0008:  ARR_PUSH  SET_OBJ, r0, r1             ; boxes:r0.push(r1)
+  ;
+  ; line 7  return boxes[1].value;
+  0009:  LDI       p1, 1                       ; p1 = 1
+  0010:  AGET_IDX  r1, r0, p1                  ; r1 = boxes:r0[p1]
+  0011:  HACC      GET_INT, r0, r1, "value"    ; boxes:r0 = r1.value
+  0012:  KILL_REF  r1                          ; r1 = null (GC)
+  0013:  RET       p0                          ; return p0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 14
+  constants:    1
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     112 bytes

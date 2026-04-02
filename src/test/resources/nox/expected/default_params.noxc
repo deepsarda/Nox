@@ -1,0 +1,54 @@
+;  Nox Bytecode Disassembly
+;  Source:   default_params.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "greet"
+
+
+; Functions
+
+;  Function: greet
+;    Entry PC:   0
+;    Params:     1
+;    Frame:      pMem=0  rMem=1
+
+.func greet
+  ; params: r0=name
+  ;
+  ; line 3  return name;
+  0000:  RET       r0                          ; return name:r0
+
+;  Function: main
+;    Entry PC:   1
+;    Params:     0
+;    Frame:      pMem=1  rMem=1
+
+.func main
+  ;
+  ; line 7  return greet();
+  0001:  CALL      greet, p0                   ; call greet(p0...)
+  0002:  RET       r0                          ; return r0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    2
+  instructions: 3
+  constants:    1
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     24 bytes

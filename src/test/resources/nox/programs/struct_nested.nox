@@ -1,0 +1,11 @@
+// @test:result "inner"
+type Inner {
+    string name;
+}
+type Outer {
+    Inner in;
+}
+main() {
+    Outer o = { in: { name: "inner" } };
+    return o.in.name;
+}

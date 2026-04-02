@@ -1,0 +1,47 @@
+;  Nox Bytecode Disassembly
+;  Source:   err_index_oob.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  (none)
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=2  rMem=1
+
+.func main
+  ;
+  ; line 3  int[] arr = [];
+  0000:  NEW_ARRAY r0                          ; arr:r0 = []
+  ;
+  ; line 4  return arr[1];
+  0001:  LDI       p1, 1                       ; p1 = 1
+  0002:  AGET_IDX  r0, r0, p1                  ; arr:r0 = arr:r0[p1]
+  0003:  RET       p0                          ; return p0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 4
+  constants:    0
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     32 bytes
