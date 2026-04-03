@@ -16,17 +16,21 @@
 ;  Function: main
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=1  rMem=2
+;    Frame:      pMem=0  rMem=5
 
 .func main
   ;
   ; line 3  string s = "hello";
-  0000:  LDC       r0, #0                      ; s:r0 = "hello"
+  0000:  LDC       r1, #0                      ; s:r1 = "hello"
   ;
   ; line 4  return s.upper();
-  0001:  SCALL     p1, __string_upper, p0      ; p1 = __string_upper(p0...)
-  0002:  KILL_REF  r0                          ; s:r0 = null (GC)
-  0003:  RET       r1                          ; return r1
+  0001:  MOVR      r4, r1                      ; r4 = s:r1
+  0002:  SCALL     __string_upper, p0, r3      ; r3 = scall __string_upper(p0..., r4...)
+  0003:  MOVR      r2, r3                      ; r2 = r3
+  0004:  KILL_REF  r1                          ; s:r1 = null (GC)
+  0005:  KILL_REF  r3                          ; r3 = null (GC)
+  0006:  KILL_REF  r4                          ; r4 = null (GC)
+  0007:  RET       r2                          ; return r2
 
 
 ; Exception Table
@@ -41,8 +45,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 4
+  instructions: 8
   constants:    2
   exceptions:   0
   globals:      0p + 0r
-  bytecode:     32 bytes
+  bytecode:     64 bytes

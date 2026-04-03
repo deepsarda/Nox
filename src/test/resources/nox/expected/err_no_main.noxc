@@ -15,13 +15,13 @@
 ;  Function: foo
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=1  rMem=0
+;    Frame:      pMem=2  rMem=0
 
 .func foo
   ;
   ; line 3  return 1;
-  0000:  LDI       p0, 1                       ; p0 = 1
-  0001:  RET       p0                          ; return p0
+  0000:  LDI       p1, 1                       ; p1 = 1
+  0001:  RET       p1                          ; return p1
 
 
 ; Exception Table

@@ -9,7 +9,7 @@
 .constants
   #0   str   "[]"
   #1   str   "Json__parse"
-  #2   str   "http://localhost/dummy"
+  #2   str   "https://localhost/dummy"
   #3   str   "Http__getJson"
   #4   str   "[{\"id\":\"a\",\"value\":10}, {\"id\":\"b\",\"value\":20}]"
   #5   type  Item { id: string, value: int }
@@ -24,77 +24,82 @@
 ;  Function: main
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=5  rMem=3
+;    Frame:      pMem=5  rMem=5
 
 .func main
   ;
   ; line 9  json data = Json.parse("[]");
-  0000:  LDC       r0, #0                      ; data:r0 = "[]"
-  0001:  SCALL     p0, Json__parse, p0         ; p0 = Json__parse(p0...)
+  0000:  LDC       r3, #0                      ; r3 = "[]"
+  0001:  SCALL     Json__parse, p0, r2         ; r2 = scall Json__parse(p0..., r3...)
+  0002:  MOVR      r1, r2                      ; data:r1 = r2
   ;
-  ; line 11  data = Http.getJson("http://localhost/dummy");
-  0002:  LDC       r0, #2                      ; data:r0 = "http://localhost/dummy"
-  0003:  SCALL     p0, Http__getJson, p0       ; p0 = Http__getJson(p0...)
-  0004:  JMP       @0008                       ; -> end
+  ; line 11  data = Http.getJson("https://localhost/dummy");
+  0003:  LDC       r3, #2                      ; r3 = "https://localhost/dummy"
+  0004:  SCALL     Http__getJson, p0, r2       ; r2 = scall Http__getJson(p0..., r3...)
+  0005:  MOVR      r1, r2                      ; data:r1 = r2
+  0006:  JMP       @0012                       ; -> end
   ;
   ; line 13  data = Json.parse("[{\"id\":\"a\",\"value\":10}, {\"id\":\"b\",\"value\":20}]");
   .catch_all:
-  0005:  LDC       r0, #4                      ; data:r0 = "[{\"id\":\"a\",\"value\":10}, {\"id\":\"b\",\"value\":20}]"
-  0006:  SCALL     p0, Json__parse, p0         ; p0 = Json__parse(p0...)
-  0007:  JMP       @0008                       ; -> end
+  0007:  LDC       r4, #4                      ; r4 = "[{\"id\":\"a\",\"value\":10}, {\"id\":\"b\",\"value\":20}]"
+  0008:  SCALL     Json__parse, p0, r3         ; r3 = scall Json__parse(p0..., r4...)
+  0009:  MOVR      r1, r3                      ; data:r1 = r3
+  0010:  KILL_REF  r4                          ; r4 = null (GC)
+  0011:  JMP       @0012                       ; -> end
   ;
   ; line 16  Item[] items = data as Item[];
   .end:
-  0008:  CAST_STRUCTr1, r0, #5                  ; items:r1 = data:r0 as Item[]
+  0012:  CAST_STRUCTr2, r1, #5                  ; items:r2 = data:r1 as Item[]
   ;
   ; line 17  int sum = 0;
-  0009:  LDI       p0, 0                       ; sum:p0 = 0
+  0013:  LDI       p0, 0                       ; sum:p0 = 0
   ;
   ; line 18  foreach (Item item in items) {
-  0010:  MOVR      r0, r1                      ; data:r0 = items:r1
-  0011:  LDI       p1, 0                       ; p1 = 0
-  0012:  MOVR      r4, r0                      ; r4 = data:r0
-  0013:  SCALL     p2, __T[]_length!Item, p4   ; p2 = __T[]_length!Item(p4...)
+  0014:  MOVR      r1, r2                      ; data:r1 = items:r2
+  0015:  LDI       p1, 0                       ; p1 = 0
+  0016:  MOVR      r3, r1                      ; r3 = data:r1
+  0017:  SCALL     __T[]_length!Item, p4, r3   ; p4 = scall __T[]_length!Item(p5..., r3...)
+  0018:  MOV       p2, p4                      ; p2 = p4
   .loop_start_1:
-  0014:  ILT       p3, p1, p2                  ; p3 = p1 < p2
-  0015:  JIF       p3, @0023                   ; if p3==0 -> loop_exit_1
-  0016:  AGET_IDX  r1, r0, p1                  ; item:r1 = data:r0[p1]
+  0019:  ILT       p3, p1, p2                  ; p3 = p1 < p2
+  0020:  JIF       p3, @0026                   ; if p3==0 -> loop_exit_1
+  0021:  AGET_IDX  r2, r1, p1                  ; item:r2 = data:r1[p1]
   ;
   ; line 19  sum = sum + item.value;
-  0017:  HACC      GET_INT, r4, r2, "value"    ; r4 = r2.value
-  0018:  IADD      p0, p0, p4                  ; sum:p0 = sum:p0 + p4
-  0019:  KILL_REF  r2                          ; r2 = null (GC)
+  0022:  HACC      GET_INT, r4, r2, "value"    ; r4 = item:r2.value
+  0023:  IADD      p0, p0, p4                  ; sum:p0 = sum:p0 + p4
   ;
   ; line 18  foreach (Item item in items) {
   .loop_update_1:
-  0020:  KILL_REF  r1                          ; item:r1 = null (GC)
-  0021:  IINC      p1                          ; p1 = p1 + 1
-  0022:  JMP       @0014                       ; -> loop_start_1
+  0024:  IINC      p1                          ; p1 = p1 + 1
+  0025:  JMP       @0019                       ; -> loop_start_1
   ;
   ; line 22  if (sum == 30) {
   .loop_exit_1:
-  0023:  LDI       p3, 30                      ; p3 = 30
-  0024:  IEQ       p1, p2, p3                  ; p1 = p2 == p3
-  0025:  JIF       p1, @0031                   ; if p1==0 -> @0031
+  0026:  LDI       p2, 30                      ; p2 = 30
+  0027:  IEQ       p1, p0, p2                  ; p1 = sum:p0 == p2
+  0028:  JIF       p1, @0035                   ; if p1==0 -> @0035
   ;
   ; line 23  return "ok";
-  0026:  LDC       r0, #8                      ; data:r0 = "ok"
-  0027:  KILL_REF  r1                          ; item:r1 = null (GC)
-  0028:  KILL_REF  r2                          ; r2 = null (GC)
-  0029:  RET       r0                          ; return data:r0
-  0030:  JMP       @0031                       ; -> @0031
+  0029:  LDC       r1, #8                      ; data:r1 = "ok"
+  0030:  KILL_REF  r2                          ; item:r2 = null (GC)
+  0031:  KILL_REF  r3                          ; r3 = null (GC)
+  0032:  KILL_REF  r4                          ; r4 = null (GC)
+  0033:  RET       r1                          ; return data:r1
+  0034:  JMP       @0035                       ; -> @0035
   ;
   ; line 25  return "error";
-  0031:  LDC       r0, #9                      ; data:r0 = "error"
-  0032:  KILL_REF  r1                          ; item:r1 = null (GC)
-  0033:  KILL_REF  r2                          ; r2 = null (GC)
-  0034:  RET       r0                          ; return data:r0
+  0035:  LDC       r1, #9                      ; data:r1 = "error"
+  0036:  KILL_REF  r2                          ; item:r2 = null (GC)
+  0037:  KILL_REF  r3                          ; r3 = null (GC)
+  0038:  KILL_REF  r4                          ; r4 = null (GC)
+  0039:  RET       r1                          ; return data:r1
 
 
 ; Exception Table
 
 .exceptions
-  [0002..0004] ANY                  -> @0005  msg=r1
+  [0003..0006] ANY                  -> @0007  msg=r2
 
 
 ; Summary
@@ -103,8 +108,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 35
+  instructions: 40
   constants:    10
   exceptions:   1
   globals:      0p + 0r
-  bytecode:     280 bytes
+  bytecode:     320 bytes

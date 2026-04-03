@@ -26,8 +26,9 @@ class GoldenTest : FunSpec({
     val allFiles = findNoxFiles(programsDir) + findNoxFiles(errorsDir)
 
     allFiles.forEach { noxFile ->
-        val relativePath = resourcesDir.relativize(noxFile).toString()
 
+        val relativePath = resourcesDir.relativize(noxFile).toString()
+        
         test("Golden Test: $relativePath") {
             val source = Files.readString(noxFile)
 
@@ -35,23 +36,21 @@ class GoldenTest : FunSpec({
             var expectedResult: String? = null
             var expectedError: String? = null
             var expectedErrorContains: String? = null
-            val expectedYields = mutableListOf<String>()
+            var expectedYields: String? =
+                null // For simplicity, we can treat yields as a string representation of the list
+
 
             source.lines().forEach { line ->
                 val trimmed = line.trim()
                 if (trimmed.startsWith("// @test:result")) {
                     expectedResult = trimmed.substringAfter("// @test:result").trim().removeSurrounding("\"")
                 } else if (trimmed.startsWith("// @test:errorContains")) {
-                    expectedErrorContains = trimmed.substringAfter("// @test:errorContains").trim().removeSurrounding("\"")
+                    expectedErrorContains =
+                        trimmed.substringAfter("// @test:errorContains").trim().removeSurrounding("\"")
                 } else if (trimmed.startsWith("// @test:error")) {
                     expectedError = trimmed.substringAfter("// @test:error").trim().removeSurrounding("\"")
                 } else if (trimmed.startsWith("// @test:yields")) {
-                    // Primitive JSON array parsing for yields like: // @test:yields ["a", "b"]
-                    val arrRaw = trimmed.substringAfter("// @test:yields").trim()
-                    if (arrRaw.startsWith("[") && arrRaw.endsWith("]")) {
-                        val items = arrRaw.drop(1).dropLast(1).split(",").map { it.trim().removeSurrounding("\"") }
-                        expectedYields.addAll(items.filter { it.isNotEmpty() })
-                    }
+                    expectedYields = trimmed.substringAfter("// @test:yields").trim()
                 }
             }
 
@@ -80,22 +79,27 @@ class GoldenTest : FunSpec({
             }
 
             // 2. E2E Execution Test
-            val runtime = NoxRuntime.builder().build()
+            val runtime = NoxRuntime.builder()
+                .setPermissionHandler { nox.runtime.PermissionResponse.Granted.Unconstrained }
+                .build()
             val result = runtime.execute(source, noxFile.fileName.toString())
 
             when (result) {
                 is NoxResult.Success -> {
+                    println(result.yields)
                     if (expectedError != null || expectedErrorContains != null) {
                         throw AssertionError("Expected error but execution succeeded with result: ${result.returnValue}")
                     }
                     if (expectedResult != null) {
                         result.returnValue shouldBe expectedResult
                     }
-                    if (expectedYields.isNotEmpty()) {
-                        result.yields shouldBe expectedYields
+                    if (expectedYields != null) {
+                        result.yields.toString() shouldBe expectedYields
                     }
                 }
+
                 is NoxResult.Error -> {
+                    println(result.yields)
                     if (expectedResult != null) {
                         println("TEST FAILED. Type: ${result.type}, Message: ${result.message}")
                         throw AssertionError("Expected success with result '$expectedResult' but failed with error: ${result.type} - ${result.message}")
@@ -109,6 +113,7 @@ class GoldenTest : FunSpec({
                 }
             }
         }
+        
     }
 
 })

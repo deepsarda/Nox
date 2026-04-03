@@ -7,9 +7,10 @@
 ; Constant Pool
 
 .constants
-  #0   str   "NetworkError"
-  #1   str   "caught network"
-  #2   str   "other"
+  #0   str   "https://invalid.dummy.url"
+  #1   str   "Http__get"
+  #2   str   "caught network"
+  #3   str   "other"
 
 
 ; Functions
@@ -17,39 +18,48 @@
 ;  Function: main
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=0  rMem=2
+;    Frame:      pMem=0  rMem=4
 
 .func main
   ;
-  ; line 4  throw "NetworkError";
-  0000:  LDC       r0, #0                      ; r0 = "NetworkError"
-  0001:  THROW     r0                          ; throw r0
-  0002:  KILL_REF  r0                          ; r0 = null (GC)
-  0003:  JMP       @0012                       ; -> end
+  ; line 4  Http.get("https://invalid.dummy.url");
+  0000:  LDC       r3, #0                      ; r3 = "https://invalid.dummy.url"
+  0001:  SCALL     Http__get, p0, r2           ; r2 = scall Http__get(p0..., r3...)
+  0002:  MOVR      r1, r2                      ; r1 = r2
+  0003:  KILL_REF  r1                          ; r1 = null (GC)
+  0004:  KILL_REF  r2                          ; r2 = null (GC)
+  0005:  KILL_REF  r3                          ; r3 = null (GC)
+  0006:  JMP       @0018                       ; -> end
   ;
   ; line 6  return "caught network";
   .catch_NetworkError:
-  0004:  LDC       r1, #1                      ; r1 = "caught network"
-  0005:  KILL_REF  r0                          ; e:r0 = null (GC)
-  0006:  RET       r1                          ; return r1
-  0007:  JMP       @0012                       ; -> end
+  0007:  LDC       r2, #2                      ; r2 = "caught network"
+  0008:  KILL_REF  r1                          ; e:r1 = null (GC)
+  0009:  KILL_REF  r3                          ; r3 = null (GC)
+  0010:  RET       r2                          ; return r2
+  0011:  JMP       @0018                       ; -> end
   ;
-  ; line 8  return "other";
+  ; line 8  yield err;
   .catch_all:
-  0008:  LDC       r1, #2                      ; r1 = "other"
-  0009:  KILL_REF  r0                          ; err:r0 = null (GC)
-  0010:  RET       r1                          ; return r1
-  0011:  JMP       @0012                       ; -> end
+  0012:  YIELD     r1                          ; yield err:r1
+  ;
+  ; line 9  return "other";
+  0013:  LDC       r1, #3                      ; err:r1 = "other"
+  0014:  KILL_REF  r2                          ; r2 = null (GC)
+  0015:  KILL_REF  r3                          ; r3 = null (GC)
+  0016:  RET       r1                          ; return err:r1
+  0017:  JMP       @0018                       ; -> end
   .end:
-  0012:  KILL_REF  r0                          ; err:r0 = null (GC)
-  0013:  KILL_REF  r1                          ; r1 = null (GC)
+  0018:  KILL_REF  r1                          ; err:r1 = null (GC)
+  0019:  KILL_REF  r2                          ; r2 = null (GC)
+  0020:  KILL_REF  r3                          ; r3 = null (GC)
 
 
 ; Exception Table
 
 .exceptions
-  [0000..0003] NetworkError         -> @0004  msg=r0
-  [0000..0003] ANY                  -> @0008  msg=r0
+  [0000..0006] NetworkError         -> @0007  msg=r1
+  [0000..0006] ANY                  -> @0012  msg=r1
 
 
 ; Summary
@@ -58,8 +68,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 14
-  constants:    3
+  instructions: 21
+  constants:    4
   exceptions:   2
   globals:      0p + 0r
-  bytecode:     112 bytes
+  bytecode:     168 bytes

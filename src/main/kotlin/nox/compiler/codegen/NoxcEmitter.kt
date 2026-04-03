@@ -395,11 +395,15 @@ class NoxcEmitter {
 
             Opcode.CALL -> {
                 val funcName = pool.getOrNull(a) as? String ?: "func_$a"
-                "$funcName, ${pr(b)}" to "call $funcName(${pn(b)}...)"
+                val pOff = if (subOp == 1) 1 else 0
+                val rOff = if (subOp == 0) 1 else 0
+                val retPrefix = if (subOp == 1) "${pn(b)} = " else if (subOp == 0) "${rn(c)} = " else ""
+                "$funcName, ${pr(b)}, ${rr(c)}" to "${retPrefix}call $funcName(${pn(b + pOff)}..., ${rn(c + rOff)}...)"
             }
 
             Opcode.RET -> {
-                if (a == 1) {
+                val isVoid = a == 1
+                if (isVoid) {
                     "" to "return (void)"
                 } else {
                     if (b < 3)
@@ -409,8 +413,11 @@ class NoxcEmitter {
             }
 
             Opcode.SCALL -> {
-                val funcName = pool.getOrNull(b) as? String ?: "sfunc_$b"
-                "${pr(a)}, $funcName, ${pr(c)}" to "${pn(a)} = $funcName(${pn(c)}...)"
+                val funcName = pool.getOrNull(a) as? String ?: "sfunc_$a"
+                val pOff = if (subOp == 1) 1 else 0
+                val rOff = if (subOp == 0) 1 else 0
+                val retPrefix = if (subOp == 1) "${pn(b)} = " else if (subOp == 0) "${rn(c)} = " else ""
+                "$funcName, ${pr(b)}, ${rr(c)}" to "${retPrefix}scall $funcName(${pn(b + pOff)}..., ${rn(c + rOff)}...)"
             }
 
             Opcode.HACC -> {

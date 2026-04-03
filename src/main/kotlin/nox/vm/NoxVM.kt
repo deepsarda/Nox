@@ -38,6 +38,7 @@ class NoxVM(
     private var pc = 0
     private var bp = 0
     private var bpRef = 0
+    private var currentFuncIndex = -1
     private var running = true
 
     // Call stack: flat array [bp, bpRef, pc, funcIndex] per frame
@@ -125,18 +126,25 @@ class NoxVM(
             // Run module init blocks
             for (module in program.modules) {
                 if (module.initFuncIndex != -1) {
-                    enterFunction(module.initFuncIndex, 0)
+                    enterFunction(module.initFuncIndex, 0, 0)
                     loop()
                     // Reset for next init / main
                     running = true
                 }
             }
-            // Run main
-            enterFunction(program.mainFuncIndex, 0)
             return try {
+                // Run main
+                if (program.mainFuncIndex == -1) {
+                    throw NoxException(NoxError.CompilationError, "No main() function found", 0)
+                }
+
+                enterFunction(program.mainFuncIndex, 0, 0)
                 loop()
                 NoxResult.Success(returnValue, yields)
             } catch (e: NoxException) {
+                // TODO: Move this behind flag
+                dumpMemory(e)
+
                 NoxResult.Error(e.type, e.message, yields)
             }
         } finally {
@@ -180,12 +188,14 @@ class NoxVM(
     // Function entry
     private fun enterFunction(
         funcIndex: Int,
-        argStart: Int,
+        primArgStart: Int,
+        refArgStart: Int,
     ) {
         val meta = program.functions[funcIndex]
-        bp += argStart
-        bpRef += argStart
+        bp += primArgStart
+        bpRef += refArgStart
         pc = meta.entryPC
+        currentFuncIndex = funcIndex
     }
 
     // Resource guard: instruction quota
@@ -246,9 +256,6 @@ class NoxVM(
                 )
 
         while (true) {
-            // Find the current function index for proper exception table scoping
-            val currentFuncIndex = if (csp > 0) callStack[csp - 1] else program.mainFuncIndex
-
             // Scan for matching handler in current frame
             for (entry in table) {
                 if (pc - 1 in entry.startPC until entry.endPC) {
@@ -279,6 +286,7 @@ class NoxVM(
             bp = callStack[csp]
             bpRef = callStack[csp + 1]
             pc = callStack[csp + 2]
+            currentFuncIndex = callStack[csp + 3]
             // Continue scanning in caller's context
         }
     }
@@ -292,6 +300,9 @@ class NoxVM(
         while (running) {
             val inst = bytecode[pc++]
             val opcode = ((inst ushr 56) and 0xFF).toInt()
+
+            //println("DUMPING MEMORY FOR PC: " + (pc - 1) );
+            //dumpMemory(NoxException(NoxError.Error, "no err", pc - 1));
 
             // Resource guard: instruction counter
             if (++instructionCount > maxInstructions) {
@@ -387,23 +398,13 @@ class NoxVM(
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    val divisor = longBitsToDouble(readP(c))
-                    if (divisor == 0.0) {
-                        handleException(NoxException(NoxError.DivisionByZeroError, "Division by zero", pc - 1))
-                        continue
-                    }
-                    writeP(a, doubleToRawLongBits(longBitsToDouble(readP(b)) / divisor))
+                    writeP(a, doubleToRawLongBits(longBitsToDouble(readP(b)) / longBitsToDouble(readP(c))))
                 }
                 Opcode.DMOD -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    val divisor = longBitsToDouble(readP(c))
-                    if (divisor == 0.0) {
-                        handleException(NoxException(NoxError.DivisionByZeroError, "Division by zero", pc - 1))
-                        continue
-                    }
-                    writeP(a, doubleToRawLongBits(longBitsToDouble(readP(b)) % divisor))
+                    writeP(a, doubleToRawLongBits(longBitsToDouble(readP(b)) % longBitsToDouble(readP(c))))
                 }
                 Opcode.DNEG -> {
                     val a = Instruction.opA(inst)
@@ -597,14 +598,16 @@ class NoxVM(
                 Opcode.JIT -> {
                     val a = Instruction.opA(inst)
                     val target = Instruction.opB(inst)
-                    if (readP(a) != 0L) pc = target
+                    if (readP(a) == 1L) pc = target
                 }
 
                 // Function Calls
 
                 Opcode.CALL -> {
+                    val subOp = Instruction.subOp(inst)
                     val funcPoolIdx = Instruction.opA(inst)
-                    val argStart = Instruction.opB(inst)
+                    val primArgStart = Instruction.opB(inst)
+                    val refArgStart = Instruction.opC(inst)
                     val funcName = pool[funcPoolIdx] as String
 
                     // Find function by name
@@ -623,17 +626,14 @@ class NoxVM(
                             continue
                         }
                     }
-
                     // Push frame
                     callStack[csp++] = bp
                     callStack[csp++] = bpRef
                     callStack[csp++] = pc
-                    callStack[csp++] = funcIndex
+                    callStack[csp++] = currentFuncIndex
 
                     // Slide window
-                    bp += argStart
-                    bpRef += argStart
-                    pc = meta.entryPC
+                    enterFunction(funcIndex, primArgStart, refArgStart)
                 }
 
                 Opcode.RET -> {
@@ -650,7 +650,7 @@ class NoxVM(
                             returnValue = if (isPrimitive) {
                                 val raw = readP(retReg)
                                 when (typeTag) {
-                                    0 -> raw.toInt().toString() // INT
+                                    0 -> raw.toString() // INT
                                     1 -> longBitsToDouble(raw).toString() // DOUBLE
                                     2 -> if (raw != 0L) "true" else "false" // BOOLEAN
                                     else -> raw.toString()
@@ -676,22 +676,19 @@ class NoxVM(
 
                     // Pop frame
                     csp -= 4
-                    val callerBp = callStack[csp]
-                    val callerBpRef = callStack[csp + 1]
-                    val callerPC = callStack[csp + 2]
-                    // callStack[csp + 3] is funcIndex, not needed for return
-
-                    bp = callerBp
-                    bpRef = callerBpRef
-                    pc = callerPC
+                    bp = callStack[csp]
+                    bpRef = callStack[csp + 1]
+                    pc = callStack[csp + 2]
+                    currentFuncIndex = callStack[csp + 3]
                 }
 
                 // System Calls
 
                 Opcode.SCALL -> {
-                    val destReg = Instruction.opA(inst)
-                    val funcPoolIdx = Instruction.opB(inst)
-                    val argStart = Instruction.opC(inst)
+                    val subOp = Instruction.subOp(inst)
+                    val funcPoolIdx = Instruction.opA(inst)
+                    val primArgStart = Instruction.opB(inst)
+                    val refArgStart = Instruction.opC(inst)
 
                     val nativeFunc =
                         scallCache[funcPoolIdx]
@@ -701,13 +698,22 @@ class NoxVM(
                                 pc - 1,
                             )
 
-                    // Native functions write directly to pMem/rMem and don't understand
-                    // the [G] flag. If dest is global-flagged, use argStart as a local
-                    // scratch register and copy the result to global memory afterward.
-                    val localDest = if (destReg and GLOBAL_FLAG != 0) argStart else destReg
+                    val pOffset = if (subOp == 1) 1 else 0
+                    val rOffset = if (subOp == 0) 1 else 0
+
+                    val localDest = if (subOp == 1) primArgStart else refArgStart
 
                     try {
-                        nativeFunc.invoke(context, pMem, rMem, bp, bpRef, argStart, localDest)
+                        nativeFunc.invoke(
+                            context,
+                            pMem,
+                            rMem,
+                            bp,
+                            bpRef,
+                            primArgStart + pOffset,
+                            refArgStart + rOffset,
+                            localDest,
+                        )
                     } catch (e: NoxException) {
                         handleException(e)
                     } catch (_: InterruptedException) {
@@ -715,13 +721,6 @@ class NoxVM(
                         throw NoxException(NoxError.TimeoutError, timeoutReason, pc - 1)
                     } catch (t: Throwable) {
                         handleException(NoxException(classifyException(t), t.message, pc - 1))
-                    }
-
-                    // Copy result to global if needed
-                    if (destReg and GLOBAL_FLAG != 0) {
-                        val slot = destReg and SLOT_MASK
-                        gMem[slot] = pMem[bp + localDest]
-                        gMemRef[slot] = rMem[bpRef + localDest]
                     }
                 }
 
@@ -744,6 +743,7 @@ class NoxVM(
                     val obj =
                         readR(objReg) as? LinkedHashMap<*, *>
                             ?: throw NoxException(NoxError.NullAccessError, "Cannot read property of null", pc - 1)
+
                     val key = pool[keyPoolIdx] as String
                     val value = obj[key]
 
@@ -788,11 +788,19 @@ class NoxVM(
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
+                    val subOp = Instruction.subOp(inst)
                     val obj =
                         readR(b) as? Map<*, *>
                             ?: throw NoxException(NoxError.NullAccessError, "Cannot access property of null", pc - 1)
                     val key = pool[c] as String
-                    writeR(a, obj[key])
+                    val value = obj[key]
+                    when (subOp) {
+                        SubOp.GET_INT -> writeP(a, (value as? Number)?.toLong() ?: 0L)
+                        SubOp.GET_DBL -> writeP(a, doubleToRawLongBits((value as? Number)?.toDouble() ?: 0.0))
+                        SubOp.GET_STR -> writeR(a, value as? String)
+                        SubOp.GET_BOOL -> writeP(a, if (value as? Boolean == true) 1L else 0L)
+                        else -> writeR(a, value)
+                    }
                 }
 
                 Opcode.AGET_IDX -> {
@@ -801,7 +809,7 @@ class NoxVM(
                     val c = Instruction.opC(inst)
                     val subOp = Instruction.subOp(inst)
                     val container = readR(b)
-                    
+
                     val value = when (container) {
                         is List<*> -> {
                             val index = readP(c).toInt()
@@ -824,7 +832,7 @@ class NoxVM(
                             pc - 1,
                         )
                     }
-                    
+
                     when (subOp) {
                         SubOp.GET_INT -> writeP(a, (value as? Number)?.toLong() ?: 0L)
                         SubOp.GET_DBL -> writeP(a, doubleToRawLongBits((value as? Number)?.toDouble() ?: 0.0))
@@ -838,6 +846,7 @@ class NoxVM(
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
+                    val subOp = Instruction.subOp(inst)
                     val root = readR(b)
                     val pathStr = pool[c] as String
                     val segments = pathStr.split(".")
@@ -858,7 +867,13 @@ class NoxVM(
                                 } // TODO: improve error message with potential misspellings
                             }
                     }
-                    writeR(a, current)
+                    when (subOp) {
+                        SubOp.GET_INT -> writeP(a, (current as? Number)?.toLong() ?: 0L)
+                        SubOp.GET_DBL -> writeP(a, doubleToRawLongBits((current as? Number)?.toDouble() ?: 0.0))
+                        SubOp.GET_STR -> writeR(a, current as? String)
+                        SubOp.GET_BOOL -> writeP(a, if (current as? Boolean == true) 1L else 0L)
+                        else -> writeR(a, current)
+                    }
                 }
 
                 Opcode.ASET_KEY -> {
@@ -886,6 +901,7 @@ class NoxVM(
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
+                    val subOp = Instruction.subOp(inst)
 
                     @Suppress("UNCHECKED_CAST")
                     val list =
@@ -908,7 +924,14 @@ class NoxVM(
                             pc - 1,
                         )
                     }
-                    list[index] = readR(c)
+                    when (subOp) {
+                        SubOp.SET_INT -> list[index] = readP(c)
+                        SubOp.SET_DBL -> list[index] = longBitsToDouble(readP(c))
+                        SubOp.SET_STR -> list[index] = readR(c)
+                        SubOp.SET_BOOL -> list[index] = readP(c) != 0L
+                        SubOp.SET_OBJ -> list[index] = readR(c)
+                        else -> list[index] = readR(c) // fallback
+                    }
                 }
 
                 // Yield
@@ -921,9 +944,9 @@ class NoxVM(
                     val value = if (isPrimitive) {
                         val raw = readP(a)
                         when (typeTag) {
-                            0 -> raw.toInt().toString()
-                            1 -> longBitsToDouble(raw).toString()
-                            2 -> if (raw != 0L) "true" else "false"
+                            0 -> raw.toString() // INT
+                            1 -> longBitsToDouble(raw).toString() // DOUBLE
+                            2 -> if (raw != 0L) "true" else "false" // BOOLEAN
                             else -> raw.toString()
                         }
                     } else {
@@ -934,7 +957,7 @@ class NoxVM(
                             obj?.toString() ?: "null"
                         }
                     }
-                    
+
                     yields.add(value)
                     context.yield(value)
                 }
@@ -1124,6 +1147,7 @@ class NoxVM(
                         } else { // Struct
                             validateStruct(value, descriptor, "", pc - 1)
                         }
+
                         writeR(a, value)
                     } catch (e: NoxException) {
                         handleException(e)
@@ -1245,5 +1269,76 @@ class NoxVM(
                 }
             }
         }
+    }
+
+    private fun dumpMemory(ex: NoxException) {
+        System.err.println("\n=== NOX MEMORY DUMP (UNCAUGHT EXCEPTION) ===")
+        System.err.println("Exception: ${ex.type} - ${ex.message} at pc=${ex.pc}")
+
+        // Globals
+        System.err.println("\nGlobals:")
+        for (module in program.modules) {
+            val ns = module.namespace
+            val base = module.globalBaseOffset
+            if (module.globalPrimitiveCount > 0 || module.globalReferenceCount > 0) {
+                System.err.println("  Module: $ns")
+                for (i in 0 until module.globalPrimitiveCount) {
+                    System.err.println("    gP$i: ${gMem[base + i]}")
+                }
+                for (i in 0 until module.globalReferenceCount) {
+                    System.err.println("    gR$i: ${gMemRef[base + i] ?: "null"}")
+                }
+            }
+        }
+
+        // Stack Trace
+        System.err.println("\nStack Frames (Bottom to Top):")
+
+        // Helper to dump a frame
+        fun dumpFrame(
+            frameBp: Int,
+            frameBpRef: Int,
+            framePc: Int,
+            fIdx: Int,
+            isTop: Boolean,
+        ) {
+            val meta = program.functions[fIdx]
+            val suffix = if (isTop) " [EXCEPTION SOURCE]" else " (Return PC)"
+            System.err.println("  # ${meta.name} @ pc $framePc$suffix")
+
+            // Resolve names from events
+            val pNames = mutableMapOf<Int, String>()
+            val rNames = mutableMapOf<Int, String>()
+            val localPc = framePc - meta.entryPC
+            for (event in meta.regNameEvents) {
+                if (event.localPC <= localPc) {
+                    if (event.isPrim) pNames[event.register] = event.name
+                    else rNames[event.register] = event.name
+                }
+            }
+
+            System.err.println("    Primitives:")
+            for (i in 0 until meta.primitiveFrameSize) {
+                val varName = pNames[i]?.let { " ($it)" } ?: ""
+                System.err.println("      p$i$varName: ${pMem[frameBp + i]}")
+            }
+            System.err.println("    References:")
+            for (i in 0 until meta.referenceFrameSize) {
+                val varName = rNames[i]?.let { " ($it)" } ?: ""
+                System.err.println("      r$i$varName: ${rMem[frameBpRef + i]}")
+            }
+        }
+
+        // Walk callStack
+        for (i in 0 until csp step 4) {
+            dumpFrame(callStack[i], callStack[i + 1], callStack[i + 2], callStack[i + 3], false)
+        }
+
+        // Top frame
+        if (currentFuncIndex != -1) {
+            dumpFrame(bp, bpRef, ex.pc, currentFuncIndex, true)
+        }
+
+        System.err.println("============================================\n")
     }
 }

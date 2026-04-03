@@ -332,8 +332,10 @@ class ExpressionEmitter(
             }
 
             else -> {
-                // TODO: this should be a warning inside the compiler
-                println("Unresolved symbol: ${expr.name}")
+                ctx.errors.report(
+                    expr.loc,
+                    "Unresolved symbol: ${expr.name}",
+                )
             }
         }
     }
@@ -344,6 +346,7 @@ class ExpressionEmitter(
     ) {
         val line = expr.loc.line
         val targetType = expr.target.resolvedType ?: TypeRef.JSON
+        val fieldType = expr.resolvedType ?: TypeRef.STRING
 
         // Attempt AGET_PATH collapse for deep json chains
         if (targetType == TypeRef.JSON || targetType.isStructType()) {
@@ -362,7 +365,8 @@ class ExpressionEmitter(
                     }
 
                 val pathIdx = ctx.pool.add(path.second)
-                ctx.emit(Opcode.AGET_PATH, 0, dest, tReg, pathIdx, line)
+                val subOp = OpcodeSelector.subOpForGet(fieldType)
+                ctx.emit(Opcode.AGET_PATH, subOp, dest, tReg, pathIdx, line)
                 if (tReg != tResolved) ctx.freer(tReg)
                 return
             }
@@ -379,7 +383,6 @@ class ExpressionEmitter(
                     emitExpr(expr.target, r, line)
                     r
                 }
-            val fieldType = expr.resolvedType ?: TypeRef.STRING
             val subOp = OpcodeSelector.subOpForGet(fieldType)
             val keyIdx = ctx.pool.add(expr.fieldName)
             ctx.emit(Opcode.HACC, subOp, dest, tReg, keyIdx, line)
@@ -409,7 +412,13 @@ class ExpressionEmitter(
 
         val targetType = expr.target.resolvedType
 
-        if (targetType == null) throw IllegalStateException("Unresolved target type in index access") //TODO: Make this a compiler error
+        if (targetType == null) {
+            ctx.errors.report(
+                expr.loc,
+                "Unresolved target type in index access",
+            )
+            return
+        }
        
         val tResolved = ctx.resolveRegister(expr.target)
 
@@ -454,32 +463,74 @@ class ExpressionEmitter(
     ) {
         val line = expr.loc.line
         val funcDef = expr.resolvedFunction ?: return
-        val argStart = ctx.allocator.allocTempPrim() // will track frame start slot
-        emitArgs(expr.args, funcDef.params, argStart, line)
-        val funcIdx = ctx.pool.add(funcDef.name)
-        ctx.emit(Opcode.CALL, 0, funcIdx, argStart, 0, line)
-        // result is left in argStart register by the callee's RET
+
         val retType = funcDef.returnType
-        if (retType != TypeRef.VOID) {
-            if (retType.isPrimitive()) {
-                if (dest != argStart) ctx.emit(Opcode.MOV, 0, dest, argStart, 0, line)
-            } else {
-                if (dest != argStart) ctx.emit(Opcode.MOVR, 0, dest, argStart, 0, line)
+        val isVoid = retType == TypeRef.VOID
+        val isPrim = retType.isPrimitive()
+        val subOp = if (isVoid) 2 else if (isPrim) 1 else 0
+
+        val pOffset = if (subOp == 1) 1 else 0
+        val rOffset = if (subOp == 0) 1 else 0
+
+        var primArgs = 0
+        var refArgs = 0
+        for (p in funcDef.params) {
+            if (p.type.isPrimitive()) primArgs++ else refArgs++
+        }
+        val primArgStart = ctx.allocator.allocArgBlockPrim(primArgs + pOffset)
+        val refArgStart = ctx.allocator.allocArgBlockRef(refArgs + rOffset)
+
+        emitArgs(expr.args, funcDef.params, primArgStart, refArgStart, line, pOffset, rOffset)
+        val funcIdx = ctx.pool.add(funcDef.name)
+
+        ctx.emit(Opcode.CALL, subOp, funcIdx, primArgStart, refArgStart, line)
+
+        if (!isVoid) {
+            val srcReg = if (isPrim) primArgStart else refArgStart
+            if (dest != srcReg) {
+                if (isPrim) {
+                    ctx.emit(Opcode.MOV, 0, dest, srcReg, 0, line)
+                } else {
+                    ctx.emit(Opcode.MOVR, 0, dest, srcReg, 0, line)
+                }
             }
         }
-        ctx.allocator.freeTempPrim(argStart)
+        ctx.allocator.freeArgBlockPrim(primArgStart, primArgs + pOffset)
+        ctx.allocator.freeArgBlockRef(refArgStart, refArgs + rOffset)
     }
 
     private fun emitArgs(
         args: List<Expr>,
         params: List<Param>,
-        argStart: Int,
+        primArgStart: Int,
+        refArgStart: Int,
         line: Int,
+        startPrimOffset: Int = 0,
+        startRefOffset: Int = 0,
     ) {
-        for ((i, arg) in args.withIndex()) {
-            val param = params.getOrNull(i) ?: continue
-            val argReg = argStart + i
-            emitExpr(arg, argReg, line)
+        var primIdx = primArgStart + startPrimOffset
+        var refIdx = refArgStart + startRefOffset
+        for (i in params.indices) {
+            val param = params[i]
+            val isPrim = param.type.isPrimitive()
+            val argReg = if (isPrim) primIdx++ else refIdx++
+
+            if (param.isVarargs) {
+                ctx.emit(Opcode.NEW_ARRAY, 0, argReg, 0, 0, line)
+                val elemType = param.type.elementType()
+                val subOp = OpcodeSelector.subOpForSet(elemType)
+                for (j in i until args.size) {
+                    val arg = args[j]
+                    val tmp = ctx.alloc(elemType)
+                    emitExpr(arg, tmp, line)
+                    ctx.emit(Opcode.ARR_PUSH, subOp, argReg, 0, tmp, line)
+                    ctx.free(elemType, tmp)
+                }
+            } else if (i < args.size) {
+                emitExpr(args[i], argReg, line)
+            } else if (param.defaultValue != null) {
+                emitExpr(param.defaultValue, argReg, line)
+            }
         }
     }
 
@@ -493,47 +544,83 @@ class ExpressionEmitter(
             MethodCallExpr.Resolution.TYPE_BOUND -> emitTypeBoundCall(expr, dest, line)
             MethodCallExpr.Resolution.UFCS -> emitUfcsCall(expr, dest, line)
             null -> {
-                // TODO: this should be a warning inside the compiler. Or error since this should never have happened.
-                println("Unresolved method call: ${expr.methodName}")
+                ctx.errors.report(
+                    expr.loc,
+                    "Unresolved method call: ${expr.methodName}",
+                )
             }
         }
     }
 
-     private fun emitNamespaceCall(
+    private fun emitNoxArgs(
+        args: List<Expr>,
+        params: List<NoxParam>,
+        primArgStart: Int,
+        refArgStart: Int,
+        line: Int,
+        startPrimOffset: Int = 0,
+        startRefOffset: Int = 0,
+    ) {
+        var primIdx = primArgStart + startPrimOffset
+        var refIdx = refArgStart + startRefOffset
+        for (i in params.indices) {
+            val param = params[i]
+            val isPrim = param.type.isPrimitive()
+            val argReg = if (isPrim) primIdx++ else refIdx++
+            
+            if (i < args.size) {
+                emitExpr(args[i], argReg, line)
+            } else if (param.defaultLiteral != null) {
+                emitDefaultLiteral(param.defaultLiteral, param.type, argReg, line)
+            }
+        }
+    }
+
+    private fun emitNamespaceCall(
         expr: MethodCallExpr,
         dest: Int,
         line: Int,
     ) {
         val target = expr.resolvedTarget ?: return
-        // check if this is an import namespace (user function) or builtin (SCALL)
         val isImport = ctx.modules.any { m -> m.program.functionsByName.containsKey(target.name) }
-        if (isImport) {
-            // CALL (user-defined function in imported module)
-            val argStart = ctx.allocator.allocTempPrim()
-            for ((i, arg) in expr.args.withIndex()) {
-                emitExpr(arg, argStart + i, line)
-            }
-            val funcIdx = ctx.pool.add(target.name)
-            ctx.emit(Opcode.CALL, 0, funcIdx, argStart, 0, line)
-            if (dest != argStart) {
-                if ((expr.resolvedType ?: TypeRef.INT).isPrimitive()) {
-                    ctx.emit(Opcode.MOV, 0, dest, argStart, 0, line)
+
+        val retType = expr.resolvedType ?: TypeRef.VOID
+        val isVoid = retType == TypeRef.VOID
+        val isPrim = retType.isPrimitive()
+        val subOp = if (isVoid) 2 else if (isPrim) 1 else 0
+
+        val pOffset = if (subOp == 1) 1 else 0
+        val rOffset = if (subOp == 0) 1 else 0
+
+        var primArgs = 0
+        var refArgs = 0
+        for (p in target.params) {
+            if (p.type.isPrimitive()) primArgs++ else refArgs++
+        }
+        val primArgStart = ctx.allocator.allocArgBlockPrim(primArgs + pOffset)
+        val refArgStart = ctx.allocator.allocArgBlockRef(refArgs + rOffset)
+
+        emitNoxArgs(expr.args, target.params, primArgStart, refArgStart, line, pOffset, rOffset)
+
+        val funcIdx = ctx.pool.add(target.name)
+        if (isImport || target.astNode != null) {
+            ctx.emit(Opcode.CALL, subOp, funcIdx, primArgStart, refArgStart, line)
+        } else {
+            ctx.emit(Opcode.SCALL, subOp, funcIdx, primArgStart, refArgStart, line)
+        }
+
+        if (!isVoid) {
+            val srcReg = if (isPrim) primArgStart else refArgStart
+            if (dest != srcReg) {
+                if (isPrim) {
+                    ctx.emit(Opcode.MOV, 0, dest, srcReg, 0, line)
                 } else {
-                    ctx.emit(Opcode.MOVR, 0, dest, argStart, 0, line)
+                    ctx.emit(Opcode.MOVR, 0, dest, srcReg, 0, line)
                 }
             }
-            ctx.allocator.freeTempPrim(argStart)
-        } else {
-            // SCALL (native function)
-            val argStart = ctx.allocator.allocTempPrim()
-            for ((i, arg) in expr.args.withIndex()) {
-                emitExpr(arg, argStart + i, line)
-            }
-            emitDefaultArgs(target.params, expr.args.size, argStart, line)
-            val funcIdx = ctx.pool.add(target.name)
-            ctx.emit(Opcode.SCALL, 0, dest, funcIdx, argStart, line)
-            ctx.allocator.freeTempPrim(argStart)
         }
+        ctx.allocator.freeArgBlockPrim(primArgStart, primArgs + pOffset)
+        ctx.allocator.freeArgBlockRef(refArgStart, refArgs + rOffset)
     }
 
     private fun emitTypeBoundCall(
@@ -542,15 +629,53 @@ class ExpressionEmitter(
         line: Int,
     ) {
         val target = expr.resolvedTarget ?: return
-        val argStart = ctx.allocator.allocTempPrim()
-        emitExpr(expr.target, argStart, line)
-        for ((i, arg) in expr.args.withIndex()) emitExpr(arg, argStart + i + 1, line)
-        // +1 offset because slot 0 is the receiver
-        emitDefaultArgs(target.params, expr.args.size, argStart + 1, line)
+
+        val retType = expr.resolvedType ?: TypeRef.VOID
+        val isVoid = retType == TypeRef.VOID
+        val isPrim = retType.isPrimitive()
+        val subOp = if (isVoid) 2 else if (isPrim) 1 else 0
+
+        val pOffset = if (subOp == 1) 1 else 0
+        val rOffset = if (subOp == 0) 1 else 0
+
+        var primArgs = 0
+        var refArgs = 0
+        val targetIsPrim = expr.target.resolvedType?.isPrimitive() == true
+        if (targetIsPrim) primArgs++ else refArgs++
+
+        for (p in target.params) {
+            if (p.type.isPrimitive()) primArgs++ else refArgs++
+        }
+        val primArgStart = ctx.allocator.allocArgBlockPrim(primArgs + pOffset)
+        val refArgStart = ctx.allocator.allocArgBlockRef(refArgs + rOffset)
+
+        if (targetIsPrim) {
+            emitExpr(expr.target, primArgStart + pOffset, line)
+        } else {
+            emitExpr(expr.target, refArgStart + rOffset, line)
+        }
+
+        val startPrimIdx = if (targetIsPrim) 1 else 0
+        val startRefIdx = if (targetIsPrim) 0 else 1
+
+        emitNoxArgs(expr.args, target.params, primArgStart, refArgStart, line, startPrimIdx + pOffset, startRefIdx + rOffset)
+
         val funcIdx = ctx.pool.add(target.name)
-        ctx.emit(Opcode.SCALL, 0, dest, funcIdx, argStart, line)
-        ctx.allocator.freeTempPrim(argStart)
-    }   
+        ctx.emit(Opcode.SCALL, subOp, funcIdx, primArgStart, refArgStart, line)
+
+        if (!isVoid) {
+            val srcReg = if (isPrim) primArgStart else refArgStart
+            if (dest != srcReg) {
+                if (isPrim) {
+                    ctx.emit(Opcode.MOV, 0, dest, srcReg, 0, line)
+                } else {
+                    ctx.emit(Opcode.MOVR, 0, dest, srcReg, 0, line)
+                }
+            }
+        }
+        ctx.allocator.freeArgBlockPrim(primArgStart, primArgs + pOffset)
+        ctx.allocator.freeArgBlockRef(refArgStart, refArgs + rOffset)
+    }
 
     private fun emitUfcsCall(
         expr: MethodCallExpr,
@@ -558,51 +683,57 @@ class ExpressionEmitter(
         line: Int,
     ) {
         val target = expr.resolvedTarget ?: return
-        val argStart = ctx.allocator.allocTempPrim()
-
-        // Prepend receiver as first argument
-        emitExpr(expr.target, argStart, line)
-        for ((i, arg) in expr.args.withIndex()) {
-            emitExpr(arg, argStart + i + 1, line)
-        }
-
-        val funcIdx = ctx.pool.add(target.name)
-        ctx.emit(Opcode.CALL, 0, funcIdx, argStart, 0, line)
 
         val retType = expr.resolvedType ?: TypeRef.VOID
-        if (retType != TypeRef.VOID && dest != argStart) {
-            if (retType.isPrimitive()) {
-                ctx.emit(Opcode.MOV, 0, dest, argStart, 0, line)
-            } else {
-                ctx.emit(Opcode.MOVR, 0, dest, argStart, 0, line)
+        val isVoid = retType == TypeRef.VOID
+        val isPrim = retType.isPrimitive()
+        val subOp = if (isVoid) 2 else if (isPrim) 1 else 0
+
+        val pOffset = if (subOp == 1) 1 else 0
+        val rOffset = if (subOp == 0) 1 else 0
+
+        var primArgs = 0
+        var refArgs = 0
+        val targetIsPrim = expr.target.resolvedType?.isPrimitive() == true
+        if (targetIsPrim) primArgs++ else refArgs++
+
+        for (p in target.params) {
+            if (p.type.isPrimitive()) primArgs++ else refArgs++
+        }
+        val primArgStart = ctx.allocator.allocArgBlockPrim(primArgs + pOffset)
+        val refArgStart = ctx.allocator.allocArgBlockRef(refArgs + rOffset)
+
+        if (targetIsPrim) {
+            emitExpr(expr.target, primArgStart + pOffset, line)
+        } else {
+            emitExpr(expr.target, refArgStart + rOffset, line)
+        }
+
+        val startPrimIdx = if (targetIsPrim) 1 else 0
+        val startRefIdx = if (targetIsPrim) 0 else 1
+
+        emitNoxArgs(expr.args, target.params, primArgStart, refArgStart, line, startPrimIdx + pOffset, startRefIdx + rOffset)
+
+        val funcIdx = ctx.pool.add(target.name)
+        if (target.astNode != null) {
+            ctx.emit(Opcode.CALL, subOp, funcIdx, primArgStart, refArgStart, line)
+        } else {
+            ctx.emit(Opcode.SCALL, subOp, funcIdx, primArgStart, refArgStart, line)
+        }
+
+        if (!isVoid) {
+            val srcReg = if (isPrim) primArgStart else refArgStart
+            if (dest != srcReg) {
+                if (isPrim) {
+                    ctx.emit(Opcode.MOV, 0, dest, srcReg, 0, line)
+                } else {
+                    ctx.emit(Opcode.MOVR, 0, dest, srcReg, 0, line)
+                }
             }
         }
-
-        ctx.allocator.freeTempPrim(argStart)
+        ctx.allocator.freeArgBlockPrim(primArgStart, primArgs + pOffset)
+        ctx.allocator.freeArgBlockRef(refArgStart, refArgs + rOffset)
     }
-
-    // Default argument injection for plugin optional params
-
-    /**
-     * Emits default values for any omitted optional arguments in a plugin (SCALL) call.
-     *
-     * @param params   the full parameter list from the [CallTarget]
-     * @param provided number of arguments the caller actually supplied
-     * @param argStart register base for arguments
-     * @param line     source line for diagnostics
-     */
-    private fun emitDefaultArgs(
-        params: List<NoxParam>,
-        provided: Int,
-        argStart: Int,
-        line: Int,
-    ) {
-        for (i in provided until params.size) {
-            val literal = params[i].defaultLiteral ?: continue
-            emitDefaultLiteral(literal, params[i].type, argStart + i, line)
-        }
-    }
-
     private fun emitDefaultLiteral(
         literal: String,
         type: TypeRef,

@@ -114,6 +114,9 @@ class ForEachStmt(
 ) : Stmt(loc) {
     /** Register for the loop variable. Set by register allocator. */
     var elementRegister: Int = -1
+
+    /** Back-link to the VarSymbol created in the type resolver. Set during semantic analysis. */
+    var resolvedSymbol: Symbol? = null
 }
 
 // Jumps

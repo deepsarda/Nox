@@ -15,15 +15,16 @@
 ;  Function: main
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=3  rMem=0
+;    Frame:      pMem=3  rMem=1
 
 .func main
   ;
   ; line 3  return Date.now() > 0;
-  0000:  SCALL     p1, Date__now, p2           ; p1 = Date__now(p2...)
-  0001:  LDI       p2, 0                       ; p2 = 0
-  0002:  IGT       p0, p1, p2                  ; p0 = p1 > p2
-  0003:  RET       p0                          ; return p0
+  0000:  SCALL     Date__now, p2, r1           ; p2 = scall Date__now(p3..., r1...)
+  0001:  MOV       p1, p2                      ; p1 = p2
+  0002:  LDI       p2, 0                       ; p2 = 0
+  0003:  IGT       p0, p1, p2                  ; p0 = p1 > p2
+  0004:  RET       p0                          ; return p0
 
 
 ; Exception Table
@@ -38,8 +39,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 4
+  instructions: 5
   constants:    1
   exceptions:   0
   globals:      0p + 0r
-  bytecode:     32 bytes
+  bytecode:     40 bytes

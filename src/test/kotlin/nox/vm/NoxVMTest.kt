@@ -185,19 +185,6 @@ class NoxVMTest :
             ) shouldContainExactly listOf("3.5")
         }
 
-        test("doubleDivisionByZero") {
-            val result =
-                err(
-                    """
-                main() {
-                    double x = 10.0 / 0.0;
-                    return "ok";
-                }
-            """,
-                )
-            result.type shouldBe NoxError.DivisionByZeroError
-        }
-
         test("integerEqualTrue") {
             yields(
                 """

@@ -23,53 +23,53 @@
 ;  Function: main
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=1  rMem=4
+;    Frame:      pMem=0  rMem=4
 
 .func main
   ;
   ; line 5  string env = Env.get("CI");
-  0000:  LDC       r0, #0                      ; env:r0 = "CI"
-  0001:  SCALL     p0, Env__get, p0            ; p0 = Env__get(p0...)
+  0000:  LDC       r3, #0                      ; r3 = "CI"
+  0001:  SCALL     Env__get, p0, r2            ; r2 = scall Env__get(p0..., r3...)
+  0002:  MOVR      r1, r2                      ; env:r1 = r2
   ;
   ; line 7  yield "building";
-  0002:  LDC       r1, #2                      ; r1 = "building"
-  0003:  YIELD     r1                          ; yield r1
+  0003:  LDC       r1, #2                      ; env:r1 = "building"
+  0004:  YIELD     r1                          ; yield env:r1
   ;
   ; line 8  yield "testing";
-  0004:  LDC       r1, #3                      ; r1 = "testing"
-  0005:  YIELD     r1                          ; yield r1
+  0005:  LDC       r1, #3                      ; env:r1 = "testing"
+  0006:  YIELD     r1                          ; yield env:r1
   ;
   ; line 11  string file = File.read("missing.log");
-  0006:  LDC       r0, #4                      ; env:r0 = "missing.log"
-  0007:  SCALL     p1, File__read, p0          ; p1 = File__read(p0...)
-  0008:  JMP       @0017                       ; -> end
+  0007:  LDC       r3, #4                      ; r3 = "missing.log"
+  0008:  SCALL     File__read, p0, r2          ; r2 = scall File__read(p0..., r3...)
+  0009:  MOVR      r1, r2                      ; file:r1 = r2
+  0010:  JMP       @0018                       ; -> end
   ;
   ; line 13  yield "failed";
   .catch_all:
-  0009:  LDC       r3, #6                      ; r3 = "failed"
-  0010:  YIELD     r3                          ; yield r3
+  0011:  LDC       r2, #6                      ; r2 = "failed"
+  0012:  YIELD     r2                          ; yield r2
   ;
   ; line 14  return "ok";
-  0011:  LDC       r3, #7                      ; r3 = "ok"
-  0012:  KILL_REF  r0                          ; env:r0 = null (GC)
-  0013:  KILL_REF  r1                          ; file:r1 = null (GC)
-  0014:  KILL_REF  r2                          ; err:r2 = null (GC)
-  0015:  RET       r3                          ; return r3
-  0016:  JMP       @0017                       ; -> end
+  0013:  LDC       r2, #7                      ; r2 = "ok"
+  0014:  KILL_REF  r1                          ; err:r1 = null (GC)
+  0015:  KILL_REF  r3                          ; r3 = null (GC)
+  0016:  RET       r2                          ; return r2
+  0017:  JMP       @0018                       ; -> end
   ;
   ; line 17  return "error";
   .end:
-  0017:  LDC       r2, #8                      ; err:r2 = "error"
-  0018:  KILL_REF  r0                          ; env:r0 = null (GC)
-  0019:  KILL_REF  r1                          ; file:r1 = null (GC)
+  0018:  LDC       r1, #8                      ; err:r1 = "error"
+  0019:  KILL_REF  r2                          ; r2 = null (GC)
   0020:  KILL_REF  r3                          ; r3 = null (GC)
-  0021:  RET       r2                          ; return err:r2
+  0021:  RET       r1                          ; return err:r1
 
 
 ; Exception Table
 
 .exceptions
-  [0006..0008] ANY                  -> @0009  msg=r2
+  [0007..0010] ANY                  -> @0011  msg=r1
 
 
 ; Summary

@@ -26,115 +26,136 @@
 ;  Function: main
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=7  rMem=9
+;    Frame:      pMem=10  rMem=12
 
 .func main
   ;
   ; line 9  json localData = Json.parse("[{\"sku\": \"A\", \"qty\": 10}, {\"sku\": \"B\", \"qty\": 2}]");
-  0000:  LDC       r0, #0                      ; localData:r0 = "[{\"sku\": \"A\", \"qty\": 10}, {\"sku\": \"B\", \"qty\": 2}]"
-  0001:  SCALL     p0, Json__parse, p0         ; p0 = Json__parse(p0...)
+  0000:  LDC       r3, #0                      ; r3 = "[{\"sku\": \"A\", \"qty\": 10}, {\"sku\": \"B\", \"qty\": 2}]"
+  0001:  SCALL     Json__parse, p0, r2         ; r2 = scall Json__parse(p0..., r3...)
+  0002:  MOVR      r1, r2                      ; localData:r1 = r2
   ;
   ; line 10  json remoteData = Json.parse("[{\"sku\": \"A\", \"qty\": 5}, {\"sku\": \"C\", \"qty\": 1}]");
-  0002:  LDC       r0, #2                      ; localData:r0 = "[{\"sku\": \"A\", \"qty\": 5}, {\"sku\": \"C\", \"qty\": 1}]"
-  0003:  SCALL     p1, Json__parse, p0         ; p1 = Json__parse(p0...)
+  0003:  LDC       r4, #2                      ; r4 = "[{\"sku\": \"A\", \"qty\": 5}, {\"sku\": \"C\", \"qty\": 1}]"
+  0004:  SCALL     Json__parse, p0, r3         ; r3 = scall Json__parse(p0..., r4...)
+  0005:  MOVR      r2, r3                      ; remoteData:r2 = r3
   ;
   ; line 12  Item[] localItems = localData as Item[];
-  0004:  CAST_STRUCTr2, r0, #3                  ; localItems:r2 = localData:r0 as Item[]
+  0006:  CAST_STRUCTr3, r1, #3                  ; localItems:r3 = localData:r1 as Item[]
   ;
   ; line 13  Item[] remoteItems = remoteData as Item[];
-  0005:  CAST_STRUCTr3, r1, #3                  ; remoteItems:r3 = remoteData:r1 as Item[]
+  0007:  CAST_STRUCTr4, r2, #3                  ; remoteItems:r4 = remoteData:r2 as Item[]
   ;
-  ; line 15  foreach (Item loc in localItems) {
-  0006:  MOVR      r1, r2                      ; remoteData:r1 = localItems:r2
-  0007:  LDI       p0, 0                       ; p0 = 0
-  0008:  MOVR      r3, r1                      ; remoteItems:r3 = remoteData:r1
-  0009:  SCALL     p1, __T[]_length!Item, p3   ; p1 = __T[]_length!Item(p3...)
+  ; line 14  yield localItems;
+  0008:  YIELD     r3                          ; yield localItems:r3
+  ;
+  ; line 15  yield remoteItems;
+  0009:  YIELD     r4                          ; yield remoteItems:r4
+  ;
+  ; line 16  foreach (Item loc in localItems) {
+  0010:  MOVR      r2, r3                      ; remoteData:r2 = localItems:r3
+  0011:  LDI       p0, 0                       ; p0 = 0
+  0012:  MOVR      r6, r2                      ; r6 = remoteData:r2
+  0013:  SCALL     __T[]_length!Item, p3, r6   ; p3 = scall __T[]_length!Item(p4..., r6...)
+  0014:  MOV       p1, p3                      ; p1 = p3
   .loop_start_1:
-  0010:  ILT       p2, p0, p1                  ; p2 = p0 < p1
-  0011:  JIF       p2, @0038                   ; if p2==0 -> loop_exit_1
-  0012:  AGET_IDX  r4, r1, p0                  ; loc:r4 = remoteData:r1[p0]
+  0015:  ILT       p2, p0, p1                  ; p2 = p0 < p1
+  0016:  JIF       p2, @0044                   ; if p2==0 -> loop_exit_1
+  0017:  AGET_IDX  r5, r2, p0                  ; loc:r5 = remoteData:r2[p0]
   ;
-  ; line 16  foreach (Item rem in remoteItems) {
-  0013:  MOVR      r5, r3                      ; r5 = remoteItems:r3
-  0014:  LDI       p3, 0                       ; p3 = 0
-  0015:  MOVR      r6, r5                      ; r6 = r5
-  0016:  SCALL     p4, __T[]_length!Item, p6   ; p4 = __T[]_length!Item(p6...)
+  ; line 17  foreach (Item rem in remoteItems) {
+  0018:  MOVR      r6, r4                      ; r6 = remoteItems:r4
+  0019:  LDI       p3, 0                       ; p3 = 0
+  0020:  MOVR      r8, r6                      ; r8 = r6
+  0021:  SCALL     __T[]_length!Item, p6, r8   ; p6 = scall __T[]_length!Item(p7..., r8...)
+  0022:  MOV       p4, p6                      ; p4 = p6
   .loop_start_2:
-  0017:  ILT       p5, p3, p4                  ; p5 = p3 < p4
-  0018:  JIF       p5, @0031                   ; if p5==0 -> loop_exit_2
-  0019:  AGET_IDX  r3, r5, p3                  ; rem:r3 = r5[p3]
+  0023:  ILT       p5, p3, p4                  ; p5 = p3 < p4
+  0024:  JIF       p5, @0039                   ; if p5==0 -> loop_exit_2
+  0025:  AGET_IDX  r7, r6, p3                  ; rem:r7 = r6[p3]
   ;
-  ; line 17  if (loc.sku == rem.sku) {
-  0020:  HACC      GET_STR, r6, r7, "sku"      ; r6 = r7.sku
-  0021:  HACC      GET_STR, r7, r8, "sku"      ; r7 = r8.sku
-  0022:  SEQ       p6, r6, r7                  ; p6 = r6 == r7
-  0023:  JIF       p6, @0025                   ; if p6==0 -> @0025
-  0024:  JMP       @0025                       ; -> @0025
-  0025:  KILL_REF  r6                          ; r6 = null (GC)
-  0026:  KILL_REF  r7                          ; r7 = null (GC)
-  0027:  KILL_REF  r8                          ; r8 = null (GC)
+  ; line 18  if (loc.sku == rem.sku) {
+  0026:  HACC      GET_STR, r8, r5, "sku"      ; r8 = loc:r5.sku
+  0027:  HACC      GET_STR, r9, r7, "sku"      ; r9 = rem:r7.sku
+  0028:  SEQ       p6, r8, r9                  ; p6 = r8 == r9
+  0029:  JIF       p6, @0036                   ; if p6==0 -> @0036
   ;
-  ; line 16  foreach (Item rem in remoteItems) {
+  ; line 19  loc.qty += rem.qty;
+  0030:  MOVR      r9, r5                      ; r9 = loc:r5
+  0031:  HACC      GET_INT, r6, r9, "qty"      ; r6 = r9.qty
+  0032:  HACC      GET_INT, r7, r7, "qty"      ; rem:r7 = rem:r7.qty
+  0033:  IADD      p8, p6, p7                  ; p8 = p6 + p7
+  0034:  HMOD      SET_INT, r9, "qty", p8      ; r9.qty = p8
+  0035:  JMP       @0036                       ; -> @0036
+  0036:  KILL_REF  r9                          ; r9 = null (GC)
+  ;
+  ; line 17  foreach (Item rem in remoteItems) {
   .loop_update_2:
-  0028:  KILL_REF  r3                          ; rem:r3 = null (GC)
-  0029:  IINC      p3                          ; p3 = p3 + 1
-  0030:  JMP       @0017                       ; -> loop_start_2
+  0037:  IINC      p3                          ; p3 = p3 + 1
+  0038:  JMP       @0023                       ; -> loop_start_2
   .loop_exit_2:
-  0031:  KILL_REF  r5                          ; r5 = null (GC)
-  0032:  KILL_REF  r6                          ; r6 = null (GC)
-  0033:  KILL_REF  r7                          ; r7 = null (GC)
-  0034:  KILL_REF  r8                          ; r8 = null (GC)
+  0039:  KILL_REF  r7                          ; rem:r7 = null (GC)
+  0040:  KILL_REF  r8                          ; r8 = null (GC)
+  0041:  KILL_REF  r9                          ; r9 = null (GC)
   ;
-  ; line 15  foreach (Item loc in localItems) {
+  ; line 16  foreach (Item loc in localItems) {
   .loop_update_1:
-  0035:  KILL_REF  r4                          ; loc:r4 = null (GC)
-  0036:  IINC      p0                          ; p0 = p0 + 1
-  0037:  JMP       @0010                       ; -> loop_start_1
+  0042:  IINC      p0                          ; p0 = p0 + 1
+  0043:  JMP       @0015                       ; -> loop_start_1
   ;
-  ; line 23  if (localItems[0].qty == 15) {
+  ; line 24  if (localItems[0].qty == 15) {
   .loop_exit_1:
-  0038:  LDI       p2, 0                       ; p2 = 0
-  0039:  AGET_IDX  r1, r2, p2                  ; remoteData:r1 = localItems:r2[p2]
-  0040:  HACC      GET_INT, r1, r1, "qty"      ; remoteData:r1 = remoteData:r1.qty
-  0041:  LDI       p2, 15                      ; p2 = 15
-  0042:  IEQ       p0, p1, p2                  ; p0 = p1 == p2
-  0043:  JIF       p0, @0062                   ; if p0==0 -> @0062
+  0044:  LDI       p2, 0                       ; p2 = 0
+  0045:  AGET_IDX  r2, r3, p2                  ; remoteData:r2 = localItems:r3[p2]
+  0046:  HACC      GET_INT, r1, r2, "qty"      ; localData:r1 = remoteData:r2.qty
+  0047:  LDI       p2, 15                      ; p2 = 15
+  0048:  IEQ       p0, p1, p2                  ; p0 = p1 == p2
+  0049:  JIF       p0, @0075                   ; if p0==0 -> @0075
   ;
-  ; line 24  string res = Json.stringify(localData);
-  0044:  LDI       p1, 1                       ; p1 = 1
-  0045:  SCALL     p1, Json__stringify, p0     ; p1 = Json__stringify(p0...)
+  ; line 25  string res = Json.stringify(localData);
+  0050:  MOVR      r11, r1                     ; r11 = localData:r1
+  0051:  LDI       p9, 1                       ; p9 = 1
+  0052:  SCALL     Json__stringify, p9, r10    ; r10 = scall Json__stringify(p9..., r11...)
+  0053:  MOVR      r2, r10                     ; res:r2 = r10
   ;
-  ; line 25  if (res.contains("15")) {
-  0046:  MOVR      r2, r1                      ; localItems:r2 = res:r1
-  0047:  LDC       r3, #8                      ; rem:r3 = "15"
-  0048:  SCALL     p0, __string_contains, p2   ; p0 = __string_contains(p2...)
-  0049:  JIF       p0, @0061                   ; if p0==0 -> @0061
+  ; line 26  if (res.contains("15")) {
+  0054:  MOVR      r10, r2                     ; r10 = res:r2
+  0055:  LDC       r11, #8                     ; r11 = "15"
+  0056:  SCALL     __string_contains, p9, r10  ; p9 = scall __string_contains(p10..., r10...)
+  0057:  MOV       p0, p9                      ; p0 = p9
+  0058:  JIF       p0, @0072                   ; if p0==0 -> @0072
   ;
-  ; line 26  return "ok";
-  0050:  LDC       r1, #10                     ; res:r1 = "ok"
-  0051:  KILL_REF  r0                          ; localData:r0 = null (GC)
-  0052:  KILL_REF  r2                          ; localItems:r2 = null (GC)
-  0053:  KILL_REF  r3                          ; rem:r3 = null (GC)
-  0054:  KILL_REF  r4                          ; loc:r4 = null (GC)
-  0055:  KILL_REF  r5                          ; r5 = null (GC)
-  0056:  KILL_REF  r6                          ; r6 = null (GC)
-  0057:  KILL_REF  r7                          ; r7 = null (GC)
-  0058:  KILL_REF  r8                          ; r8 = null (GC)
-  0059:  RET       r1                          ; return res:r1
-  0060:  JMP       @0061                       ; -> @0061
-  0061:  JMP       @0062                       ; -> @0062
+  ; line 27  return "ok";
+  0059:  LDC       r2, #10                     ; res:r2 = "ok"
+  0060:  KILL_REF  r1                          ; localData:r1 = null (GC)
+  0061:  KILL_REF  r3                          ; localItems:r3 = null (GC)
+  0062:  KILL_REF  r4                          ; remoteItems:r4 = null (GC)
+  0063:  KILL_REF  r5                          ; loc:r5 = null (GC)
+  0064:  KILL_REF  r6                          ; r6 = null (GC)
+  0065:  KILL_REF  r7                          ; rem:r7 = null (GC)
+  0066:  KILL_REF  r8                          ; r8 = null (GC)
+  0067:  KILL_REF  r9                          ; r9 = null (GC)
+  0068:  KILL_REF  r10                         ; r10 = null (GC)
+  0069:  KILL_REF  r11                         ; r11 = null (GC)
+  0070:  RET       r2                          ; return res:r2
+  0071:  JMP       @0072                       ; -> @0072
+  0072:  KILL_REF  r10                         ; r10 = null (GC)
+  0073:  KILL_REF  r11                         ; r11 = null (GC)
+  0074:  JMP       @0075                       ; -> @0075
   ;
-  ; line 29  return "error";
-  0062:  LDC       r1, #11                     ; res:r1 = "error"
-  0063:  KILL_REF  r0                          ; localData:r0 = null (GC)
-  0064:  KILL_REF  r2                          ; localItems:r2 = null (GC)
-  0065:  KILL_REF  r3                          ; rem:r3 = null (GC)
-  0066:  KILL_REF  r4                          ; loc:r4 = null (GC)
-  0067:  KILL_REF  r5                          ; r5 = null (GC)
-  0068:  KILL_REF  r6                          ; r6 = null (GC)
-  0069:  KILL_REF  r7                          ; r7 = null (GC)
-  0070:  KILL_REF  r8                          ; r8 = null (GC)
-  0071:  RET       r1                          ; return res:r1
+  ; line 30  return "error";
+  0075:  LDC       r2, #11                     ; res:r2 = "error"
+  0076:  KILL_REF  r1                          ; localData:r1 = null (GC)
+  0077:  KILL_REF  r3                          ; localItems:r3 = null (GC)
+  0078:  KILL_REF  r4                          ; remoteItems:r4 = null (GC)
+  0079:  KILL_REF  r5                          ; loc:r5 = null (GC)
+  0080:  KILL_REF  r6                          ; r6 = null (GC)
+  0081:  KILL_REF  r7                          ; rem:r7 = null (GC)
+  0082:  KILL_REF  r8                          ; r8 = null (GC)
+  0083:  KILL_REF  r9                          ; r9 = null (GC)
+  0084:  KILL_REF  r10                         ; r10 = null (GC)
+  0085:  KILL_REF  r11                         ; r11 = null (GC)
+  0086:  RET       r2                          ; return res:r2
 
 
 ; Exception Table
@@ -149,8 +170,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 72
+  instructions: 87
   constants:    12
   exceptions:   0
   globals:      0p + 0r
-  bytecode:     576 bytes
+  bytecode:     696 bytes

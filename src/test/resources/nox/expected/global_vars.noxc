@@ -17,7 +17,7 @@
   ;
   ; line 2  int GLOBAL = 42;
   0000:  LDI       g0, 42                      ; g0 = 42
-  0001:  RET       p0                          ; return p0
+  0001:  RET                                   ; return (void)
 
 
 ; Functions

@@ -23,6 +23,7 @@ import nox.compiler.types.VarSymbol
  */
 class RegisterAllocator(
     params: List<Param>,
+    returnType: TypeRef = TypeRef.VOID,
 ) {
     // Bank pools
 
@@ -51,6 +52,13 @@ class RegisterAllocator(
     private val paramRefReg = mutableMapOf<String, Int>() // paramName to rMem reg
 
     init {
+        // Offset parameter registers if there's a return value (result slot at 0)
+        if (returnType.isPrimitive()) {
+            nextPrim = 1
+        } else if (returnType != TypeRef.VOID) {
+            nextRef = 1
+        }
+
         // Pre-assign parameter registers in declaration order.
         for (param in params) {
             if (param.type.isPrimitive()) {
@@ -111,6 +119,7 @@ class RegisterAllocator(
     fun allocElement(stmt: ForEachStmt): Int {
         val reg = if (stmt.elementType.isPrimitive()) allocPrim() else allocRef()
         stmt.elementRegister = reg
+        (stmt.resolvedSymbol as? VarSymbol)?.register = reg
         return reg
     }
 
@@ -156,6 +165,37 @@ class RegisterAllocator(
 
     /** Allocate a temp register for [type] (dispatches to pMem or rMem). */
     fun allocTemp(type: TypeRef): Int = if (type.isPrimitive()) allocTempPrim() else allocTempRef()
+
+    /**
+     * Allocate a contiguous block of registers in pMem for function arguments.
+     */
+    fun allocArgBlockPrim(size: Int): Int {
+        val start = nextPrim
+        nextPrim += size
+        if (nextPrim > maxPrim) maxPrim = nextPrim
+        return start
+    }
+
+    /**
+     * Allocate a contiguous block of registers in rMem for function arguments.
+     */
+    fun allocArgBlockRef(size: Int): Int {
+        val start = nextRef
+        nextRef += size
+        if (nextRef > maxRef) maxRef = nextRef
+        for (i in start until start + size) {
+            _allRefRegs.add(i)
+        }
+        return start
+    }
+
+    fun freeArgBlockPrim(start: Int, size: Int) {
+        if (nextPrim == start + size) nextPrim = start
+    }
+
+    fun freeArgBlockRef(start: Int, size: Int) {
+        if (nextRef == start + size) nextRef = start
+    }
 
     /** Free a temp register for [type]. */
     fun freeTemp(

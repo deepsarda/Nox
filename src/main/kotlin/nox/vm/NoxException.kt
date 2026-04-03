@@ -28,12 +28,12 @@ fun classifyException(t: Throwable): NoxError =
         is ArithmeticException -> NoxError.DivisionByZeroError
         is IndexOutOfBoundsException -> NoxError.IndexOutOfBoundsError
         is ClassCastException -> NoxError.CastError
-        is IOException -> NoxError.FileError
         is java.net.ConnectException,
         is java.net.UnknownHostException,
         is java.net.SocketTimeoutException,
         is java.net.http.HttpTimeoutException,
         -> NoxError.NetworkError
+        is IOException -> NoxError.FileError
         is SecurityException -> NoxError.SecurityError
         is IllegalArgumentException -> NoxError.TypeError
         else -> NoxError.Error

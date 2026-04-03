@@ -15,7 +15,7 @@
 ;  Function: main
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=6  rMem=0
+;    Frame:      pMem=3  rMem=0
 
 .func main
   ;
@@ -25,27 +25,27 @@
   0002:  IADD      p0, p1, p0                  ; a:p0 = p1 + a:p0
   ;
   ; line 4  int b = 100 - 58;
-  0003:  LDI       p2, 100                     ; p2 = 100
-  0004:  LDI       p1, 58                      ; b:p1 = 58
-  0005:  ISUB      p1, p2, p1                  ; b:p1 = p2 - b:p1
+  0003:  LDI       p1, 100                     ; p1 = 100
+  0004:  LDI       p0, 58                      ; b:p0 = 58
+  0005:  ISUB      p0, p1, p0                  ; b:p0 = p1 - b:p0
   ;
   ; line 5  int c = 6 * 7;
-  0006:  LDI       p3, 6                       ; p3 = 6
-  0007:  LDI       p2, 7                       ; c:p2 = 7
-  0008:  IMUL      p2, p3, p2                  ; c:p2 = p3 * c:p2
+  0006:  LDI       p1, 6                       ; p1 = 6
+  0007:  LDI       p0, 7                       ; c:p0 = 7
+  0008:  IMUL      p0, p1, p0                  ; c:p0 = p1 * c:p0
   ;
   ; line 6  int d = 84 / 2;
-  0009:  LDI       p4, 84                      ; p4 = 84
-  0010:  LDI       p3, 2                       ; d:p3 = 2
-  0011:  IDIV      p3, p4, p3                  ; d:p3 = p4 / d:p3
+  0009:  LDI       p2, 84                      ; p2 = 84
+  0010:  LDI       p1, 2                       ; d:p1 = 2
+  0011:  IDIV      p1, p2, p1                  ; d:p1 = p2 / d:p1
   ;
   ; line 7  int e = 142 % 100;
-  0012:  LDI       p5, 142                     ; p5 = 142
-  0013:  LDI       p4, 100                     ; e:p4 = 100
-  0014:  IMOD      p4, p5, p4                  ; e:p4 = p5 % e:p4
+  0012:  LDI       p2, 142                     ; p2 = 142
+  0013:  LDI       p1, 100                     ; e:p1 = 100
+  0014:  IMOD      p1, p2, p1                  ; e:p1 = p2 % e:p1
   ;
   ; line 8  return c;
-  0015:  RET       p2                          ; return c:p2
+  0015:  RET       p0                          ; return c:p0
 
 
 ; Exception Table

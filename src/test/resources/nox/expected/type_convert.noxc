@@ -18,29 +18,33 @@
 ;  Function: main
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=3  rMem=1
+;    Frame:      pMem=4  rMem=3
 
 .func main
   ;
   ; line 3  string s = "42";
-  0000:  LDC       r0, #0                      ; s:r0 = "42"
+  0000:  LDC       r1, #0                      ; s:r1 = "42"
   ;
   ; line 4  int a = s.toInt(0);
-  0001:  MOVR      r1, r0                      ; r1 = s:r0
+  0001:  MOVR      r2, r1                      ; r2 = s:r1
   0002:  LDI       p2, 0                       ; p2 = 0
-  0003:  SCALL     p0, __string_toInt, p1      ; a:p0 = __string_toInt(p1...)
+  0003:  SCALL     __string_toInt, p1, r2      ; p1 = scall __string_toInt(p2..., r2...)
+  0004:  MOV       p0, p1                      ; a:p0 = p1
   ;
   ; line 5  double d = a.toDouble();
-  0004:  MOV       p2, p0                      ; p2 = a:p0
-  0005:  SCALL     p1, __int_toDouble, p2      ; d:p1 = __int_toDouble(p2...)
+  0005:  MOV       p3, p0                      ; p3 = a:p0
+  0006:  SCALL     __int_toDouble, p2, r2      ; p2 = scall __int_toDouble(p3..., r2...)
+  0007:  MOV       p1, p2                      ; d:p1 = p2
   ;
   ; line 6  int b = d.toInt();
-  0006:  MOV       p0, p1                      ; a:p0 = d:p1
-  0007:  SCALL     p2, __double_toInt, p0      ; b:p2 = __double_toInt(a:p0...)
+  0008:  MOV       p3, p1                      ; p3 = d:p1
+  0009:  SCALL     __double_toInt, p2, r2      ; p2 = scall __double_toInt(p3..., r2...)
+  0010:  MOV       p0, p2                      ; b:p0 = p2
   ;
   ; line 7  return b;
-  0008:  KILL_REF  r0                          ; s:r0 = null (GC)
-  0009:  RET       p2                          ; return b:p2
+  0011:  KILL_REF  r1                          ; s:r1 = null (GC)
+  0012:  KILL_REF  r2                          ; r2 = null (GC)
+  0013:  RET       p0                          ; return b:p0
 
 
 ; Exception Table
@@ -55,8 +59,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 10
+  instructions: 14
   constants:    4
   exceptions:   0
   globals:      0p + 0r
-  bytecode:     80 bytes
+  bytecode:     112 bytes

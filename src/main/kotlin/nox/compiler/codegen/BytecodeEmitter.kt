@@ -1,5 +1,6 @@
 package nox.compiler.codegen
 
+import nox.compiler.CompilerErrors
 import nox.compiler.ast.*
 import nox.compiler.semantic.ResolvedModule
 import nox.compiler.types.*
@@ -21,6 +22,7 @@ class BytecodeEmitter(
     internal val modules: List<ResolvedModule> = emptyList(),
     private val freeAtNode: Map<Any, List<Symbol>> = emptyMap(),
     private val registry: LibraryRegistry = LibraryRegistry.createDefault(),
+    internal val errors: CompilerErrors,
 ) {
     // Sub-emitters
 

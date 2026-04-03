@@ -658,7 +658,7 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
-            int add(int a, int b) { return a + b; }
+            void add(int a, int b) { int c = a + b; }
             main() { return "ok"; }
         """,
                 )

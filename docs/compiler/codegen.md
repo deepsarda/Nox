@@ -534,13 +534,13 @@ int result = add(x, y);
 ```
     MOV   argStart+0, x_reg       // Copy arg 1
     MOV   argStart+1, y_reg       // Copy arg 2
-    CALL  funcId, argStart        // Push frame, jump to function
+    CALL  [subOp] funcId, primArgStart, refArgStart // Push frame, jump to function
     MOV   dest_reg, retReg        // Extract return value
 ```
 
 The `CALL` instruction:
 1. Pushes a new call frame (saves `bp`, `bpRef`, return `pc`)
-2. Slides `bp` and `bpRef` forward by the caller's frame size
+2. Slides `bp` and `bpRef` forward by the caller's frame size (`primArgStart` and `refArgStart`)
 3. Arguments are already in the new frame's register 0, 1, 2, ...
 4. Jumps to the function's `entryPC`
 
@@ -552,10 +552,10 @@ double root = Math.sqrt(144);
 
 ```
     LDI   arg_reg, 144
-    SCALL dest_reg, funcId, arg_reg
+    SCALL [subOp] funcId, primArgStart, refArgStart
 ```
 
-`SCALL` invokes the linked `NoxNativeFunc` directly via `MethodHandle`. No frame push, the Kotlin function runs on the same coroutine.
+`SCALL` invokes the linked `NoxNativeFunc` directly via `MethodHandle`. No frame push, the Kotlin function runs on the same coroutine. `subOp` determines if the result is primitive (1) or reference (0).
 
 ### Method Call (Resolution-Dependent)
 

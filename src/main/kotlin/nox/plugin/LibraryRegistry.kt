@@ -99,7 +99,7 @@ class LibraryRegistry {
         methodName: String,
     ): CallTarget? {
         // Direct type match (e.g. string.upper(), json.size())
-        builtinMethods[targetType.name]?.get(methodName)?.let { return it }
+        builtinMethods[targetType.toString()]?.get(methodName)?.let { return it }
         // Struct types can call json methods (implicit upcast)
         if (targetType.isStructType()) {
             builtinMethods["json"]?.get(methodName)?.let { return it }
@@ -124,12 +124,12 @@ class LibraryRegistry {
     fun lookupTypeMethod(
         targetType: TypeRef,
         methodName: String,
-    ): CallTarget? = typeMethods[targetType.name]?.get(methodName)
+    ): CallTarget? = typeMethods[targetType.toString()]?.get(methodName)
 
     /** All built-in method names for [targetType] (for diagnostics). */
     fun getBuiltinMethodNames(targetType: TypeRef): Set<String>? {
         val names = mutableSetOf<String>()
-        builtinMethods[targetType.name]?.keys?.let { names.addAll(it) }
+        builtinMethods[targetType.toString()]?.keys?.let { names.addAll(it) }
         if (targetType.isStructType()) builtinMethods["json"]?.keys?.let { names.addAll(it) }
         for (template in templates) {
             if (template.targetTypeStr != null && targetType.match(template.targetTypeStr) != null) {
@@ -140,7 +140,7 @@ class LibraryRegistry {
     }
 
     /** All type-bound conversion method names for [targetType] (for diagnostics). */
-    fun getTypeMethodNames(targetType: TypeRef): Set<String>? = typeMethods[targetType.name]?.keys
+    fun getTypeMethodNames(targetType: TypeRef): Set<String>? = typeMethods[targetType.toString()]?.keys
 
     /** Look up a linked native function by SCALL name (for VM dispatch). */
     fun lookupNativeFunc(scallName: String): NoxNativeFunc? {

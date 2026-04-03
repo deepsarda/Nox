@@ -16,50 +16,60 @@
 ;  Function: sum
 ;    Entry PC:   0
 ;    Params:     1
-;    Frame:      pMem=6  rMem=2
+;    Frame:      pMem=6  rMem=3
 
 .func sum
-  ; params: p0=total
+  ; params: r0=vals
   ;
   ; line 3  int total = 0;
-  0000:  LDI       p0, 0                       ; total:p0 = 0
+  0000:  LDI       p1, 0                       ; total:p1 = 0
   ;
   ; line 4  foreach (int v in vals) {
   0001:  MOVR      r1, r0                      ; r1 = vals:r0
-  0002:  LDI       p1, 0                       ; p1 = 0
-  0003:  MOVR      r5, r1                      ; r5 = r1
-  0004:  SCALL     p2, __T[]_length!int, p5    ; p2 = __T[]_length!int(p5...)
+  0002:  LDI       p2, 0                       ; p2 = 0
+  0003:  MOVR      r2, r1                      ; r2 = r1
+  0004:  SCALL     __T[]_length!int, p6, r2    ; p6 = scall __T[]_length!int(p7..., r2...)
+  0005:  MOV       p3, p6                      ; p3 = p6
   .loop_start_1:
-  0005:  ILT       p3, p1, p2                  ; p3 = p1 < p2
-  0006:  JIF       p3, @0012                   ; if p3==0 -> loop_exit_1
-  0007:  AGET_IDX  r4, r1, p1                  ; r4 = r1[p1]
+  0006:  ILT       p4, p2, p3                  ; p4 = p2 < p3
+  0007:  JIF       p4, @0012                   ; if p4==0 -> loop_exit_1
+  0008:  AGET_IDX  r5, r1, p2                  ; r5 = r1[p2]
   ;
   ; line 5  total = total + v;
-  0008:  IADD      p0, p0, p5                  ; total:p0 = total:p0 + p5
+  0009:  IADD      p1, p1, p5                  ; total:p1 = total:p1 + v:p5
   ;
   ; line 4  foreach (int v in vals) {
   .loop_update_1:
-  0009:  KILL_REF  r4                          ; r4 = null (GC)
-  0010:  IINC      p1                          ; p1 = p1 + 1
-  0011:  JMP       @0005                       ; -> loop_start_1
+  0010:  IINC      p2                          ; p2 = p2 + 1
+  0011:  JMP       @0006                       ; -> loop_start_1
   ;
   ; line 7  return total;
   .loop_exit_1:
   0012:  KILL_REF  r0                          ; vals:r0 = null (GC)
-  0013:  RET       p1                          ; return p1
+  0013:  KILL_REF  r2                          ; r2 = null (GC)
+  0014:  RET       p1                          ; return total:p1
 
 ;  Function: main
-;    Entry PC:   14
+;    Entry PC:   15
 ;    Params:     0
-;    Frame:      pMem=2  rMem=0
+;    Frame:      pMem=3  rMem=2
 
 .func main
   ;
   ; line 11  return sum(1, 2, 3, 4);
-  0014:  LDI       p1, 1                       ; p1 = 1
-  0015:  CALL      sum, p1                     ; call sum(p1...)
-  0016:  MOV       p0, p1                      ; p0 = p1
-  0017:  RET       p0                          ; return p0
+  0015:  NEW_ARRAY r1                          ; r1 = []
+  0016:  LDI       p2, 1                       ; p2 = 1
+  0017:  ARR_PUSH  SET_INT, r1, p2             ; r1.push(p2)
+  0018:  LDI       p2, 2                       ; p2 = 2
+  0019:  ARR_PUSH  SET_INT, r1, p2             ; r1.push(p2)
+  0020:  LDI       p2, 3                       ; p2 = 3
+  0021:  ARR_PUSH  SET_INT, r1, p2             ; r1.push(p2)
+  0022:  LDI       p2, 4                       ; p2 = 4
+  0023:  ARR_PUSH  SET_INT, r1, p2             ; r1.push(p2)
+  0024:  CALL      sum, p1, r1                 ; p1 = call sum(p2..., r1...)
+  0025:  MOV       p0, p1                      ; p0 = p1
+  0026:  KILL_REF  r1                          ; r1 = null (GC)
+  0027:  RET       p0                          ; return p0
 
 
 ; Exception Table
@@ -74,8 +84,8 @@
   modules:      1
   init_blocks:  0
   functions:    2
-  instructions: 18
+  instructions: 28
   constants:    2
   exceptions:   0
   globals:      0p + 0r
-  bytecode:     144 bytes
+  bytecode:     224 bytes

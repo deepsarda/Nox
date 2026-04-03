@@ -3,9 +3,9 @@ type Inner {
     string name;
 }
 type Outer {
-    Inner in;
+    Inner innerObj;
 }
 main() {
-    Outer o = { in: { name: "inner" } };
-    return o.in.name;
+    Outer o = { innerObj: { name: "inner" } };
+    return o.innerObj.name;
 }

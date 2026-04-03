@@ -1,4 +1,4 @@
-// @test:yields ["building", "testing", "failed"]
+// @test:yields [building, testing, failed]
 // @test:result "ok"
 
 main() {

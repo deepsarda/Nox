@@ -15,19 +15,19 @@
 ;  Function: add
 ;    Entry PC:   0
 ;    Params:     2
-;    Frame:      pMem=3  rMem=0
+;    Frame:      pMem=4  rMem=0
 
 .func add
-  ; params: p0=a  p1=b
+  ; params: p1=a  p2=b
   ;
   ; line 3  return a + b;
-  0000:  IADD      p2, p0, p1                  ; p2 = a:p0 + b:p1
-  0001:  RET       p2                          ; return p2
+  0000:  IADD      p3, p1, p2                  ; p3 = a:p1 + b:p2
+  0001:  RET       p3                          ; return p3
 
 ;  Function: main
 ;    Entry PC:   2
 ;    Params:     0
-;    Frame:      pMem=3  rMem=0
+;    Frame:      pMem=6  rMem=1
 
 .func main
   ;
@@ -35,9 +35,9 @@
   0002:  LDI       p0, 40                      ; a:p0 = 40
   ;
   ; line 8  return a.add(2);
-  0003:  MOV       p2, p0                      ; p2 = a:p0
-  0004:  LDI       p3, 2                       ; p3 = 2
-  0005:  CALL      add, p2                     ; call add(p2...)
+  0003:  MOV       p3, p0                      ; p3 = a:p0
+  0004:  LDI       p4, 2                       ; p4 = 2
+  0005:  CALL      add, p2, r1                 ; p2 = call add(p3..., r1...)
   0006:  MOV       p1, p2                      ; p1 = p2
   0007:  RET       p1                          ; return p1
 

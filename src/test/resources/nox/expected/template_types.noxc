@@ -16,7 +16,7 @@
 ;  Function: main
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=2  rMem=2
+;    Frame:      pMem=2  rMem=3
 
 .func main
   ;
@@ -27,14 +27,14 @@
   0001:  LDC       p1, #0                      ; d:p1 = 3.14
   ;
   ; line 5  return `${i} ${d}`;
-  0002:  I2S       r1, p0                      ; r1 = toString(i:p0)
-  0003:  MOVR      r0, r1                      ; r0 = r1
-  0004:  LDC       r1, #1                      ; r1 = " "
-  0005:  SCONCAT   r0, r0, r1                  ; r0 = r0 + r1
-  0006:  D2S       r1, p1                      ; r1 = toString(d:p1)
-  0007:  SCONCAT   r0, r0, r1                  ; r0 = r0 + r1
-  0008:  KILL_REF  r1                          ; r1 = null (GC)
-  0009:  RET       r0                          ; return r0
+  0002:  I2S       r2, p0                      ; r2 = toString(i:p0)
+  0003:  MOVR      r1, r2                      ; r1 = r2
+  0004:  LDC       r2, #1                      ; r2 = " "
+  0005:  SCONCAT   r1, r1, r2                  ; r1 = r1 + r2
+  0006:  D2S       r2, p1                      ; r2 = toString(d:p1)
+  0007:  SCONCAT   r1, r1, r2                  ; r1 = r1 + r2
+  0008:  KILL_REF  r2                          ; r2 = null (GC)
+  0009:  RET       r1                          ; return r1
 
 
 ; Exception Table

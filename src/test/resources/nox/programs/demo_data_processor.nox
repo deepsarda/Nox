@@ -8,17 +8,17 @@ type Item {
 main() {
     json data = Json.parse("[]");
     try {
-        data = Http.getJson("http://localhost/dummy");
+        data = Http.getJson("https://localhost/dummy");
     } catch (err) {
         data = Json.parse("[{\"id\":\"a\",\"value\":10}, {\"id\":\"b\",\"value\":20}]");
     }
-    
+
     Item[] items = data as Item[];
     int sum = 0;
     foreach (Item item in items) {
         sum = sum + item.value;
     }
-    
+
     if (sum == 30) {
         return "ok";
     }

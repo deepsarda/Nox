@@ -98,7 +98,7 @@ Each operand can carry flags to modify its interpretation:
 | `JMP` | `JMP target` | Unconditional jump: `pc = target` |
 | `JIF` | `JIF A, target` | Jump if false: `if (pMem[A] == 0) pc = target` |
 | `JIT` | `JIT A, target` | Jump if true: `if (pMem[A] != 0) pc = target` |
-| `CALL` | `CALL funcId, argStart` | Push frame, slide `bp`, jump to function |
+| `CALL` | `CALL [subOp] funcId, primArgStart, refArgStart` | Push frame, slide `bp` and `bpRef`, jump to function. `subOp` indicates return type (0=REF, 1=PRIM, 2=VOID). |
 | `RET` | `RET isVoid, reg` | Returns from function. If `isVoid=0`, copies `reg` to the caller's result slot. |
 | `RET` | `RET isVoid, typeTag, reg` | Returns from function. If `isVoid=0`, copies `reg` to caller's result slot. `typeTag` (0=INT, 1=DBL, 2=BOOL, 3=REF) used for conversion in `main`. |
 
@@ -106,7 +106,7 @@ Each operand can carry flags to modify its interpretation:
 
 | Opcode | Syntax | Description |
 |---|---|---|
-| `SCALL` | `SCALL A, funcId, argStart` | System call via FFI. Result in register `A`. |
+| `SCALL` | `SCALL [subOp] funcId, primArgStart, refArgStart` | System call via FFI. `subOp` determines result type: primitive (1) or reference (0). Result overwrites the first argument register (`primArgStart` or `refArgStart`). |
 
 ### Struct Operations
 
@@ -122,11 +122,11 @@ Each operand can carry flags to modify its interpretation:
 |---|---|---|
 | `HMOD` | `HMOD [SubOp] A, key, val` | Host Modify: modify a property on a host object |
 | `HACC` | `HACC [SubOp] A, B, key` | Host Access: read a property from a host object |
-| `AGET_KEY` | `AGET_KEY A, B, key` | Get a named property from object `B`, store in `A` |
-| `AGET_IDX` | `AGET_IDX A, B, C` | Get element at index `C` from collection `B`, store in `A` |
-| `AGET_PATH` | `AGET_PATH A, B, path` | Traverse a cached static path on object `B`, store in `A` |
-| `ASET_KEY` | `ASET_KEY A, key, val` | Set a named property on object `A` |
-| `ASET_IDX` | `ASET_IDX A, B, C` | Set element at index `B` in collection `A` to value `C` |
+| `AGET_KEY` | `AGET_KEY [SubOp] A, B, key` | Get a named property from object `B`, store in `A` |
+| `AGET_IDX` | `AGET_IDX [SubOp] A, B, C` | Get element at index `C` from collection `B`, store in `A` |
+| `AGET_PATH` | `AGET_PATH [SubOp] A, B, path` | Traverse a cached static path on object `B`, store in `A` |
+| `ASET_KEY` | `ASET_KEY [SubOp] A, key, val` | Set a named property on object `A` |
+| `ASET_IDX` | `ASET_IDX [SubOp] A, B, C` | Set element at index `B` in collection `A` to value `C` |
 | `SCONCAT` | `SCONCAT A, B, C` | String concat: `rMem[A] = rMem[B] + rMem[C]` |
 
 ### Streaming & Output

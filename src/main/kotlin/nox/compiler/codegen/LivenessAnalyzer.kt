@@ -1,7 +1,6 @@
 package nox.compiler.codegen
 
 import nox.compiler.ast.*
-import nox.compiler.types.AssignOp
 import nox.compiler.types.ParamSymbol
 import nox.compiler.types.Symbol
 import nox.compiler.types.VarSymbol
@@ -17,10 +16,14 @@ class LivenessAnalyzer {
     // The set of symbols currently "live" (referenced moving backwards from the end of the block).
     private val live = mutableSetOf<Symbol>()
 
+    // Whether to record nodes that can be freed. Set to false during fixed-point iterations.
+    private var recordFrees = true
+
     /** Run the analyzer on a function definition. */
     fun analyze(func: FuncDef) {
         live.clear()
         freeAtNode.clear()
+        recordFrees = true
         analyzeBlock(func.body)
     }
 
@@ -28,6 +31,7 @@ class LivenessAnalyzer {
     fun analyze(main: MainDef) {
         live.clear()
         freeAtNode.clear()
+        recordFrees = true
         analyzeBlock(main.body)
     }
 
@@ -40,21 +44,22 @@ class LivenessAnalyzer {
     private fun analyzeStmt(stmt: Stmt) {
         when (stmt) {
             is VarDeclStmt -> {
+                val sym = stmt.resolvedSymbol
+                if (sym != null && sym !in live) {
+                    if (recordFrees) {
+                        freeAtNode.getOrPut(stmt) { mutableListOf() }.add(sym)
+                    }
+                }
+
                 // Initialize value
                 analyzeExpr(stmt.initializer, stmt)
 
                 // Definition: Variable is killed (born going forward) so it is no longer live going backward.
-                stmt.resolvedSymbol?.let { live.remove(it) }
+                sym?.let { live.remove(it) }
             }
 
             is AssignStmt -> {
-                if (stmt.target is IdentifierExpr && stmt.op == AssignOp.ASSIGN) {
-                    // Definition: Simple assignment overwrites. Kill the target.
-                    stmt.target.resolvedSymbol?.let { live.remove(it) }
-                } else {
-                    // Compound assignment reads the target as well as writes it.
-                    analyzeExpr(stmt.target, stmt)
-                }
+                analyzeExpr(stmt.target, stmt)
                 analyzeExpr(stmt.value, stmt)
             }
 
@@ -102,6 +107,8 @@ class LivenessAnalyzer {
                 val liveAfterLoop = live.toSet()
                 var currentLiveIn = liveAfterLoop.toSet()
                 var iteration = 0
+                val wasRecording = recordFrees
+                recordFrees = false
                 do {
                     val previousLiveIn = currentLiveIn
 
@@ -117,12 +124,26 @@ class LivenessAnalyzer {
                     currentLiveIn = live.toSet()
                     iteration++
                 } while (currentLiveIn != previousLiveIn && iteration < 10)
+
+                recordFrees = wasRecording
+                if (recordFrees) {
+                    live.clear()
+                    live.addAll(liveAfterLoop)
+                    live.addAll(currentLiveIn)
+                    analyzeBlock(stmt.body)
+                    analyzeExpr(stmt.condition, stmt.condition)
+                } else {
+                    live.clear()
+                    live.addAll(currentLiveIn)
+                }
             }
 
             is ForStmt -> {
                 val liveAfterLoop = live.toSet()
                 var currentLiveIn = liveAfterLoop.toSet()
                 var iteration = 0
+                val wasRecording = recordFrees
+                recordFrees = false
                 do {
                     val previousLiveIn = currentLiveIn
                     live.clear()
@@ -137,6 +158,19 @@ class LivenessAnalyzer {
                     iteration++
                 } while (currentLiveIn != previousLiveIn && iteration < 10)
 
+                recordFrees = wasRecording
+                if (recordFrees) {
+                    live.clear()
+                    live.addAll(liveAfterLoop)
+                    live.addAll(currentLiveIn)
+                    stmt.update?.let { analyzeStmt(it) }
+                    analyzeBlock(stmt.body)
+                    stmt.condition?.let { analyzeExpr(it, it) }
+                } else {
+                    live.clear()
+                    live.addAll(currentLiveIn)
+                }
+
                 stmt.init?.let { analyzeStmt(it) }
             }
 
@@ -144,6 +178,8 @@ class LivenessAnalyzer {
                 val liveAfterLoop = live.toSet()
                 var currentLiveIn = liveAfterLoop.toSet()
                 var iteration = 0
+                val wasRecording = recordFrees
+                recordFrees = false
                 do {
                     val previousLiveIn = currentLiveIn
                     live.clear()
@@ -155,6 +191,17 @@ class LivenessAnalyzer {
                     currentLiveIn = live.toSet()
                     iteration++
                 } while (currentLiveIn != previousLiveIn && iteration < 10)
+
+                recordFrees = wasRecording
+                if (recordFrees) {
+                    live.clear()
+                    live.addAll(liveAfterLoop)
+                    live.addAll(currentLiveIn)
+                    analyzeBlock(stmt.body)
+                } else {
+                    live.clear()
+                    live.addAll(currentLiveIn)
+                }
 
                 analyzeExpr(stmt.iterable, stmt.iterable)
             }
@@ -197,7 +244,9 @@ class LivenessAnalyzer {
                 val sym = expr.resolvedSymbol
                 if (sym != null && (sym is VarSymbol || sym is ParamSymbol)) {
                     if (sym !in live) {
-                        freeAtNode.getOrPut(expr) { mutableListOf() }.add(sym)
+                        if (recordFrees) {
+                            freeAtNode.getOrPut(expr) { mutableListOf() }.add(sym)
+                        }
                         live.add(sym)
                     }
                 }

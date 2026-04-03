@@ -147,13 +147,18 @@ class StatementEmitter(
                         r
                     }
 
-                ctx.emit(Opcode.ASET_IDX, 0, tReg, iReg, valReg, line)
+                val subOp = OpcodeSelector.subOpForSet(valType)
+                ctx.emit(Opcode.ASET_IDX, subOp, tReg, iReg, valReg, line)
                 if (valReg != valResolved) ctx.free(valType, valReg)
                 ctx.free(idxType, iReg)
                 ctx.free(targetType2, tReg)
             }
 
-            else -> { // unsupported lvalue
+            else -> {
+                ctx.errors.report(
+                    stmt.target.loc,
+                    "Unsupported assignment target",
+                )
             }
         }
     }
@@ -163,34 +168,125 @@ class StatementEmitter(
         line: Int,
     ) {
         val targetType = stmt.target.resolvedType ?: TypeRef.INT
-        val reg = ctx.resolveRegister(stmt.target) ?: return
         val valType = stmt.value.resolvedType ?: TypeRef.INT
 
-        val valResolved = ctx.resolveRegister(stmt.value)
-        val valReg =
-            if (valResolved != null) {
-                ctx.freeNodeRegisters(stmt.value)
-                valResolved
-            } else {
-                val r = ctx.alloc(valType)
-                ctx.emitExpr(stmt.value, r, line)
-                r
+        when (val target = stmt.target) {
+            is IdentifierExpr -> {
+                val reg = ctx.resolveRegister(target) ?: return
+                val valResolved = ctx.resolveRegister(stmt.value)
+                val valReg =
+                    if (valResolved != null) {
+                        ctx.freeNodeRegisters(stmt.value)
+                        valResolved
+                    } else {
+                        val r = ctx.alloc(valType)
+                        ctx.emitExpr(stmt.value, r, line)
+                        r
+                    }
+
+                // Optimization: += to IINCN, -= to IDECN
+                if (stmt.op == AssignOp.ADD_ASSIGN && targetType == TypeRef.INT) {
+                    ctx.emit(Opcode.IINCN, 0, reg, valReg, 0, line)
+                } else if (stmt.op == AssignOp.SUB_ASSIGN && targetType == TypeRef.INT) {
+                    ctx.emit(Opcode.IDECN, 0, reg, valReg, 0, line)
+                } else if (stmt.op == AssignOp.ADD_ASSIGN && targetType == TypeRef.DOUBLE) {
+                    ctx.emit(Opcode.DINCN, 0, reg, valReg, 0, line)
+                } else if (stmt.op == AssignOp.SUB_ASSIGN && targetType == TypeRef.DOUBLE) {
+                    ctx.emit(Opcode.DDECN, 0, reg, valReg, 0, line)
+                } else {
+                    val opcode = OpcodeSelector.compoundAssignOpcode(stmt.op, targetType)
+                    ctx.emit(opcode, 0, reg, reg, valReg, line)
+                }
+                if (valReg != valResolved) ctx.free(valType, valReg)
             }
 
-        // Optimization: += to IINCN, -= to IDECN
-        if (stmt.op == AssignOp.ADD_ASSIGN && targetType == TypeRef.INT) {
-            ctx.emit(Opcode.IINCN, 0, reg, valReg, 0, line)
-        } else if (stmt.op == AssignOp.SUB_ASSIGN && targetType == TypeRef.INT) {
-            ctx.emit(Opcode.IDECN, 0, reg, valReg, 0, line)
-        } else if (stmt.op == AssignOp.ADD_ASSIGN && targetType == TypeRef.DOUBLE) {
-            ctx.emit(Opcode.DINCN, 0, reg, valReg, 0, line)
-        } else if (stmt.op == AssignOp.SUB_ASSIGN && targetType == TypeRef.DOUBLE) {
-            ctx.emit(Opcode.DDECN, 0, reg, valReg, 0, line)
-        } else {
-            val opcode = OpcodeSelector.compoundAssignOpcode(stmt.op, targetType)
-            ctx.emit(opcode, 0, reg, reg, valReg, line)
+            is FieldAccessExpr -> {
+                val objType = target.target.resolvedType ?: TypeRef.JSON
+                val objReg = ctx.alloc(objType)
+                ctx.emitExpr(target.target, objReg, line)
+
+                val getSubOp = OpcodeSelector.subOpForGet(targetType)
+                val keyIdx = ctx.pool.add(target.fieldName)
+                val currentValReg = ctx.alloc(targetType)
+                ctx.emit(Opcode.HACC, getSubOp, currentValReg, objReg, keyIdx, line)
+
+                val valResolved = ctx.resolveRegister(stmt.value)
+                val valReg =
+                    if (valResolved != null) {
+                        ctx.freeNodeRegisters(stmt.value)
+                        valResolved
+                    } else {
+                        val r = ctx.alloc(valType)
+                        ctx.emitExpr(stmt.value, r, line)
+                        r
+                    }
+
+                val resultReg = ctx.alloc(targetType)
+                if (stmt.op == AssignOp.ADD_ASSIGN && targetType == TypeRef.STRING) {
+                    ctx.emit(Opcode.SCONCAT, 0, resultReg, currentValReg, valReg, line)
+                } else {
+                    val opcode = OpcodeSelector.compoundAssignOpcode(stmt.op, targetType)
+                    ctx.emit(opcode, 0, resultReg, currentValReg, valReg, line)
+                }
+
+                val setSubOp = OpcodeSelector.subOpForSet(targetType)
+                ctx.emit(Opcode.HMOD, setSubOp, objReg, keyIdx, resultReg, line)
+
+                ctx.free(targetType, resultReg)
+                if (valReg != valResolved) ctx.free(valType, valReg)
+                ctx.free(targetType, currentValReg)
+                ctx.free(objType, objReg)
+            }
+
+            is IndexAccessExpr -> {
+                val objType = target.target.resolvedType ?: TypeRef.JSON
+                val objReg = ctx.alloc(objType)
+                ctx.emitExpr(target.target, objReg, line)
+
+                val idxType = target.index.resolvedType ?: TypeRef.INT
+                val idxReg = ctx.alloc(idxType)
+                ctx.emitExpr(target.index, idxReg, line)
+
+                val getSubOp = OpcodeSelector.subOpForGet(targetType)
+                val currentValReg = ctx.alloc(targetType)
+                ctx.emit(Opcode.AGET_IDX, getSubOp, currentValReg, objReg, idxReg, line)
+
+                val valResolved = ctx.resolveRegister(stmt.value)
+                val valReg =
+                    if (valResolved != null) {
+                        ctx.freeNodeRegisters(stmt.value)
+                        valResolved
+                    } else {
+                        val r = ctx.alloc(valType)
+                        ctx.emitExpr(stmt.value, r, line)
+                        r
+                    }
+
+                val resultReg = ctx.alloc(targetType)
+                if (stmt.op == AssignOp.ADD_ASSIGN && targetType == TypeRef.STRING) {
+                    ctx.emit(Opcode.SCONCAT, 0, resultReg, currentValReg, valReg, line)
+                } else {
+                    val opcode = OpcodeSelector.compoundAssignOpcode(stmt.op, targetType)
+                    ctx.emit(opcode, 0, resultReg, currentValReg, valReg, line)
+                }
+
+                val setSubOp = OpcodeSelector.subOpForSet(targetType)
+                ctx.emit(Opcode.ASET_IDX, setSubOp, objReg, idxReg, resultReg, line)
+
+                ctx.free(targetType, resultReg)
+                if (valReg != valResolved) ctx.free(valType, valReg)
+                ctx.free(targetType, currentValReg)
+                ctx.free(idxType, idxReg)
+                ctx.free(objType, objReg)
+            }
+
+            else -> {
+                ctx.errors.report(
+                    stmt.target.loc,
+                    "Unsupported compound assignment target",
+                )
+            }
         }
-        if (valReg != valResolved) ctx.free(valType, valReg)
     }
 
     private fun emitIncrement(stmt: IncrementStmt) {
@@ -359,11 +455,17 @@ class StatementEmitter(
         val lenTarget =
             registry.lookupBuiltinMethod(iterType, "length")
                 ?: error("No 'length' method found on type '$iterType'")
-        val lenArgStart = ctx.allocator.allocTempPrim()
-        ctx.emit(Opcode.MOVR, 0, lenArgStart, arrReg, 0, line)
+        
+        val lenPrimArgStart = ctx.allocator.allocArgBlockPrim(0)
+        val lenRefArgStart = ctx.allocator.allocArgBlockRef(1)
+        ctx.emit(Opcode.MOVR, 0, lenRefArgStart, arrReg, 0, line)
+        
         val lenFuncIdx = ctx.pool.add(lenTarget.name)
-        ctx.emit(Opcode.SCALL, 0, lenReg, lenFuncIdx, lenArgStart, line)
-        ctx.allocator.freeTempPrim(lenArgStart)
+        ctx.emit(Opcode.SCALL, 1, lenFuncIdx, lenPrimArgStart, lenRefArgStart, line)
+        ctx.emit(Opcode.MOV, 0, lenReg, lenPrimArgStart, 0, line)
+        
+        ctx.allocator.freeArgBlockPrim(lenPrimArgStart, 0)
+        ctx.allocator.freeArgBlockRef(lenRefArgStart, 1)
 
         val seq = ++ctx.labelSeq
         ctx.addLabel("loop_start_$seq")
@@ -391,7 +493,6 @@ class StatementEmitter(
         val updatePc = ctx.pc
         loopCtx.continuePatches.forEach { ctx.patch(it, updatePc) }
 
-        ctx.emit(Opcode.KILL_REF, 0, elemReg, 0, 0, line)
         ctx.emit(Opcode.IINC, 0, idxReg, 0, 0, line)
         ctx.emit(Opcode.JMP, 0, loopStart, 0, 0)
 
@@ -438,7 +539,13 @@ class StatementEmitter(
             ctx.emit(Opcode.RET, 0, 1, 0, 0, line) // A=1 (void)
         } else {
             val type = stmt.value.resolvedType
-                ?: throw Exception("UNKNOWN TYPE FOR RETURN") // TODO: Make this a compiler error
+            if (type == null) {
+                ctx.errors.report(
+                    stmt.value.loc,
+                    "Unknown type for return",
+                )
+                return
+            }
 
             val reg = ctx.resolveRegister(stmt.value)
             val retReg =

@@ -323,13 +323,15 @@ class StatementResolver(
         }
 
         val feScope = scope.child()
-        if (!feScope.define(stmt.elementName, VarSymbol(stmt.elementName, stmt.elementType, feScope.depth))) {
+        val sym = VarSymbol(stmt.elementName, stmt.elementType, feScope.depth)
+        if (!feScope.define(stmt.elementName, sym)) {
             errors.report(
                 stmt.loc,
                 "Variable '${stmt.elementName}' is already declared in this scope",
                 suggestion = "Choose a different name for the foreach element variable",
             )
         }
+        stmt.resolvedSymbol = sym
         resolveBlock(feScope, stmt.body, expectedReturn)
     }
 

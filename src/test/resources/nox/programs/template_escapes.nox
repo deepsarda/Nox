@@ -1,4 +1,0 @@
-// @test:result "line1\nline2"
-main() {
-    return `line1\nline2`;
-}

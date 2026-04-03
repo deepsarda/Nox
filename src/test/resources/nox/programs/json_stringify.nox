@@ -1,5 +1,5 @@
 // @test:result "{"k":"v"}"
 main() {
     json j = { k: "v" };
-    return Json.stringify(j);
+    return Json.stringify(j, false);
 }

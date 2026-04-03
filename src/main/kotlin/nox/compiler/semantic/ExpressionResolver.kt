@@ -44,7 +44,7 @@ class ExpressionResolver(
                 is DoubleLiteralExpr -> TypeRef.DOUBLE
                 is BoolLiteralExpr -> TypeRef.BOOLEAN
                 is StringLiteralExpr -> TypeRef.STRING
-                is NullLiteralExpr -> null // Type inferred from context
+                is NullLiteralExpr -> TypeRef.NULL
                 is TemplateLiteralExpr -> resolveTemplate(scope, expr)
 
                 // Composites

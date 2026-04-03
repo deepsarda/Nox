@@ -26,13 +26,14 @@ fun interface NoxNativeFunc {
      * @param destReg  register where the result should be stored
      */
     @Throws(Throwable::class)
-    fun invoke(
+    suspend fun invoke(
         context: RuntimeContext,
         pMem: LongArray,
         rMem: Array<Any?>,
         bp: Int,
         bpRef: Int,
-        argStart: Int,
+        primArgStart: Int,
+        refArgStart: Int,
         destReg: Int,
     )
 }

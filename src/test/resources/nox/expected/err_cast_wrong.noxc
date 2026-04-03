@@ -1,0 +1,55 @@
+;  Nox Bytecode Disassembly
+;  Source:   err_cast_wrong.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "a"
+  #1   type  Point { x: int, y: int }
+  #2   str   "x"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=1  rMem=3
+
+.func main
+  ;
+  ; line 4  json j = { a: 4 };
+  0000:  NEW_OBJ   r1                          ; j:r1 = {}
+  0001:  LDI       p0, 4                       ; p0 = 4
+  0002:  OBJ_SET   SET_INT, r1, "a", p0        ; j:r1.a = p0
+  ;
+  ; line 5  Point p = j as Point;
+  0003:  CAST_STRUCTr2, r1, #1                  ; p:r2 = j:r1 as Point
+  ;
+  ; line 6  return p.x;
+  0004:  HACC      GET_INT, r0, r2, "x"        ; r0 = p:r2.x
+  0005:  KILL_REF  r1                          ; j:r1 = null (GC)
+  0006:  KILL_REF  r2                          ; p:r2 = null (GC)
+  0007:  RET       p0                          ; return p0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 8
+  constants:    3
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     64 bytes

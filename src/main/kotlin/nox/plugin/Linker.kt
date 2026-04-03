@@ -6,6 +6,7 @@ import nox.plugin.annotations.NoxTypeMethod
 import nox.compiler.types.TypeRef
 import nox.runtime.RuntimeContext
 import java.lang.invoke.MethodHandles
+import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.findAnnotation
@@ -79,7 +80,7 @@ object Linker {
         val returnDesc = ReturnDescriptor.from(function, typeMapping)
 
         // Build the NoxNativeFunc adapter
-        val adapter = buildAdapter(handle, instance, isStatic, paramDescriptors, returnDesc)
+        val adapter = buildAdapter(handle, instance, isStatic, function.isSuspend, paramDescriptors, returnDesc)
 
         return LinkedFunc(scallName, adapter)
     }
@@ -95,13 +96,14 @@ object Linker {
         handle: java.lang.invoke.MethodHandle,
         instance: Any?,
         isStatic: Boolean,
+        isSuspend: Boolean,
         params: List<ParamDescriptor>,
         returnDesc: ReturnDescriptor,
     ): NoxNativeFunc {
         // Count only the VM-visible args (skip RuntimeContext injection)
         val vmParams = params.filter { !it.isContextInjection }
 
-        return NoxNativeFunc { context, pMem, rMem, bp, bpRef, argStart, destReg ->
+        return NoxNativeFunc { context, pMem, rMem, bp, bpRef, primArgStart, refArgStart, destReg ->
             // Build the argument array
             val args = mutableListOf<Any?>()
             if (instance != null && !isStatic) args.add(instance)
@@ -118,12 +120,12 @@ object Linker {
 
                 when (param.bank) {
                     RegisterBank.PRIMITIVE -> {
-                        val raw = pMem[bp + argStart + primArgIdx]
+                        val raw = pMem[bp + primArgStart + primArgIdx]
                         args.add(param.extract(raw))
                         primArgIdx++
                     }
                     RegisterBank.REFERENCE -> {
-                        val raw = rMem[bpRef + argStart + refArgIdx]
+                        val raw = rMem[bpRef + refArgStart + refArgIdx]
                         args.add(raw)
                         refArgIdx++
                     }
@@ -131,7 +133,15 @@ object Linker {
             }
 
             // Invoke the target method
-            val result = handle.invokeWithArguments(args)
+            val result =
+                if (isSuspend) {
+                    suspendCoroutineUninterceptedOrReturn { cont ->
+                        args.add(cont)
+                        handle.invokeWithArguments(args)
+                    }
+                } else {
+                    handle.invokeWithArguments(args)
+                }
 
             // Store result
             when (returnDesc.bank) {
@@ -249,16 +259,16 @@ object Linker {
         fun pack(value: Any?): Long =
             when {
                 value == null -> 0L
-                mappedType?.name == "int" -> (value as Int).toLong()
-                mappedType?.name == "double" -> java.lang.Double.doubleToRawLongBits(value as Double)
+                mappedType?.name == "int" -> (value as Number).toLong()
+                mappedType?.name == "double" -> java.lang.Double.doubleToRawLongBits((value as Number).toDouble())
                 mappedType?.name == "boolean" -> if (value as Boolean) 1L else 0L
-                kotlinType == Long::class.java || kotlinType == java.lang.Long::class.java -> value as Long
-                kotlinType == Int::class.java || kotlinType == java.lang.Integer::class.java -> (value as Int).toLong()
+                kotlinType == Long::class.java || kotlinType == java.lang.Long::class.java -> (value as Number).toLong()
+                kotlinType == Int::class.java || kotlinType == java.lang.Integer::class.java -> (value as Number).toLong()
                 kotlinType == Double::class.java || kotlinType == java.lang.Double::class.java ->
-                    java.lang.Double.doubleToRawLongBits(value as Double)
+                    java.lang.Double.doubleToRawLongBits((value as Number).toDouble())
                 kotlinType == Float::class.java || kotlinType == java.lang.Float::class.java ->
                     java.lang.Float
-                        .floatToRawIntBits(value as Float)
+                        .floatToRawIntBits((value as Number).toFloat())
                         .toLong()
                 kotlinType == Boolean::class.java || kotlinType == java.lang.Boolean::class.java ->
                     if (value as Boolean) 1L else 0L

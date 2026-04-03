@@ -1,4 +1,4 @@
-// @test:yields ["a", "b"]
+// @test:yields [a, b]
 // @test:result "c"
 main() {
     yield "a";

@@ -16,31 +16,31 @@
 ;  Function: main
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=0  rMem=2
+;    Frame:      pMem=0  rMem=3
 
 .func main
   ;
   ; line 4  throw "error";
-  0000:  LDC       r0, #0                      ; r0 = "error"
-  0001:  THROW     r0                          ; throw r0
-  0002:  KILL_REF  r0                          ; r0 = null (GC)
+  0000:  LDC       r1, #0                      ; r1 = "error"
+  0001:  THROW     r1                          ; throw r1
+  0002:  KILL_REF  r1                          ; r1 = null (GC)
   0003:  JMP       @0008                       ; -> end
   ;
   ; line 6  return "caught";
   .catch_all:
-  0004:  LDC       r1, #1                      ; r1 = "caught"
-  0005:  KILL_REF  r0                          ; err:r0 = null (GC)
-  0006:  RET       r1                          ; return r1
+  0004:  LDC       r2, #1                      ; r2 = "caught"
+  0005:  KILL_REF  r1                          ; err:r1 = null (GC)
+  0006:  RET       r2                          ; return r2
   0007:  JMP       @0008                       ; -> end
   .end:
-  0008:  KILL_REF  r0                          ; err:r0 = null (GC)
-  0009:  KILL_REF  r1                          ; r1 = null (GC)
+  0008:  KILL_REF  r1                          ; err:r1 = null (GC)
+  0009:  KILL_REF  r2                          ; r2 = null (GC)
 
 
 ; Exception Table
 
 .exceptions
-  [0000..0003] ANY                  -> @0004  msg=r0
+  [0000..0003] ANY                  -> @0004  msg=r1
 
 
 ; Summary

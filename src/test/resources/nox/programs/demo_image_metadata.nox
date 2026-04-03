@@ -8,7 +8,7 @@ type Meta {
 main() {
     json arr = Json.parse("[{\"flags\": 1, \"name\": \"a.png\"}, {\"flags\": 2, \"name\": \"b.png\"}, {\"flags\": 3, \"name\": \"c.png\"}]");
     Meta[] images = arr as Meta[];
-    
+
     int count = 0;
     foreach (Meta m in images) {
         if (m.flags == 2) {
@@ -20,9 +20,10 @@ main() {
         }
         count = count + 1;
     }
-    
+
     if (count == 2) {
         return "ok";
     }
+
     return "error";
 }

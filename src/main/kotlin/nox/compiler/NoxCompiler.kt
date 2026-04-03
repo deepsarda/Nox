@@ -5,11 +5,7 @@ import nox.compiler.codegen.CodeGenerator
 import nox.compiler.codegen.CompiledProgram
 import nox.compiler.codegen.NoxcEmitter
 import nox.compiler.parsing.NoxParsing
-import nox.compiler.semantic.ControlFlowValidator
-import nox.compiler.semantic.DeclarationCollector
-import nox.compiler.semantic.ImportResolver
-import nox.compiler.semantic.ResolvedModule
-import nox.compiler.semantic.TypeResolver
+import nox.compiler.semantic.*
 import nox.compiler.types.SymbolTable
 import nox.plugin.LibraryRegistry
 import java.nio.file.Path
@@ -111,7 +107,7 @@ object NoxCompiler {
         program.sourceLines.addAll(source.lines())
 
         // Phase 6: Code Generation
-        val compiledProgram = CodeGenerator(modules, registry).generate(program)
+        val compiledProgram = CodeGenerator(errors, modules, registry).generate(program)
 
         // Phase 7: Disassembly
         val programName = program.headers.firstOrNull { it.key == "name" }?.value ?: "(unnamed)"

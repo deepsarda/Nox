@@ -17,7 +17,7 @@
 ;  Function: main
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=3  rMem=1
+;    Frame:      pMem=3  rMem=2
 
 .func main
   ;
@@ -30,8 +30,8 @@
   0003:  JIF       p1, @0007                   ; if p1==0 -> @0007
   ;
   ; line 5  return "not matched";
-  0004:  LDC       r0, #0                      ; r0 = "not matched"
-  0005:  RET       r0                          ; return r0
+  0004:  LDC       r1, #0                      ; r1 = "not matched"
+  0005:  RET       r1                          ; return r1
   0006:  JMP       @0015                       ; -> @0015
   ;
   ; line 6  } else if (x == 2) {
@@ -40,14 +40,14 @@
   0009:  JIF       p1, @0013                   ; if p1==0 -> @0013
   ;
   ; line 7  return "matched";
-  0010:  LDC       r0, #1                      ; r0 = "matched"
-  0011:  RET       r0                          ; return r0
+  0010:  LDC       r1, #1                      ; r1 = "matched"
+  0011:  RET       r1                          ; return r1
   0012:  JMP       @0015                       ; -> @0015
   ;
   ; line 9  return "else";
-  0013:  LDC       r0, #2                      ; r0 = "else"
-  0014:  RET       r0                          ; return r0
-  0015:  KILL_REF  r0                          ; r0 = null (GC)
+  0013:  LDC       r1, #2                      ; r1 = "else"
+  0014:  RET       r1                          ; return r1
+  0015:  KILL_REF  r1                          ; r1 = null (GC)
 
 
 ; Exception Table

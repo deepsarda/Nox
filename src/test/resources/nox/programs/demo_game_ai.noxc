@@ -1,6 +1,7 @@
 ;  Nox Bytecode Disassembly
 ;  Source:   demo_game_ai.nox
 ;  Program:  "(unnamed)"
+;  Compiled: 2026-04-03T18:52:36.284405+05:30
 ;  Modules:  1 (main)
 
 
@@ -24,7 +25,7 @@
 ;  Function: main
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=8  rMem=4
+;    Frame:      pMem=8  rMem=3
 
 .func main
   ;
@@ -61,17 +62,17 @@
   ; line 16  if (dist == 13.0) {
   0020:  LDC       p5, #4                      ; p5 = 13.0
   0021:  DEQ       p7, p2, p5                  ; p7 = dist:p2 == p5
-  0022:  JIF       p7, @0051                   ; if p7==0 -> @0051
+  0022:  JIF       p7, @0047                   ; if p7==0 -> @0047
   ;
   ; line 17  if (start.next != null) {
   0023:  HACC      GET_OBJ, r1, r2, "next"     ; end:r1 = start:r2.next
-  0024:  KILL_REF  r3                          ; r3 = null (GC)
-  0025:  SNE       p7, r1, r3                  ; p7 = end:r1 != r3
-  0026:  JIF       p7, @0045                   ; if p7==0 -> @0045
+  0024:  KILL_REF  r2                          ; start:r2 = null (GC)
+  0025:  SNE       p7, r1, r2                  ; p7 = end:r1 != start:r2
+  0026:  JIF       p7, @0043                   ; if p7==0 -> @0043
   ;
   ; line 18  yield start.next;
-  0027:  HACC      GET_OBJ, r3, r2, "next"     ; r3 = start:r2.next
-  0028:  YIELD     r3                          ; yield r3
+  0027:  HACC      GET_OBJ, r1, r2, "next"     ; end:r1 = start:r2.next
+  0028:  YIELD     r1                          ; yield end:r1
   ;
   ; line 19  yield start.next.score;
   0029:  AGET_PATH r7, r2, "next.score"        ; r7 = start:r2.next.score
@@ -81,35 +82,30 @@
   0031:  AGET_PATH r2, r2, "next.score"        ; start:r2 = start:r2.next.score
   0032:  LDI       p5, 100                     ; p5 = 100
   0033:  IEQ       p7, p2, p5                  ; p7 = dist:p2 == p5
-  0034:  JIF       p7, @0040                   ; if p7==0 -> @0040
+  0034:  JIF       p7, @0039                   ; if p7==0 -> @0039
   ;
   ; line 21  return "ok";
   0035:  LDC       r2, #6                      ; start:r2 = "ok"
   0036:  KILL_REF  r1                          ; end:r1 = null (GC)
-  0037:  KILL_REF  r3                          ; r3 = null (GC)
-  0038:  RET       r2                          ; return start:r2
-  0039:  JMP       @0044                       ; -> @0044
+  0037:  RET       r2                          ; return start:r2
+  0038:  JMP       @0042                       ; -> @0042
   ;
   ; line 23  return "wrong_score";
-  0040:  LDC       r2, #7                      ; start:r2 = "wrong_score"
-  0041:  KILL_REF  r1                          ; end:r1 = null (GC)
-  0042:  KILL_REF  r3                          ; r3 = null (GC)
-  0043:  RET       r2                          ; return start:r2
-  0044:  JMP       @0049                       ; -> @0049
+  0039:  LDC       r2, #7                      ; start:r2 = "wrong_score"
+  0040:  KILL_REF  r1                          ; end:r1 = null (GC)
+  0041:  RET       r2                          ; return start:r2
+  0042:  JMP       @0046                       ; -> @0046
   ;
   ; line 26  return "no_next";
-  0045:  LDC       r2, #8                      ; start:r2 = "no_next"
-  0046:  KILL_REF  r1                          ; end:r1 = null (GC)
-  0047:  KILL_REF  r3                          ; r3 = null (GC)
-  0048:  RET       r2                          ; return start:r2
-  0049:  KILL_REF  r3                          ; r3 = null (GC)
-  0050:  JMP       @0051                       ; -> @0051
+  0043:  LDC       r2, #8                      ; start:r2 = "no_next"
+  0044:  KILL_REF  r1                          ; end:r1 = null (GC)
+  0045:  RET       r2                          ; return start:r2
+  0046:  JMP       @0047                       ; -> @0047
   ;
   ; line 29  return "error";
-  0051:  LDC       r2, #9                      ; start:r2 = "error"
-  0052:  KILL_REF  r1                          ; end:r1 = null (GC)
-  0053:  KILL_REF  r3                          ; r3 = null (GC)
-  0054:  RET       r2                          ; return start:r2
+  0047:  LDC       r2, #9                      ; start:r2 = "error"
+  0048:  KILL_REF  r1                          ; end:r1 = null (GC)
+  0049:  RET       r2                          ; return start:r2
 
 
 ; Exception Table
@@ -124,8 +120,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 55
+  instructions: 50
   constants:    10
   exceptions:   0
   globals:      0p + 0r
-  bytecode:     440 bytes
+  bytecode:     400 bytes

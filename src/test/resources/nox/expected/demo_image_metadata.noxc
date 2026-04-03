@@ -21,75 +21,79 @@
 ;  Function: main
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=7  rMem=3
+;    Frame:      pMem=7  rMem=4
 
 .func main
   ;
   ; line 9  json arr = Json.parse("[{\"flags\": 1, \"name\": \"a.png\"}, {\"flags\": 2, \"name\": \"b.png\"}, {\"flags\": 3, \"name\": \"c.png\"}]");
-  0000:  LDC       r0, #0                      ; arr:r0 = "[{\"flags\": 1, \"name\": \"a.png\"}, {\"flags\": 2, \"name\": \"b.png\"}, {\"flags\": 3, \"name\": \"c.png\"}]"
-  0001:  SCALL     p0, Json__parse, p0         ; p0 = Json__parse(p0...)
+  0000:  LDC       r3, #0                      ; r3 = "[{\"flags\": 1, \"name\": \"a.png\"}, {\"flags\": 2, \"name\": \"b.png\"}, {\"flags\": 3, \"name\": \"c.png\"}]"
+  0001:  SCALL     Json__parse, p0, r2         ; r2 = scall Json__parse(p0..., r3...)
+  0002:  MOVR      r1, r2                      ; arr:r1 = r2
   ;
   ; line 10  Meta[] images = arr as Meta[];
-  0002:  CAST_STRUCTr1, r0, #2                  ; images:r1 = arr:r0 as Meta[]
+  0003:  CAST_STRUCTr2, r1, #2                  ; images:r2 = arr:r1 as Meta[]
   ;
   ; line 12  int count = 0;
-  0003:  LDI       p0, 0                       ; count:p0 = 0
+  0004:  LDI       p0, 0                       ; count:p0 = 0
   ;
   ; line 13  foreach (Meta m in images) {
-  0004:  MOVR      r0, r1                      ; arr:r0 = images:r1
-  0005:  LDI       p1, 0                       ; p1 = 0
-  0006:  MOVR      r4, r0                      ; r4 = arr:r0
-  0007:  SCALL     p2, __T[]_length!Meta, p4   ; p2 = __T[]_length!Meta(p4...)
+  0005:  MOVR      r1, r2                      ; arr:r1 = images:r2
+  0006:  LDI       p1, 0                       ; p1 = 0
+  0007:  MOVR      r3, r1                      ; r3 = arr:r1
+  0008:  SCALL     __T[]_length!Meta, p4, r3   ; p4 = scall __T[]_length!Meta(p5..., r3...)
+  0009:  MOV       p2, p4                      ; p2 = p4
   .loop_start_1:
-  0008:  ILT       p3, p1, p2                  ; p3 = p1 < p2
-  0009:  JIF       p3, @0029                   ; if p3==0 -> loop_exit_1
-  0010:  AGET_IDX  r1, r0, p1                  ; m:r1 = arr:r0[p1]
+  0010:  ILT       p3, p1, p2                  ; p3 = p1 < p2
+  0011:  JIF       p3, @0031                   ; if p3==0 -> loop_exit_1
+  0012:  AGET_IDX  r2, r1, p1                  ; m:r2 = arr:r1[p1]
   ;
   ; line 14  if (m.flags == 2) {
-  0011:  HACC      GET_INT, r5, r2, "flags"    ; r5 = r2.flags
-  0012:  LDI       p6, 2                       ; p6 = 2
-  0013:  IEQ       p4, p5, p6                  ; p4 = p5 == p6
-  0014:  JIF       p4, @0017                   ; if p4==0 -> @0017
-  0015:  JMP       @0026                       ; -> loop_update_1
-  0016:  JMP       @0017                       ; -> @0017
+  0013:  HACC      GET_INT, r5, r2, "flags"    ; r5 = m:r2.flags
+  0014:  LDI       p6, 2                       ; p6 = 2
+  0015:  IEQ       p4, p5, p6                  ; p4 = p5 == p6
+  0016:  JIF       p4, @0019                   ; if p4==0 -> @0019
+  0017:  JMP       @0029                       ; -> loop_update_1
+  0018:  JMP       @0019                       ; -> @0019
   ;
   ; line 17  if (m.flags == 3) {
-  0017:  HACC      GET_INT, r6, r2, "flags"    ; r6 = r2.flags
-  0018:  LDI       p5, 3                       ; p5 = 3
-  0019:  IEQ       p4, p6, p5                  ; p4 = p6 == p5
-  0020:  JIF       p4, @0025                   ; if p4==0 -> @0025
+  0019:  HACC      GET_INT, r6, r2, "flags"    ; r6 = m:r2.flags
+  0020:  LDI       p5, 3                       ; p5 = 3
+  0021:  IEQ       p4, p6, p5                  ; p4 = p6 == p5
+  0022:  JIF       p4, @0027                   ; if p4==0 -> @0027
   ;
   ; line 18  count = count + 1;
-  0021:  LDI       p4, 1                       ; p4 = 1
-  0022:  IADD      p0, p0, p4                  ; count:p0 = count:p0 + p4
-  0023:  JMP       @0029                       ; -> loop_exit_1
-  0024:  JMP       @0025                       ; -> @0025
-  0025:  KILL_REF  r2                          ; r2 = null (GC)
+  0023:  LDI       p4, 1                       ; p4 = 1
+  0024:  IADD      p0, p0, p4                  ; count:p0 = count:p0 + p4
+  0025:  JMP       @0031                       ; -> loop_exit_1
+  0026:  JMP       @0027                       ; -> @0027
+  ;
+  ; line 21  count = count + 1;
+  0027:  LDI       p4, 1                       ; p4 = 1
+  0028:  IADD      p0, p0, p4                  ; count:p0 = count:p0 + p4
   ;
   ; line 13  foreach (Meta m in images) {
   .loop_update_1:
-  0026:  KILL_REF  r1                          ; m:r1 = null (GC)
-  0027:  IINC      p1                          ; p1 = p1 + 1
-  0028:  JMP       @0008                       ; -> loop_start_1
+  0029:  IINC      p1                          ; p1 = p1 + 1
+  0030:  JMP       @0010                       ; -> loop_start_1
   ;
   ; line 24  if (count == 2) {
   .loop_exit_1:
-  0029:  LDI       p3, 2                       ; p3 = 2
-  0030:  IEQ       p1, p2, p3                  ; p1 = p2 == p3
-  0031:  JIF       p1, @0037                   ; if p1==0 -> @0037
+  0031:  LDI       p2, 2                       ; p2 = 2
+  0032:  IEQ       p1, p0, p2                  ; p1 = count:p0 == p2
+  0033:  JIF       p1, @0039                   ; if p1==0 -> @0039
   ;
   ; line 25  return "ok";
-  0032:  LDC       r0, #5                      ; arr:r0 = "ok"
-  0033:  KILL_REF  r1                          ; m:r1 = null (GC)
-  0034:  KILL_REF  r2                          ; r2 = null (GC)
-  0035:  RET       r0                          ; return arr:r0
-  0036:  JMP       @0037                       ; -> @0037
+  0034:  LDC       r1, #5                      ; arr:r1 = "ok"
+  0035:  KILL_REF  r2                          ; m:r2 = null (GC)
+  0036:  KILL_REF  r3                          ; r3 = null (GC)
+  0037:  RET       r1                          ; return arr:r1
+  0038:  JMP       @0039                       ; -> @0039
   ;
-  ; line 27  return "error";
-  0037:  LDC       r0, #6                      ; arr:r0 = "error"
-  0038:  KILL_REF  r1                          ; m:r1 = null (GC)
-  0039:  KILL_REF  r2                          ; r2 = null (GC)
-  0040:  RET       r0                          ; return arr:r0
+  ; line 28  return "error";
+  0039:  LDC       r1, #6                      ; arr:r1 = "error"
+  0040:  KILL_REF  r2                          ; m:r2 = null (GC)
+  0041:  KILL_REF  r3                          ; r3 = null (GC)
+  0042:  RET       r1                          ; return arr:r1
 
 
 ; Exception Table
@@ -104,8 +108,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 41
+  instructions: 43
   constants:    7
   exceptions:   0
   globals:      0p + 0r
-  bytecode:     328 bytes
+  bytecode:     344 bytes

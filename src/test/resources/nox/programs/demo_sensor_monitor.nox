@@ -1,4 +1,4 @@
-// @test:yields ["alert"]
+// @test:yields [alert]
 // @test:result "ok"
 
 type Sensor {
