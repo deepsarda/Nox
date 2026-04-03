@@ -301,8 +301,8 @@ class NoxVM(
             val inst = bytecode[pc++]
             val opcode = ((inst ushr 56) and 0xFF).toInt()
 
-            //println("DUMPING MEMORY FOR PC: " + (pc - 1) );
-            //dumpMemory(NoxException(NoxError.Error, "no err", pc - 1));
+            // println("DUMPING MEMORY FOR PC: " + (pc - 1) );
+            // dumpMemory(NoxException(NoxError.Error, "no err", pc - 1));
 
             // Resource guard: instruction counter
             if (++instructionCount > maxInstructions) {
@@ -647,31 +647,36 @@ class NoxVM(
                         running = false
 
                         if (!isVoid) {
-                            returnValue = if (isPrimitive) {
-                                val raw = readP(retReg)
-                                when (typeTag) {
-                                    0 -> raw.toString() // INT
-                                    1 -> longBitsToDouble(raw).toString() // DOUBLE
-                                    2 -> if (raw != 0L) "true" else "false" // BOOLEAN
-                                    else -> raw.toString()
-                                }
-                            } else {
-                                val obj = readR(retReg)
-                                if (typeTag == 3 && obj != null && obj !is String) {
-                                    nox.runtime.json.NoxJsonWriter(prettyPrint = false).write(obj)
+                            returnValue =
+                                if (isPrimitive) {
+                                    val raw = readP(retReg)
+                                    when (typeTag) {
+                                        0 -> raw.toString() // INT
+                                        1 -> longBitsToDouble(raw).toString() // DOUBLE
+                                        2 -> if (raw != 0L) "true" else "false" // BOOLEAN
+                                        else -> raw.toString()
+                                    }
                                 } else {
-                                    obj?.toString() ?: "null"
+                                    val obj = readR(retReg)
+                                    if (typeTag == 3 && obj != null && obj !is String) {
+                                        nox.runtime.json
+                                            .NoxJsonWriter(prettyPrint = false)
+                                            .write(obj)
+                                    } else {
+                                        obj?.toString() ?: "null"
+                                    }
                                 }
-                            }
                         }
                         return
                     }
 
                     // Copy return value to frame base (bp) before popping.
                     if (!isVoid) {
-                        if (isPrimitive)
+                        if (isPrimitive) {
                             writeP(0, readP(retReg))
-                        else writeR(0, readR(retReg))
+                        } else {
+                            writeR(0, readR(retReg))
+                        }
                     }
 
                     // Pop frame
@@ -810,28 +815,29 @@ class NoxVM(
                     val subOp = Instruction.subOp(inst)
                     val container = readR(b)
 
-                    val value = when (container) {
-                        is List<*> -> {
-                            val index = readP(c).toInt()
-                            if (index < 0 || index >= container.size) {
-                                throw NoxException(
-                                    NoxError.IndexOutOfBoundsError,
-                                    "Index $index out of bounds for length ${container.size}",
-                                    pc - 1,
-                                )
+                    val value =
+                        when (container) {
+                            is List<*> -> {
+                                val index = readP(c).toInt()
+                                if (index < 0 || index >= container.size) {
+                                    throw NoxException(
+                                        NoxError.IndexOutOfBoundsError,
+                                        "Index $index out of bounds for length ${container.size}",
+                                        pc - 1,
+                                    )
+                                }
+                                container[index]
                             }
-                            container[index]
+                            is Map<*, *> -> {
+                                val key = readR(c)
+                                container[key.toString()]
+                            }
+                            else -> throw NoxException(
+                                NoxError.TypeError,
+                                "Cannot index into ${container?.javaClass?.simpleName}",
+                                pc - 1,
+                            )
                         }
-                        is Map<*, *> -> {
-                            val key = readR(c)
-                            container[key.toString()]
-                        }
-                        else -> throw NoxException(
-                            NoxError.TypeError,
-                            "Cannot index into ${container?.javaClass?.simpleName}",
-                            pc - 1,
-                        )
-                    }
 
                     when (subOp) {
                         SubOp.GET_INT -> writeP(a, (value as? Number)?.toLong() ?: 0L)
@@ -941,22 +947,25 @@ class NoxVM(
                     val typeTag = Instruction.opB(inst)
                     val isPrimitive = typeTag < 3
 
-                    val value = if (isPrimitive) {
-                        val raw = readP(a)
-                        when (typeTag) {
-                            0 -> raw.toString() // INT
-                            1 -> longBitsToDouble(raw).toString() // DOUBLE
-                            2 -> if (raw != 0L) "true" else "false" // BOOLEAN
-                            else -> raw.toString()
-                        }
-                    } else {
-                        val obj = readR(a)
-                        if (typeTag == 3 && obj != null && obj !is String) {
-                            nox.runtime.json.NoxJsonWriter(prettyPrint = false).write(obj)
+                    val value =
+                        if (isPrimitive) {
+                            val raw = readP(a)
+                            when (typeTag) {
+                                0 -> raw.toString() // INT
+                                1 -> longBitsToDouble(raw).toString() // DOUBLE
+                                2 -> if (raw != 0L) "true" else "false" // BOOLEAN
+                                else -> raw.toString()
+                            }
                         } else {
-                            obj?.toString() ?: "null"
+                            val obj = readR(a)
+                            if (typeTag == 3 && obj != null && obj !is String) {
+                                nox.runtime.json
+                                    .NoxJsonWriter(prettyPrint = false)
+                                    .write(obj)
+                            } else {
+                                obj?.toString() ?: "null"
+                            }
                         }
-                    }
 
                     yields.add(value)
                     context.yield(value)
@@ -1312,8 +1321,11 @@ class NoxVM(
             val localPc = framePc - meta.entryPC
             for (event in meta.regNameEvents) {
                 if (event.localPC <= localPc) {
-                    if (event.isPrim) pNames[event.register] = event.name
-                    else rNames[event.register] = event.name
+                    if (event.isPrim) {
+                        pNames[event.register] = event.name
+                    } else {
+                        rNames[event.register] = event.name
+                    }
                 }
             }
 

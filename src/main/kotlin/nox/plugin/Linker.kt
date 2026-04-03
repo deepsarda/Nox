@@ -1,9 +1,9 @@
 package nox.plugin
 
+import nox.compiler.types.TypeRef
 import nox.plugin.annotations.NoxFunction
 import nox.plugin.annotations.NoxType
 import nox.plugin.annotations.NoxTypeMethod
-import nox.compiler.types.TypeRef
 import nox.runtime.RuntimeContext
 import java.lang.invoke.MethodHandles
 import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
@@ -186,7 +186,9 @@ object Linker {
                     java.lang.Float.intBitsToFloat(raw.toInt())
                 kotlinType == Boolean::class.java || kotlinType == java.lang.Boolean::class.java ->
                     raw != 0L
-                else -> throw IllegalStateException("Cannot extract primitive type: $kotlinType for mapped type $mappedType")
+                else -> throw IllegalStateException(
+                    "Cannot extract primitive type: $kotlinType for mapped type $mappedType",
+                )
             }
 
         companion object {
@@ -263,7 +265,9 @@ object Linker {
                 mappedType?.name == "double" -> java.lang.Double.doubleToRawLongBits((value as Number).toDouble())
                 mappedType?.name == "boolean" -> if (value as Boolean) 1L else 0L
                 kotlinType == Long::class.java || kotlinType == java.lang.Long::class.java -> (value as Number).toLong()
-                kotlinType == Int::class.java || kotlinType == java.lang.Integer::class.java -> (value as Number).toLong()
+                kotlinType == Int::class.java || kotlinType == java.lang.Integer::class.java ->
+                    (value as Number)
+                        .toLong()
                 kotlinType == Double::class.java || kotlinType == java.lang.Double::class.java ->
                     java.lang.Double.doubleToRawLongBits((value as Number).toDouble())
                 kotlinType == Float::class.java || kotlinType == java.lang.Float::class.java ->
@@ -272,7 +276,9 @@ object Linker {
                         .toLong()
                 kotlinType == Boolean::class.java || kotlinType == java.lang.Boolean::class.java ->
                     if (value as Boolean) 1L else 0L
-                else -> throw IllegalStateException("Cannot pack primitive type: $kotlinType for mapped type $mappedType")
+                else -> throw IllegalStateException(
+                    "Cannot pack primitive type: $kotlinType for mapped type $mappedType",
+                )
             }
 
         companion object {

@@ -419,7 +419,7 @@ class ExpressionEmitter(
             )
             return
         }
-       
+
         val tResolved = ctx.resolveRegister(expr.target)
 
         val tReg =
@@ -467,7 +467,14 @@ class ExpressionEmitter(
         val retType = funcDef.returnType
         val isVoid = retType == TypeRef.VOID
         val isPrim = retType.isPrimitive()
-        val subOp = if (isVoid) 2 else if (isPrim) 1 else 0
+        val subOp =
+            if (isVoid) {
+                2
+            } else if (isPrim) {
+                1
+            } else {
+                0
+            }
 
         val pOffset = if (subOp == 1) 1 else 0
         val rOffset = if (subOp == 0) 1 else 0
@@ -567,7 +574,7 @@ class ExpressionEmitter(
             val param = params[i]
             val isPrim = param.type.isPrimitive()
             val argReg = if (isPrim) primIdx++ else refIdx++
-            
+
             if (i < args.size) {
                 emitExpr(args[i], argReg, line)
             } else if (param.defaultLiteral != null) {
@@ -587,7 +594,14 @@ class ExpressionEmitter(
         val retType = expr.resolvedType ?: TypeRef.VOID
         val isVoid = retType == TypeRef.VOID
         val isPrim = retType.isPrimitive()
-        val subOp = if (isVoid) 2 else if (isPrim) 1 else 0
+        val subOp =
+            if (isVoid) {
+                2
+            } else if (isPrim) {
+                1
+            } else {
+                0
+            }
 
         val pOffset = if (subOp == 1) 1 else 0
         val rOffset = if (subOp == 0) 1 else 0
@@ -633,7 +647,14 @@ class ExpressionEmitter(
         val retType = expr.resolvedType ?: TypeRef.VOID
         val isVoid = retType == TypeRef.VOID
         val isPrim = retType.isPrimitive()
-        val subOp = if (isVoid) 2 else if (isPrim) 1 else 0
+        val subOp =
+            if (isVoid) {
+                2
+            } else if (isPrim) {
+                1
+            } else {
+                0
+            }
 
         val pOffset = if (subOp == 1) 1 else 0
         val rOffset = if (subOp == 0) 1 else 0
@@ -658,7 +679,15 @@ class ExpressionEmitter(
         val startPrimIdx = if (targetIsPrim) 1 else 0
         val startRefIdx = if (targetIsPrim) 0 else 1
 
-        emitNoxArgs(expr.args, target.params, primArgStart, refArgStart, line, startPrimIdx + pOffset, startRefIdx + rOffset)
+        emitNoxArgs(
+            expr.args,
+            target.params,
+            primArgStart,
+            refArgStart,
+            line,
+            startPrimIdx + pOffset,
+            startRefIdx + rOffset,
+        )
 
         val funcIdx = ctx.pool.add(target.name)
         ctx.emit(Opcode.SCALL, subOp, funcIdx, primArgStart, refArgStart, line)
@@ -687,7 +716,14 @@ class ExpressionEmitter(
         val retType = expr.resolvedType ?: TypeRef.VOID
         val isVoid = retType == TypeRef.VOID
         val isPrim = retType.isPrimitive()
-        val subOp = if (isVoid) 2 else if (isPrim) 1 else 0
+        val subOp =
+            if (isVoid) {
+                2
+            } else if (isPrim) {
+                1
+            } else {
+                0
+            }
 
         val pOffset = if (subOp == 1) 1 else 0
         val rOffset = if (subOp == 0) 1 else 0
@@ -712,7 +748,15 @@ class ExpressionEmitter(
         val startPrimIdx = if (targetIsPrim) 1 else 0
         val startRefIdx = if (targetIsPrim) 0 else 1
 
-        emitNoxArgs(expr.args, target.params, primArgStart, refArgStart, line, startPrimIdx + pOffset, startRefIdx + rOffset)
+        emitNoxArgs(
+            expr.args,
+            target.params,
+            primArgStart,
+            refArgStart,
+            line,
+            startPrimIdx + pOffset,
+            startRefIdx + rOffset,
+        )
 
         val funcIdx = ctx.pool.add(target.name)
         if (target.astNode != null) {
@@ -734,6 +778,7 @@ class ExpressionEmitter(
         ctx.allocator.freeArgBlockPrim(primArgStart, primArgs + pOffset)
         ctx.allocator.freeArgBlockRef(refArgStart, refArgs + rOffset)
     }
+
     private fun emitDefaultLiteral(
         literal: String,
         type: TypeRef,

@@ -189,11 +189,17 @@ class RegisterAllocator(
         return start
     }
 
-    fun freeArgBlockPrim(start: Int, size: Int) {
+    fun freeArgBlockPrim(
+        start: Int,
+        size: Int,
+    ) {
         if (nextPrim == start + size) nextPrim = start
     }
 
-    fun freeArgBlockRef(start: Int, size: Int) {
+    fun freeArgBlockRef(
+        start: Int,
+        size: Int,
+    ) {
         if (nextRef == start + size) nextRef = start
     }
 

@@ -9,5 +9,5 @@ package nox.plugin.annotations
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class NoxGeneric(
-    val params: Array<String>
+    val params: Array<String>,
 )

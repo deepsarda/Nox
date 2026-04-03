@@ -455,15 +455,15 @@ class StatementEmitter(
         val lenTarget =
             registry.lookupBuiltinMethod(iterType, "length")
                 ?: error("No 'length' method found on type '$iterType'")
-        
+
         val lenPrimArgStart = ctx.allocator.allocArgBlockPrim(0)
         val lenRefArgStart = ctx.allocator.allocArgBlockRef(1)
         ctx.emit(Opcode.MOVR, 0, lenRefArgStart, arrReg, 0, line)
-        
+
         val lenFuncIdx = ctx.pool.add(lenTarget.name)
         ctx.emit(Opcode.SCALL, 1, lenFuncIdx, lenPrimArgStart, lenRefArgStart, line)
         ctx.emit(Opcode.MOV, 0, lenReg, lenPrimArgStart, 0, line)
-        
+
         ctx.allocator.freeArgBlockPrim(lenPrimArgStart, 0)
         ctx.allocator.freeArgBlockRef(lenRefArgStart, 1)
 
@@ -557,12 +557,13 @@ class StatementEmitter(
                     tmp
                 }
 
-            val typeTag = when {
-                type == TypeRef.INT -> 0
-                type == TypeRef.DOUBLE -> 1
-                type == TypeRef.BOOLEAN -> 2
-                else -> 3 // Reference types (string, json, struct, array)
-            }
+            val typeTag =
+                when {
+                    type == TypeRef.INT -> 0
+                    type == TypeRef.DOUBLE -> 1
+                    type == TypeRef.BOOLEAN -> 2
+                    else -> 3 // Reference types (string, json, struct, array)
+                }
 
             // Emit KILL_REF for all live rMem registers EXCEPT the return register.
             for (r in ctx.allocator.allRefRegs.sorted()) {
@@ -586,12 +587,13 @@ class StatementEmitter(
         val type = stmt.value.resolvedType ?: TypeRef.STRING
         val reg = ctx.resolveRegister(stmt.value)
 
-        val typeTag = when {
-            type == TypeRef.INT -> 0
-            type == TypeRef.DOUBLE -> 1
-            type == TypeRef.BOOLEAN -> 2
-            else -> 3 // Reference types (string, json, struct, array)
-        }
+        val typeTag =
+            when {
+                type == TypeRef.INT -> 0
+                type == TypeRef.DOUBLE -> 1
+                type == TypeRef.BOOLEAN -> 2
+                else -> 3 // Reference types (string, json, struct, array)
+            }
 
         if (reg != null) {
             ctx.freeNodeRegisters(stmt.value)

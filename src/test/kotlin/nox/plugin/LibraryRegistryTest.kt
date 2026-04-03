@@ -177,7 +177,7 @@ class LibraryRegistryTest :
             val registry = LibraryRegistry.createDefault()
             val targetType = TypeRef("int", 2) // int[][]
             val callTarget = registry.lookupBuiltinMethod(targetType, "push")
-            
+
             callTarget.shouldNotBeNull()
             callTarget.name shouldBe "__T[]_push!int[]"
             callTarget.params.size shouldBe 1
@@ -189,7 +189,7 @@ class LibraryRegistryTest :
             val registry = LibraryRegistry.createDefault()
             val targetType = TypeRef("string", 3) // string[][][]
             val callTarget = registry.lookupBuiltinMethod(targetType, "pop")
-            
+
             callTarget.shouldNotBeNull()
             callTarget.name shouldBe "__T[]_pop!string[][]"
             callTarget.params.size shouldBe 0
@@ -199,7 +199,7 @@ class LibraryRegistryTest :
         test("lookupNativeFunc caches and returns correctly linked adapter for generic JIT requests") {
             val registry = LibraryRegistry.createDefault()
             val scallName = "__T[]_push!double"
-            
+
             // First lookup misses cache and triggers JIT linkage
             val func1 = registry.lookupNativeFunc(scallName)
             func1.shouldNotBeNull()
@@ -212,7 +212,7 @@ class LibraryRegistryTest :
         test("lookupNativeFunc parses multidimensional JIT generic requests") {
             val registry = LibraryRegistry.createDefault()
             val scallName = "__T[]_pop!json[][]"
-            
+
             val func = registry.lookupNativeFunc(scallName)
             func.shouldNotBeNull()
         }

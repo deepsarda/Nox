@@ -397,7 +397,14 @@ class NoxcEmitter {
                 val funcName = pool.getOrNull(a) as? String ?: "func_$a"
                 val pOff = if (subOp == 1) 1 else 0
                 val rOff = if (subOp == 0) 1 else 0
-                val retPrefix = if (subOp == 1) "${pn(b)} = " else if (subOp == 0) "${rn(c)} = " else ""
+                val retPrefix =
+                    if (subOp == 1) {
+                        "${pn(b)} = "
+                    } else if (subOp == 0) {
+                        "${rn(c)} = "
+                    } else {
+                        ""
+                    }
                 "$funcName, ${pr(b)}, ${rr(c)}" to "${retPrefix}call $funcName(${pn(b + pOff)}..., ${rn(c + rOff)}...)"
             }
 
@@ -406,9 +413,11 @@ class NoxcEmitter {
                 if (isVoid) {
                     "" to "return (void)"
                 } else {
-                    if (b < 3)
+                    if (b < 3) {
                         pr(c) to "return ${pn(c)}"
-                    else rr(c) to "return ${rn(c)}"
+                    } else {
+                        rr(c) to "return ${rn(c)}"
+                    }
                 }
             }
 
@@ -416,7 +425,14 @@ class NoxcEmitter {
                 val funcName = pool.getOrNull(a) as? String ?: "sfunc_$a"
                 val pOff = if (subOp == 1) 1 else 0
                 val rOff = if (subOp == 0) 1 else 0
-                val retPrefix = if (subOp == 1) "${pn(b)} = " else if (subOp == 0) "${rn(c)} = " else ""
+                val retPrefix =
+                    if (subOp == 1) {
+                        "${pn(b)} = "
+                    } else if (subOp == 0) {
+                        "${rn(c)} = "
+                    } else {
+                        ""
+                    }
                 "$funcName, ${pr(b)}, ${rr(c)}" to "${retPrefix}scall $funcName(${pn(b + pOff)}..., ${rn(c + rOff)}...)"
             }
 
@@ -445,8 +461,11 @@ class NoxcEmitter {
             Opcode.ASET_IDX -> "${rr(a)}, ${pr(b)}, ${pr(c)}" to "${rn(a)}[${pn(b)}] = ${pn(c)}"
 
             Opcode.YIELD -> {
-                if (b < 3) pr(a) to "yield ${pn(a)}"
-                else rr(a) to "yield ${rn(a)}"
+                if (b < 3) {
+                    pr(a) to "yield ${pn(a)}"
+                } else {
+                    rr(a) to "yield ${rn(a)}"
+                }
             }
 
             Opcode.IINC -> pr(a) to "${pn(a)} = ${pn(a)} + 1"

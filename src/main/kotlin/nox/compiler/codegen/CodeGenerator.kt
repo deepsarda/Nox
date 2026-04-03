@@ -260,14 +260,15 @@ class CodeGenerator(
         val base = entryPc
 
         // Patch local jump targets to be absolute
-        val patchedInstructions = emittedInstructions.map { inst ->
-            val opcode = Instruction.opcode(inst)
-            when (opcode) {
-                Opcode.JMP -> Instruction.patchA(inst, Instruction.opA(inst) + base)
-                Opcode.JIF, Opcode.JIT -> Instruction.patchB(inst, Instruction.opB(inst) + base)
-                else -> inst
+        val patchedInstructions =
+            emittedInstructions.map { inst ->
+                val opcode = Instruction.opcode(inst)
+                when (opcode) {
+                    Opcode.JMP -> Instruction.patchA(inst, Instruction.opA(inst) + base)
+                    Opcode.JIF, Opcode.JIT -> Instruction.patchB(inst, Instruction.opB(inst) + base)
+                    else -> inst
+                }
             }
-        }
 
         bytecode.addAll(patchedInstructions)
         allSrcLines.addAll(emitter.sourceLines)

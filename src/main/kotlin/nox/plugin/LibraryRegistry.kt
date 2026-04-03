@@ -57,6 +57,7 @@ class LibraryRegistry {
         val methodName: String,
         val namespace: String?,
     )
+
     private val templates = mutableListOf<TemplateSignature>()
 
     // Runtime data (NoxNativeFuncs for VM SCALL dispatch)
@@ -110,7 +111,9 @@ class LibraryRegistry {
             if (template.targetTypeStr != null && template.methodName == methodName) {
                 val mapping = targetType.match(template.targetTypeStr)
                 if (mapping != null) {
-                    val scallName = template.baseScallName + "!" + template.genericParams.joinToString("!") { mapping[it]?.toString() ?: "unknown" }
+                    val scallName =
+                        template.baseScallName + "!" +
+                            template.genericParams.joinToString("!") { mapping[it]?.toString() ?: "unknown" }
                     val returnType = resolveInstantiatedReturnType(template.kotlinMethod, mapping)
                     val params = buildInstantiatedParams(template.kotlinMethod, mapping).drop(1)
                     return CallTarget(scallName, params, returnType)
@@ -146,13 +149,13 @@ class LibraryRegistry {
     fun lookupNativeFunc(scallName: String): NoxNativeFunc? {
         nativeFuncs[scallName]?.let { return it }
         if (!scallName.contains("!")) return null
-        
+
         // JIT Linking for Generics
         val parts = scallName.split("!")
         val baseName = parts[0]
         val template = templates.find { it.baseScallName == baseName } ?: return null
         val mapping = template.genericParams.zip(parts.drop(1).map { parseTypeRefString(it) }).toMap()
-        
+
         val linked = Linker.link(template.kotlinMethod, template.instance, scallName, mapping)
         nativeFuncs[scallName] = linked.nativeFunc
         return linked.nativeFunc
@@ -190,8 +193,14 @@ class LibraryRegistry {
                     val scallName = "${namespace}__$noxName"
                     templates.add(
                         TemplateSignature(
-                            genericParams, scallName, func, instance, null, noxName, namespace
-                        )
+                            genericParams,
+                            scallName,
+                            func,
+                            instance,
+                            null,
+                            noxName,
+                            namespace,
+                        ),
                     )
                 } else if (noxTypeMethod != null) {
                     val targetTypeStr = noxTypeMethod.targetType
@@ -199,8 +208,14 @@ class LibraryRegistry {
                     val scallName = "__${targetTypeStr}_$noxName"
                     templates.add(
                         TemplateSignature(
-                            genericParams, scallName, func, instance, targetTypeStr, noxName, null
-                        )
+                            genericParams,
+                            scallName,
+                            func,
+                            instance,
+                            targetTypeStr,
+                            noxName,
+                            null,
+                        ),
                     )
                 }
             } else {
