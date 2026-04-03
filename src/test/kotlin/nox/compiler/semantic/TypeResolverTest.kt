@@ -125,7 +125,7 @@ class TypeResolverTest :
                     """.trimIndent(),
                 )
             val varDecl = program.main!!.body.statements[0] as VarDeclStmt
-            varDecl.initializer.resolvedType.shouldBeNull()
+            varDecl.initializer.resolvedType shouldBe TypeRef.NULL
         }
 
         test("templateResolvesToString") {
