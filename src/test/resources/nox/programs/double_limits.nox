@@ -1,0 +1,6 @@
+// @test:result "Infinity"
+main() {
+    double d = 1.0;
+    double zero = 0.0;
+    return d / zero;
+}

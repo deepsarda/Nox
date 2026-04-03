@@ -1,0 +1,8 @@
+// @test:result "boom"
+main() {
+    try {
+        throw "boom";
+    } catch (err) {
+        return err;
+    }
+}

@@ -1,6 +1,8 @@
 package nox.compiler.ast
 
-import nox.compiler.types.*
+import nox.compiler.types.SourceLocation
+import nox.compiler.types.Symbol
+import nox.compiler.types.TypeRef
 
 /*
  *  Declaration AST Nodes

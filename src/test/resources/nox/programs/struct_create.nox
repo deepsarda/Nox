@@ -1,0 +1,9 @@
+// @test:result "10"
+type Point {
+    int x;
+    int y;
+}
+main() {
+    Point p = { x: 10, y: 20 };
+    return p.x;
+}

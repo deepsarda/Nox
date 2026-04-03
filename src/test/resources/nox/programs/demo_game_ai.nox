@@ -1,0 +1,30 @@
+// @test:result "ok"
+
+type State {
+    int score;
+    State next;
+}
+
+main() {
+    State end = { score: 100, next: null };
+    State start = { score: 10, next: end };
+
+    int dx = 5;
+    int dy = 12;
+    double dist = Math.sqrt(0.0 + (dx * dx) + (dy * dy));
+
+    if (dist == 13.0) {
+        if (start.next != null) {
+            yield start.next;
+            yield start.next.score;
+            if (start.next.score == 100) {
+                return "ok";
+            } else {
+                return "wrong_score";
+            }
+        } else {
+            return "no_next";
+        }
+    }
+    return "error";
+}

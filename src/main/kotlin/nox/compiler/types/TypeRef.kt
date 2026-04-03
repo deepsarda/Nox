@@ -21,6 +21,29 @@ data class TypeRef(
         val STRING = TypeRef("string")
         val JSON = TypeRef("json")
         val VOID = TypeRef("void")
+        val NULL = TypeRef("null")
+    }
+
+    /**
+     * Matches this TypeRef against a pattern (e.g., "T[]").
+     * Returns a mapping of generic parameters to resolved types, or null if no match.
+     * For example, if this is `int[][]` and pattern is `T[]`, returns `{"T": int[]}`.
+     */
+    fun match(pattern: String): Map<String, TypeRef>? {
+        val patternDepth = pattern.count { it == '[' }
+        val patternBaseName = pattern.substringBefore("[")
+
+        if (this.arrayDepth < patternDepth) return null
+
+        if (patternBaseName == this.name) {
+            if (this.arrayDepth == patternDepth) return emptyMap()
+            return null
+        }
+
+        if (patternBaseName in BUILTIN_TYPE_NAMES) return null
+
+        val resolvedType = TypeRef(this.name, this.arrayDepth - patternDepth)
+        return mapOf(patternBaseName to resolvedType)
     }
 
     /** Whether this is an array type (any depth). */
@@ -76,7 +99,8 @@ data class TypeRef(
      * - Struct and json are comparable (struct implicitly upcasts to json).
      */
     fun isComparable(other: TypeRef?): Boolean {
-        if (other == null) return isNullable()
+        if (other == null || other == NULL) return isNullable()
+        if (this == NULL) return other.isNullable()
         if (this == other) return true
         // Struct and json are comparable (implicit upcast)
         if (this == JSON && other.isStructType()) return true
@@ -96,7 +120,7 @@ data class TypeRef(
      */
     fun isAssignableFrom(value: TypeRef?): Boolean {
         // null to any nullable type
-        if (value == null) return isNullable()
+        if (value == null || value == NULL) return isNullable()
 
         // Same type always ok
         if (this == value) return true
@@ -136,4 +160,4 @@ val NULLABLE_VALUE_NAMES = setOf("string", "json")
 val IMMUTABLE_NAMES = setOf("int", "double", "boolean", "string")
 
 /** All built-in type names. Used by [TypeRef.isStructType] to exclude non-struct types. */
-val BUILTIN_TYPE_NAMES = setOf("int", "double", "boolean", "string", "json", "void")
+val BUILTIN_TYPE_NAMES = setOf("int", "double", "boolean", "string", "json", "void", "null")

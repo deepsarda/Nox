@@ -1,0 +1,4 @@
+// @test:error "DivisionByZeroError"
+main() {
+    return 1 / 0;
+}

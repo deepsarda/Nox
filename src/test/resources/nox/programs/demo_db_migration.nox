@@ -1,0 +1,41 @@
+// @test:result "ok"
+
+type Column {
+    string name;
+    string colType;
+}
+
+type Table {
+    string table;
+    Column[] cols;
+}
+
+main() {
+    json schema = Json.parse("{\"table\": \"users\", \"cols\": [{\"name\": \"id\", \"colType\": \"INT\"}, {\"name\": \"name\", \"colType\": \"VARCHAR\"}]}");
+    Table t = schema as Table;
+    
+    string query = "CREATE TABLE " + t.table + " (";
+    yield t;
+    int i = 0;
+    while (i < t.cols.length()) {
+        Column c = t.cols[i];
+        query = query + c.name + " " + c.colType;
+        if (i < t.cols.length() - 1) {
+            query = query + ", ";
+        }
+        i = i + 1;
+    }
+    query = query + ");";
+
+    try {
+        File.write("migration.sql", query);
+        File.read("migration.sql");
+    } catch (err) {
+        // mock success
+    }
+
+    if (query == "CREATE TABLE users (id INT, name VARCHAR);") {
+        return "ok";
+    }
+    return "error";
+}

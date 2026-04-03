@@ -1,0 +1,6 @@
+// @test:result "-9223372036854775808"
+main() {
+    int max = 9223372036854775807;
+    int overflow = max + 1;
+    return overflow;
+}

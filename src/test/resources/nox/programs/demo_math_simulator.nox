@@ -1,0 +1,22 @@
+// @test:result "ok"
+
+main() {
+    double[] dist = [];
+    int i = 0;
+    while (i < 10) {
+        double r = Math.random();
+        double val = Math.sqrt(Math.pow(r, 2.0));
+        dist.push(val);
+        i = i + 1;
+    }
+    
+    double sum = 0.0;
+    foreach (double d in dist) {
+        sum = sum + d;
+    }
+    
+    if (dist.length() == 10) {
+        return "ok";
+    }
+    return "error";
+}

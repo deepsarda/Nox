@@ -1,0 +1,31 @@
+// @test:result "ok"
+
+type Item {
+    string sku;
+    int qty;
+}
+
+main() {
+    json localData = Json.parse("[{\"sku\": \"A\", \"qty\": 10}, {\"sku\": \"B\", \"qty\": 2}]");
+    json remoteData = Json.parse("[{\"sku\": \"A\", \"qty\": 5}, {\"sku\": \"C\", \"qty\": 1}]");
+
+    Item[] localItems = localData as Item[];
+    Item[] remoteItems = remoteData as Item[];
+    yield localItems;
+    yield remoteItems;
+    foreach (Item loc in localItems) {
+        foreach (Item rem in remoteItems) {
+            if (loc.sku == rem.sku) {
+                loc.qty += rem.qty;
+            }
+        }
+    }
+
+    if (localItems[0].qty == 15) {
+        string res = Json.stringify(localData);
+        if (res.contains("15")) {
+            return "ok";
+        }
+    }
+    return "error";
+}

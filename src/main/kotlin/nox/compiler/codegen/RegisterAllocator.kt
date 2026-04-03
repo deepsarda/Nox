@@ -1,7 +1,13 @@
 package nox.compiler.codegen
 
-import nox.compiler.ast.*
-import nox.compiler.types.*
+import nox.compiler.ast.CatchClause
+import nox.compiler.ast.ForEachStmt
+import nox.compiler.ast.Param
+import nox.compiler.ast.VarDeclStmt
+import nox.compiler.types.ParamSymbol
+import nox.compiler.types.Symbol
+import nox.compiler.types.TypeRef
+import nox.compiler.types.VarSymbol
 
 /**
  * Dual-bank register allocator for a single function or init block.
@@ -17,6 +23,7 @@ import nox.compiler.types.*
  */
 class RegisterAllocator(
     params: List<Param>,
+    returnType: TypeRef = TypeRef.VOID,
 ) {
     // Bank pools
 
@@ -45,6 +52,13 @@ class RegisterAllocator(
     private val paramRefReg = mutableMapOf<String, Int>() // paramName to rMem reg
 
     init {
+        // Offset parameter registers if there's a return value (result slot at 0)
+        if (returnType.isPrimitive()) {
+            nextPrim = 1
+        } else if (returnType != TypeRef.VOID) {
+            nextRef = 1
+        }
+
         // Pre-assign parameter registers in declaration order.
         for (param in params) {
             if (param.type.isPrimitive()) {
@@ -76,6 +90,17 @@ class RegisterAllocator(
     }
 
     /**
+     * Allocate a register for the exception variable in a [CatchClause].
+     * Sets both [CatchClause.register] and [VarSymbol.register].
+     */
+    fun allocCatchVar(clause: CatchClause): Int {
+        val reg = allocRef() // Exception is always string (or object later)
+        clause.register = reg
+        (clause.resolvedSymbol as? VarSymbol)?.register = reg
+        return reg
+    }
+
+    /**
      * Write pre-allocated param registers into [ParamSymbol.register] for each param.
      * Call this after constructing the allocator, before emitting the function body.
      */
@@ -94,6 +119,7 @@ class RegisterAllocator(
     fun allocElement(stmt: ForEachStmt): Int {
         val reg = if (stmt.elementType.isPrimitive()) allocPrim() else allocRef()
         stmt.elementRegister = reg
+        (stmt.resolvedSymbol as? VarSymbol)?.register = reg
         return reg
     }
 
@@ -139,6 +165,43 @@ class RegisterAllocator(
 
     /** Allocate a temp register for [type] (dispatches to pMem or rMem). */
     fun allocTemp(type: TypeRef): Int = if (type.isPrimitive()) allocTempPrim() else allocTempRef()
+
+    /**
+     * Allocate a contiguous block of registers in pMem for function arguments.
+     */
+    fun allocArgBlockPrim(size: Int): Int {
+        val start = nextPrim
+        nextPrim += size
+        if (nextPrim > maxPrim) maxPrim = nextPrim
+        return start
+    }
+
+    /**
+     * Allocate a contiguous block of registers in rMem for function arguments.
+     */
+    fun allocArgBlockRef(size: Int): Int {
+        val start = nextRef
+        nextRef += size
+        if (nextRef > maxRef) maxRef = nextRef
+        for (i in start until start + size) {
+            _allRefRegs.add(i)
+        }
+        return start
+    }
+
+    fun freeArgBlockPrim(
+        start: Int,
+        size: Int,
+    ) {
+        if (nextPrim == start + size) nextPrim = start
+    }
+
+    fun freeArgBlockRef(
+        start: Int,
+        size: Int,
+    ) {
+        if (nextRef == start + size) nextRef = start
+    }
 
     /** Free a temp register for [type]. */
     fun freeTemp(

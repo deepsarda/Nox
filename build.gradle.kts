@@ -149,3 +149,23 @@ tasks.withType<Test> {
         this.showStandardStreams = true
     }
 }
+
+/**
+ * Compile a Nox source file and generate its .noxc disassembly.
+ * Usage: ./gradlew noxc -Pfile=path/to/file.nox
+ */
+tasks.register<JavaExec>("noxc") {
+    group = "nox"
+    description = "Compiles a Nox source file and generates its .noxc disassembly."
+
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("nox.compiler.NoxcApp")
+
+    // Pass the file argument from the command line property 'file'
+    if (project.hasProperty("file")) {
+        args(project.property("file") as String)
+    }
+
+    // Ensure compilation happens before execution
+    dependsOn(tasks.compileKotlin)
+}

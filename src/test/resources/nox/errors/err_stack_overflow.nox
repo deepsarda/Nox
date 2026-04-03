@@ -1,0 +1,7 @@
+// @test:error "StackOverflowError"
+int recurse() {
+    return recurse();
+}
+main() {
+    return recurse();
+}

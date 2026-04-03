@@ -1,0 +1,52 @@
+;  Nox Bytecode Disassembly
+;  Source:   throw_custom.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "boom"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=0  rMem=2
+
+.func main
+  ;
+  ; line 4  throw "boom";
+  0000:  LDC       r1, #0                      ; r1 = "boom"
+  0001:  THROW     r1                          ; throw r1
+  0002:  KILL_REF  r1                          ; r1 = null (GC)
+  0003:  JMP       @0006                       ; -> end
+  ;
+  ; line 6  return err;
+  .catch_all:
+  0004:  RET       r1                          ; return err:r1
+  0005:  JMP       @0006                       ; -> end
+  .end:
+  0006:  KILL_REF  r1                          ; err:r1 = null (GC)
+
+
+; Exception Table
+
+.exceptions
+  [0000..0003] ANY                  -> @0004  msg=r1
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 7
+  constants:    1
+  exceptions:   1
+  globals:      0p + 0r
+  bytecode:     56 bytes

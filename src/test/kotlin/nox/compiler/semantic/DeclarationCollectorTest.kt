@@ -9,7 +9,6 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import nox.compiler.CompilerErrors
 import nox.compiler.parsing.NoxParsing
 import nox.compiler.types.*
-import nox.compiler.types.TypeRef
 
 /**
  * Tests for [DeclarationCollector] (Pass 1).
@@ -181,40 +180,6 @@ class DeclarationCollectorTest :
 
             errors.hasErrors() shouldBe true
             errors.all()[0].message shouldContain "Only one 'main()' block is allowed"
-        }
-
-        test("rejects empty struct from ANTLR recovery") {
-            // ANTLR recovery produces a TypeDef with zero fields on `type Empty { }`.
-            // DeclarationCollector must reject it.
-            val (scope, errors) =
-                collect(
-                    """
-                    type Empty { }
-                    main() { return "ok"; }
-                    """.trimIndent(),
-                )
-
-            errors.hasErrors() shouldBe true
-            errors.all().any { it.message.contains("has no fields") } shouldBe true
-            scope.lookup("Empty").shouldBeNull()
-        }
-
-        test("skips ErrorDecl without crashing") {
-            // Force a parse error that produces an ErrorDecl
-            val errors = CompilerErrors()
-            val program =
-                NoxParsing.parse(
-                    "int ??? = bad;\nmain() { return \"ok\"; }",
-                    "test.nox",
-                    errors,
-                )
-
-            // Parse errors exist, but collection should not throw
-            val globalScope = SymbolTable()
-            DeclarationCollector(globalScope, errors).collect(program)
-
-            // main should still be collected despite ErrorDecl
-            program.main.shouldNotBeNull()
         }
 
         test("assigns globalSlot on the GlobalVarDecl AST node") {

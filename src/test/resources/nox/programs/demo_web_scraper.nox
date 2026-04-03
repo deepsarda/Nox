@@ -1,0 +1,28 @@
+// @test:result "ok"
+
+main() {
+    string html = "<html><body>Some Data</body></html>";
+    try {
+        // mock Http.get
+        string url = "http://dummy";
+        if (url.contains("dummy")) {
+            throw "NetworkError";
+        }
+    } catch (err) {
+        // proceed
+    }
+    
+    string[] parts = html.split("<body>");
+    if (parts.length() > 1) {
+        string body = parts[1];
+        if (body.contains("Some Data")) {
+            string lower = body.lower();
+            string upper = lower.upper();
+            if (upper.contains("SOME DATA")) {
+                return "ok";
+            }
+        }
+    }
+    
+    return "error";
+}

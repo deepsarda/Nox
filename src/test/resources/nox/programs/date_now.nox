@@ -1,0 +1,4 @@
+// @test:result "true"
+main() {
+    return Date.now() > 0;
+}

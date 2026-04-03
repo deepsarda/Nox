@@ -1,0 +1,11 @@
+// @test:result "inner"
+type Inner {
+    string name;
+}
+type Outer {
+    Inner innerObj;
+}
+main() {
+    Outer o = { innerObj: { name: "inner" } };
+    return o.innerObj.name;
+}

@@ -1,0 +1,5 @@
+// @test:error "NullAccessError"
+main() {
+    string s = null;
+    return s.length();
+}

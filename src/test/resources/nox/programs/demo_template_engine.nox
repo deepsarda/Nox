@@ -1,0 +1,21 @@
+// @test:result "ok"
+
+main() {
+    string template = "Hello {{name}}, welcome to {{place}}!";
+    json data = Json.parse("{\"name\": \"Alice\", \"place\": \"Wonderland\"}");
+    
+    if (template.contains("{{name}}")) {
+        string[] p1 = template.split("{{name}}");
+        template = p1[0] + data.getString("name", "") + p1[1];
+    }
+    
+    if (template.contains("{{place}}")) {
+        string[] p2 = template.split("{{place}}");
+        template = p2[0] + data.getString("place", "") + p2[1];
+    }
+    
+    if (template == "Hello Alice, welcome to Wonderland!") {
+        return "ok";
+    }
+    return "error";
+}

@@ -1,0 +1,8 @@
+// @test:result "42"
+main() {
+    string s = "42";
+    int a = s.toInt(0);
+    double d = a.toDouble();
+    int b = d.toInt();
+    return b;
+}

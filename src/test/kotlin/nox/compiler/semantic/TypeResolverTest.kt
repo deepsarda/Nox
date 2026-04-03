@@ -4,9 +4,14 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import nox.compiler.CompilerErrors
-import nox.compiler.ast.*
+import nox.compiler.ast.MethodCallExpr
+import nox.compiler.ast.Program
+import nox.compiler.ast.ReturnStmt
+import nox.compiler.ast.VarDeclStmt
 import nox.compiler.parsing.NoxParsing
-import nox.compiler.types.*
+import nox.compiler.types.SymbolTable
+import nox.compiler.types.TypeRef
+import nox.compiler.types.TypeSymbol
 
 /**
  * Tests for Pass 2: Type Resolution.
@@ -54,9 +59,9 @@ class TypeResolverTest :
             val (_, _, program) =
                 resolveOk(
                     """
-                    main() { 
-                        int x = 42; 
-                        return "ok"; 
+                    main() {
+                        int x = 42;
+                        return "ok";
                     }
                     """.trimIndent(),
                 )
@@ -70,9 +75,9 @@ class TypeResolverTest :
             val (_, _, program) =
                 resolveOk(
                     """
-                    main() { 
-                        double x = 3.14; 
-                        return "ok"; 
+                    main() {
+                        double x = 3.14;
+                        return "ok";
                     }
                     """.trimIndent(),
                 )
@@ -85,9 +90,9 @@ class TypeResolverTest :
             val (_, _, program) =
                 resolveOk(
                     """
-                    main() { 
-                        boolean x = true; 
-                        return "ok"; 
+                    main() {
+                        boolean x = true;
+                        return "ok";
                     }
                     """.trimIndent(),
                 )
@@ -99,9 +104,9 @@ class TypeResolverTest :
             val (_, _, program) =
                 resolveOk(
                     """
-                    main() { 
-                        string x = "hello"; 
-                        return "ok"; 
+                    main() {
+                        string x = "hello";
+                        return "ok";
                     }
                     """.trimIndent(),
                 )
@@ -113,14 +118,14 @@ class TypeResolverTest :
             val (_, _, program) =
                 resolveOk(
                     """
-                    main() { 
-                        string x = null; 
-                        return "ok"; 
+                    main() {
+                        string x = null;
+                        return "ok";
                     }
                     """.trimIndent(),
                 )
             val varDecl = program.main!!.body.statements[0] as VarDeclStmt
-            varDecl.initializer.resolvedType.shouldBeNull()
+            varDecl.initializer.resolvedType shouldBe TypeRef.NULL
         }
 
         test("templateResolvesToString") {
@@ -128,10 +133,10 @@ class TypeResolverTest :
             val (_, _, program) =
                 resolveOk(
                     """
-                    main() { 
-                        int x = 42; 
+                    main() {
+                        int x = 42;
                         string s = `value is $dollar{x}`;
-                        return "ok"; 
+                        return "ok";
                     }
                     """.trimIndent(),
                 )
@@ -226,9 +231,9 @@ class TypeResolverTest :
         test("intAndIntFails") {
             resolveError(
                 """
-                main() { 
-                    boolean b = 1 && 2; 
-                    return "ok"; 
+                main() {
+                    boolean b = 1 && 2;
+                    return "ok";
                 }
                 """.trimIndent(),
                 "Logical '&&' expected 'boolean'",
@@ -247,9 +252,9 @@ class TypeResolverTest :
         test("bitwiseDoubleFails") {
             resolveError(
                 """
-                main() { 
-                    double d = 1.0 & 2.0; 
-                    return "ok"; 
+                main() {
+                    double d = 1.0 & 2.0;
+                    return "ok";
                 }
                 """.trimIndent(),
                 "Bitwise '&' requires 'int' operands",
@@ -259,9 +264,9 @@ class TypeResolverTest :
         test("equalitySameType") {
             resolveOk(
                 """
-                main() { 
-                    boolean b = 1 == 1; 
-                    return "ok"; 
+                main() {
+                    boolean b = 1 == 1;
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -270,9 +275,9 @@ class TypeResolverTest :
         test("equalityIntStringFails") {
             resolveError(
                 """
-                main() { 
-                    boolean b = 1 == "hello"; 
-                    return "ok"; 
+                main() {
+                    boolean b = 1 == "hello";
+                    return "ok";
                 }
                 """.trimIndent(),
                 "Cannot compare 'int'",
@@ -284,9 +289,9 @@ class TypeResolverTest :
         test("negateInt") {
             resolveOk(
                 """
-                main() { 
-                    int x = -42; 
-                    return "ok"; 
+                main() {
+                    int x = -42;
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -295,9 +300,9 @@ class TypeResolverTest :
         test("negateDouble") {
             resolveOk(
                 """
-                main() { 
-                    double x = -3.14; 
-                    return "ok"; 
+                main() {
+                    double x = -3.14;
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -306,9 +311,9 @@ class TypeResolverTest :
         test("negateBoolFails") {
             resolveError(
                 """
-                main() { 
-                    int x = -true; 
-                    return "ok"; 
+                main() {
+                    int x = -true;
+                    return "ok";
                 }
                 """.trimIndent(),
                 "Unary '-' cannot be applied to",
@@ -318,9 +323,9 @@ class TypeResolverTest :
         test("notBool") {
             resolveOk(
                 """
-                main() { 
-                    boolean x = !true; 
-                    return "ok"; 
+                main() {
+                    boolean x = !true;
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -329,9 +334,9 @@ class TypeResolverTest :
         test("notIntFails") {
             resolveError(
                 """
-                main() { 
-                    boolean x = !0; 
-                    return "ok"; 
+                main() {
+                    boolean x = !0;
+                    return "ok";
                 }
                 """.trimIndent(),
                 "Logical '!' requires 'boolean'",
@@ -341,9 +346,9 @@ class TypeResolverTest :
         test("bitwiseNotInt") {
             resolveOk(
                 """
-                main() { 
-                    int x = ~0; 
-                    return "ok"; 
+                main() {
+                    int x = ~0;
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -353,9 +358,9 @@ class TypeResolverTest :
         test("nullToPrimitiveFails") {
             resolveError(
                 """
-                main() { 
-                    int x = null; 
-                    return "ok"; 
+                main() {
+                    int x = null;
+                    return "ok";
                 }
                 """.trimIndent(),
                 "not nullable",
@@ -365,9 +370,9 @@ class TypeResolverTest :
         test("nullToStringOk") {
             resolveOk(
                 """
-                main() { 
+                main() {
                     string x = null;
-                    return "ok"; 
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -376,9 +381,9 @@ class TypeResolverTest :
         test("nullToJsonOk") {
             resolveOk(
                 """
-                main() { 
+                main() {
                     json x = null;
-                    return "ok"; 
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -388,9 +393,9 @@ class TypeResolverTest :
             resolveOk(
                 """
                 type Config { string name; }
-                main() { 
-                    Config c = null; 
-                    return "ok"; 
+                main() {
+                    Config c = null;
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -399,9 +404,9 @@ class TypeResolverTest :
         test("nullToArrayOk") {
             resolveOk(
                 """
-                main() { 
+                main() {
                     int[] x = null;
-                    return "ok"; 
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -413,9 +418,9 @@ class TypeResolverTest :
             resolveOk(
                 """
                 type Point { int x; int y; }
-                main() { 
+                main() {
                     Point p = { x: 1, y: 2 };
-                    return "ok"; 
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -425,9 +430,9 @@ class TypeResolverTest :
             resolveError(
                 """
                 type Point { int x; int y; }
-                main() { 
-                    Point p = { x: 1 }; 
-                    return "ok"; 
+                main() {
+                    Point p = { x: 1 };
+                    return "ok";
                 }
                 """.trimIndent(),
                 "requires field 'y'",
@@ -438,9 +443,9 @@ class TypeResolverTest :
             resolveError(
                 """
                 type Point { int x; int y; }
-                main() { 
-                    Point p = { x: 1, y: 2, z: 3 }; 
-                    return "ok"; 
+                main() {
+                    Point p = { x: 1, y: 2, z: 3 };
+                    return "ok";
                 }
                 """.trimIndent(),
                 "has no field 'z'",
@@ -451,9 +456,9 @@ class TypeResolverTest :
             resolveError(
                 """
                 type Point { int x; int y; }
-                main() { 
-                    Point p = { x: 1, y: "hello" }; 
-                    return "ok"; 
+                main() {
+                    Point p = { x: 1, y: "hello" };
+                    return "ok";
                 }
                 """.trimIndent(),
                 "Field 'y' expects",
@@ -464,9 +469,9 @@ class TypeResolverTest :
             resolveOk(
                 """
                 type Node { string val; Node next; }
-                main() { 
-                    Node n = { val: "a", next: null }; 
-                    return "ok"; 
+                main() {
+                    Node n = { val: "a", next: null };
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -477,10 +482,10 @@ class TypeResolverTest :
             resolveOk(
                 """
                 type Config { string name; }
-                main() { 
-                    json j = null; 
-                    Config c = j as Config; 
-                    return "ok"; 
+                main() {
+                    json j = null;
+                    Config c = j as Config;
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -490,10 +495,10 @@ class TypeResolverTest :
             resolveError(
                 """
                 type Config { string name; }
-                main() { 
-                    int x = 1; 
-                    Config c = x as Config; 
-                    return "ok"; 
+                main() {
+                    int x = 1;
+                    Config c = x as Config;
+                    return "ok";
                 }
                 """.trimIndent(),
                 "Cannot cast from 'int'",
@@ -503,10 +508,10 @@ class TypeResolverTest :
         test("castToUnknownTypeFails") {
             resolveError(
                 """
-                main() { 
-                    json j = null; 
-                    j as Unknown; 
-                    return "ok"; 
+                main() {
+                    json j = null;
+                    j as Unknown;
+                    return "ok";
                 }
                 """.trimIndent(),
                 "Cast target type 'Unknown' is not defined",
@@ -519,9 +524,9 @@ class TypeResolverTest :
             val (_, _, program) =
                 resolveOk(
                     """
-                    main() { 
-                        double x = Math.sqrt(4.0); 
-                        return "ok"; 
+                    main() {
+                        double x = Math.sqrt(4.0);
+                        return "ok";
                     }
                     """.trimIndent(),
                 )
@@ -534,10 +539,10 @@ class TypeResolverTest :
             val (_, _, program) =
                 resolveOk(
                     """
-                    main() { 
-                        string s = "hello"; 
-                        string u = s.upper(); 
-                        return "ok"; 
+                    main() {
+                        string s = "hello";
+                        string u = s.upper();
+                        return "ok";
                     }
                     """.trimIndent(),
                 )
@@ -550,10 +555,10 @@ class TypeResolverTest :
             val (_, _, program) =
                 resolveOk(
                     """
-                    main() { 
-                        int x = 42; 
-                        double d = x.toDouble(); 
-                        return "ok"; 
+                    main() {
+                        int x = 42;
+                        double d = x.toDouble();
+                        return "ok";
                     }
                     """.trimIndent(),
                 )
@@ -568,10 +573,10 @@ class TypeResolverTest :
                     """
                     type Point { int x; int y; }
                     int getX(Point p) { return p.x; }
-                    main() { 
-                        Point p = { x: 1, y: 2 }; 
-                        int x = p.getX(); 
-                        return "ok"; 
+                    main() {
+                        Point p = { x: 1, y: 2 };
+                        int x = p.getX();
+                        return "ok";
                     }
                     """.trimIndent(),
                 )
@@ -583,10 +588,10 @@ class TypeResolverTest :
         test("unknownMethodFails") {
             resolveError(
                 """
-                main() { 
-                    int x = 42; 
-                    x.nonexistent(); 
-                    return "ok"; 
+                main() {
+                    int x = 42;
+                    x.nonexistent();
+                    return "ok";
                 }
                 """.trimIndent(),
                 "has no method 'nonexistent'",
@@ -597,9 +602,9 @@ class TypeResolverTest :
         test("undeclaredVariableFails") {
             resolveError(
                 """
-                main() { 
-                    int x = y; 
-                    return "ok"; 
+                main() {
+                    int x = y;
+                    return "ok";
                 }
                 """.trimIndent(),
                 "not declared in this scope",
@@ -639,9 +644,9 @@ class TypeResolverTest :
         test("varDeclTypeMismatchFails") {
             resolveError(
                 """
-                main() { 
-                    int x = "hello"; 
-                    return "ok"; 
+                main() {
+                    int x = "hello";
+                    return "ok";
                 }
                 """.trimIndent(),
                 "Type mismatch",
@@ -651,10 +656,10 @@ class TypeResolverTest :
         test("compoundAssignmentOk") {
             resolveOk(
                 """
-                main() { 
-                    int x = 0; 
-                    x += 5; 
-                    return "ok"; 
+                main() {
+                    int x = 0;
+                    x += 5;
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -676,9 +681,9 @@ class TypeResolverTest :
         test("throwRequiresString") {
             resolveError(
                 """
-                main() { 
-                    throw 42; 
-                    return "ok"; 
+                main() {
+                    throw 42;
+                    return "ok";
                 }
                 """.trimIndent(),
                 "'throw' requires a string message",
@@ -688,9 +693,9 @@ class TypeResolverTest :
         test("assignToLiteralFails") {
             resolveError(
                 """
-                main() { 
-                    42 = 10; 
-                    return "ok"; 
+                main() {
+                    42 = 10;
+                    return "ok";
                 }
                 """.trimIndent(),
                 "is not a valid assignment target",
@@ -701,9 +706,9 @@ class TypeResolverTest :
         test("intToDoubleOk") {
             resolveOk(
                 """
-                main() { 
-                    double d = 42; 
-                    return "ok"; 
+                main() {
+                    double d = 42;
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -712,9 +717,9 @@ class TypeResolverTest :
         test("doubleToIntFails") {
             resolveError(
                 """
-                main() { 
-                    int x = 3.14; 
-                    return "ok"; 
+                main() {
+                    int x = 3.14;
+                    return "ok";
                 }
                 """.trimIndent(),
                 "Type mismatch",
@@ -725,10 +730,10 @@ class TypeResolverTest :
             resolveOk(
                 """
                 type Config { string name; }
-                main() { 
-                    Config c = { name: "test" }; 
-                    json j = c; 
-                    return "ok"; 
+                main() {
+                    Config c = { name: "test" };
+                    json j = c;
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -737,10 +742,10 @@ class TypeResolverTest :
         test("arrayElementTypeMustMatch") {
             resolveError(
                 """
-                main() { 
-                    int[] a = [1, 2, 3]; 
-                    string[] b = a; 
-                    return "ok"; 
+                main() {
+                    int[] a = [1, 2, 3];
+                    string[] b = a;
+                    return "ok";
                 }
                 """.trimIndent(),
                 "Type mismatch",
@@ -777,10 +782,10 @@ class TypeResolverTest :
             resolveOk(
                 """
                 type Point { int x; int y; }
-                main() { 
-                    Point p = { x: 1, y: 2 }; 
-                    int x = p.x; 
-                    return "ok"; 
+                main() {
+                    Point p = { x: 1, y: 2 };
+                    int x = p.x;
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -789,10 +794,10 @@ class TypeResolverTest :
         test("arrayIndexAccess") {
             resolveOk(
                 """
-                main() { 
-                    int[] a = [1, 2, 3]; 
-                    int x = a[0]; 
-                    return "ok"; 
+                main() {
+                    int[] a = [1, 2, 3];
+                    int x = a[0];
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -801,10 +806,10 @@ class TypeResolverTest :
         test("stringLengthMethod") {
             resolveOk(
                 """
-                main() { 
-                    string s = "hello"; 
+                main() {
+                    string s = "hello";
                     int l = s.length();
-                    return "ok"; 
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -813,10 +818,10 @@ class TypeResolverTest :
         test("arrayLengthMethod") {
             resolveOk(
                 """
-                main() { 
-                    int[] a = [1, 2]; 
-                    int l = a.length(); 
-                    return "ok"; 
+                main() {
+                    int[] a = [1, 2];
+                    int l = a.length();
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -827,9 +832,9 @@ class TypeResolverTest :
             resolveOk(
                 """
                 int add(int a, int b) { return a + b; }
-                main() { 
-                    int x = add(1, 2); 
-                    return "ok"; 
+                main() {
+                    int x = add(1, 2);
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -839,9 +844,9 @@ class TypeResolverTest :
             resolveError(
                 """
                 int add(int a, int b) { return a + b; }
-                main() { 
-                    int x = add(1); 
-                    return "ok"; 
+                main() {
+                    int x = add(1);
+                    return "ok";
                 }
                 """.trimIndent(),
                 "Too few arguments: 'add' requires at least 2",
@@ -852,9 +857,9 @@ class TypeResolverTest :
             resolveOk(
                 """
                 int inc(int a, int b = 1) { return a + b; }
-                main() { 
-                    int x = inc(5); 
-                    return "ok"; 
+                main() {
+                    int x = inc(5);
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -865,10 +870,10 @@ class TypeResolverTest :
         test("nonBoolConditionFails") {
             resolveError(
                 """
-                main() { 
-                    if (0) { 
-                    } 
-                    return "ok"; 
+                main() {
+                    if (0) {
+                    }
+                    return "ok";
                 }
                 """.trimIndent(),
                 "condition must be 'boolean'",
@@ -878,10 +883,10 @@ class TypeResolverTest :
         test("stringConditionFails") {
             resolveError(
                 """
-                main() { 
-                    if ("") { 
-                    } 
-                    return "ok"; 
+                main() {
+                    if ("") {
+                    }
+                    return "ok";
                 }
                 """.trimIndent(),
                 "condition must be 'boolean'",
@@ -1025,10 +1030,10 @@ class TypeResolverTest :
                     """
                     type Point { int x; int y; }
                     int distance(Point p, int dx, int dy) { return dx + dy; }
-                    main() { 
-                        Point p = { x: 1, y: 2 }; 
-                        int d = p.distance(3, 4); 
-                        return "ok"; 
+                    main() {
+                        Point p = { x: 1, y: 2 };
+                        int d = p.distance(3, 4);
+                        return "ok";
                     }
                     """.trimIndent(),
                 )
@@ -1052,10 +1057,10 @@ class TypeResolverTest :
                 resolveOk(
                     """
                     string upper(string s) { return s; }
-                    main() { 
-                        string s = "hello"; 
-                        string u = s.upper(); 
-                        return "ok"; 
+                    main() {
+                        string s = "hello";
+                        string u = s.upper();
+                        return "ok";
                     }
                     """.trimIndent(),
                 )
@@ -1070,10 +1075,10 @@ class TypeResolverTest :
             resolveError(
                 """
                 int getValue() { return 42; }
-                main() { 
-                    int x = 1; 
-                    x.getValue(); 
-                    return "ok"; 
+                main() {
+                    int x = 1;
+                    x.getValue();
+                    return "ok";
                 }
                 """.trimIndent(),
                 "has no method 'getValue'",
@@ -1103,8 +1108,8 @@ class TypeResolverTest :
             val mainSource =
                 """
                 main() {
-                 int x = helpers.twice(5); 
-                 return "ok"; 
+                 int x = helpers.twice(5);
+                 return "ok";
                  }
                 """.trimIndent()
             val errors = CompilerErrors()
@@ -1138,9 +1143,9 @@ class TypeResolverTest :
 
             val mainSource =
                 """
-                main() { 
-                    helpers.nonexistent(); 
-                    return "ok"; 
+                main() {
+                    helpers.nonexistent();
+                    return "ok";
                 }
                 """.trimIndent()
             val errors = CompilerErrors()
@@ -1158,9 +1163,9 @@ class TypeResolverTest :
         test("namespaceArgCountMismatch") {
             resolveError(
                 """
-                main() { 
-                    Math.sqrt(1.0, 2.0); 
-                    return "ok"; 
+                main() {
+                    Math.sqrt(1.0, 2.0);
+                    return "ok";
                 }
                 """.trimIndent(),
                 "Too many arguments: 'Math.sqrt' accepts at most 1",
@@ -1170,9 +1175,9 @@ class TypeResolverTest :
         test("namespaceArgTypeMismatch") {
             resolveError(
                 """
-                main() { 
-                    Math.sqrt("hello"); 
-                    return "ok"; 
+                main() {
+                    Math.sqrt("hello");
+                    return "ok";
                 }
                 """.trimIndent(),
                 "expected 'double'",
@@ -1186,9 +1191,9 @@ class TypeResolverTest :
                 resolveOk(
                     """
                     main() {
-                        string s = "a,b,c"; 
-                        string[] parts = s.split(","); 
-                        return "ok"; 
+                        string s = "a,b,c";
+                        string[] parts = s.split(",");
+                        return "ok";
                     }
                     """.trimIndent(),
                 )
@@ -1201,10 +1206,10 @@ class TypeResolverTest :
         test("stringContainsReturnsBool") {
             resolveOk(
                 """
-                main() { 
-                    string s = "hello"; 
-                    boolean b = s.contains("ell"); 
-                    return "ok"; 
+                main() {
+                    string s = "hello";
+                    boolean b = s.contains("ell");
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -1213,9 +1218,9 @@ class TypeResolverTest :
         test("mathAbsReturnsDouble") {
             resolveOk(
                 """
-                main() { 
-                    double x = Math.abs(-3.14); 
-                    return "ok"; 
+                main() {
+                    double x = Math.abs(-3.14);
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -1224,9 +1229,9 @@ class TypeResolverTest :
         test("mathMaxReturnsDouble") {
             resolveOk(
                 """
-                main() { 
-                    double x = Math.max(1.0, 2.0); 
-                    return "ok"; 
+                main() {
+                    double x = Math.max(1.0, 2.0);
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -1238,9 +1243,9 @@ class TypeResolverTest :
             val (_, _, program) =
                 resolveOk(
                     """
-                    main() { 
-                        json a = {ok: true, msg: "hello"}; 
-                        return "ok"; 
+                    main() {
+                        json a = {ok: true, msg: "hello"};
+                        return "ok";
                     }
                     """.trimIndent(),
                 )
@@ -1331,10 +1336,10 @@ class TypeResolverTest :
                 """
                 type Point { int x; int y; }
                 void process(json data) { return; }
-                main() { 
-                    Point p = { x: 1, y: 2 }; 
-                    process(p); 
-                    return "ok"; 
+                main() {
+                    Point p = { x: 1, y: 2 };
+                    process(p);
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -1346,10 +1351,10 @@ class TypeResolverTest :
                     """
                     type Point { int x; int y; }
                     string serialize(json data) { return "{}"; }
-                    main() { 
-                        Point p = { x: 1, y: 2 }; 
-                        string s = p.serialize(); 
-                        return "ok"; 
+                    main() {
+                        Point p = { x: 1, y: 2 };
+                        string s = p.serialize();
+                        return "ok";
                     }
                     """.trimIndent(),
                 )
@@ -1364,10 +1369,10 @@ class TypeResolverTest :
                 """
                 type Config { string name; }
                 void send(json data, string endpoint) { return; }
-                main() { 
-                    Config c = { name: "test" }; 
-                    send(c, "/api"); 
-                    return "ok"; 
+                main() {
+                    Config c = { name: "test" };
+                    send(c, "/api");
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -1392,9 +1397,9 @@ class TypeResolverTest :
             resolveError(
                 """
                 void foo(int ...vals[]) { }
-                main() { 
-                    foo(1, "bad"); 
-                    return "ok"; 
+                main() {
+                    foo(1, "bad");
+                    return "ok";
                 }
                 """.trimIndent(),
                 "Argument 2 ('vals') of 'foo': expected 'int', got 'string'",
@@ -1434,9 +1439,9 @@ class TypeResolverTest :
         test("rejects void in local variables") {
             resolveError(
                 """
-                main() { 
-                    void x = null; 
-                    return "ok"; 
+                main() {
+                    void x = null;
+                    return "ok";
                 }
                 """.trimIndent(),
                 "'void' is not a valid variable type",
@@ -1481,10 +1486,10 @@ class TypeResolverTest :
         test("compound assign int += int ok") {
             resolveOk(
                 """
-                main() { 
-                    int x = 1; 
-                    x += 2; 
-                    return "ok"; 
+                main() {
+                    int x = 1;
+                    x += 2;
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -1493,10 +1498,10 @@ class TypeResolverTest :
         test("compound assign double += int ok") {
             resolveOk(
                 """
-                main() { 
-                    double d = 1.0; 
-                    d += 2; 
-                    return "ok"; 
+                main() {
+                    double d = 1.0;
+                    d += 2;
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -1505,10 +1510,10 @@ class TypeResolverTest :
         test("compound assign double += double ok") {
             resolveOk(
                 """
-                main() { 
-                    double d = 1.0; 
-                    d += 2.5; 
-                    return "ok"; 
+                main() {
+                    double d = 1.0;
+                    d += 2.5;
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -1517,10 +1522,10 @@ class TypeResolverTest :
         test("compound assign int += double fails") {
             resolveError(
                 """
-                main() { 
-                    int x = 1; 
-                    x += 2.5; 
-                    return "ok"; 
+                main() {
+                    int x = 1;
+                    x += 2.5;
+                    return "ok";
                 }
                 """.trimIndent(),
                 "narrow",
@@ -1530,10 +1535,10 @@ class TypeResolverTest :
         test("compound assign int -= double fails") {
             resolveError(
                 """
-                main() { 
-                    int x = 10; 
-                    x -= 1.5; 
-                    return "ok"; 
+                main() {
+                    int x = 10;
+                    x -= 1.5;
+                    return "ok";
                 }
                 """.trimIndent(),
                 "narrow",
@@ -1543,10 +1548,10 @@ class TypeResolverTest :
         test("compound assign int *= double fails") {
             resolveError(
                 """
-                main() { 
-                    int x = 3; 
-                    x *= 2.0; 
-                    return "ok"; 
+                main() {
+                    int x = 3;
+                    x *= 2.0;
+                    return "ok";
                 }
                 """.trimIndent(),
                 "narrow",
@@ -1556,10 +1561,10 @@ class TypeResolverTest :
         test("compound assign string += string ok") {
             resolveOk(
                 """
-                main() { 
-                    string s = "a"; 
-                    s += "b"; 
-                    return "ok"; 
+                main() {
+                    string s = "a";
+                    s += "b";
+                    return "ok";
                 }
                 """.trimIndent(),
             )
@@ -1568,10 +1573,10 @@ class TypeResolverTest :
         test("compound assign string -= string fails") {
             resolveError(
                 """
-                main() { 
-                    string s = "a"; 
-                    s -= "b"; 
-                    return "ok"; 
+                main() {
+                    string s = "a";
+                    s -= "b";
+                    return "ok";
                 }
                 """.trimIndent(),
                 "requires numeric",
@@ -1581,10 +1586,10 @@ class TypeResolverTest :
         test("compound assign int += string fails") {
             resolveError(
                 """
-                main() { 
-                    int x = 1; 
-                    x += "a"; 
-                    return "ok"; 
+                main() {
+                    int x = 1;
+                    x += "a";
+                    return "ok";
                 }
                 """.trimIndent(),
                 "requires numeric or string",

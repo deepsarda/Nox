@@ -1,0 +1,26 @@
+// @test:yields [{"status":"accepted","timestamp":123}]
+// @test:result "ok"
+
+type Request {
+    string user;
+    int action;
+}
+
+main() {
+    string raw = "{\"user\": \"bob\", \"action\": 1}";
+    json payload = Json.parse(raw);
+
+    Request req = payload as Request;
+    int ts = 123;
+
+    if (req.action > 0) {
+        json resp = Json.parse("{}");
+        resp.setString("status", "accepted");
+        resp.setInt("timestamp", ts);
+
+        string out = Json.stringify(resp, false);
+        yield out;
+        return "ok";
+    }
+    return "error";
+}

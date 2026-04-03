@@ -1,0 +1,8 @@
+// @test:result "2"
+main() {
+    int[] arr = [1, 2, 3];
+    arr.push(4);
+    arr.pop();
+    arr.pop();
+    return arr.length();
+}

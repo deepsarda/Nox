@@ -130,14 +130,13 @@ The JVM generates a synthetic class in memory. This class:
 - Is treated as a **direct call** by the optimizer
  
 ## VM Integration
-
 ### The `SCALL` Opcode
 
 System calls use the `SCALL` instruction:
 
 ```
 ┌────────┬──────────┬──────────┬──────────┬──────────┐
-│ SCALL  │ (unused) │ dest reg │ func ID  │ arg start│
+│ SCALL  │  subOp   │ func ID  │ pArgStart│ rArgStart│
 └────────┴──────────┴──────────┴──────────┴──────────┘
 ```
 
@@ -145,19 +144,20 @@ System calls use the `SCALL` instruction:
 
 ```kotlin
 SCALL -> {
-    val funcId = opB      // Look up the linked function
-    val destReg = opA     // Where to put the result
-    val argStart = opC    // Where arguments begin
+    val subOp = Instruction.subOp(inst)
+    val funcId = opA      // Look up the linked function
+    val pArgStart = opB   // Primitive argument start
+    val rArgStart = opC   // Reference argument start
 
     // O(1) array lookup
     val func = systemLibrary[funcId]
 
     try {
-        // This looks generic, but JIT sees it as:
-        //   val result = MathExtension.hypot(a, b)
-        //   pMem[bp + destReg] = doubleToRawLongBits(result)
-        func.invoke(pMem, rMem, bp, bpRef, argStart, destReg)
+        // subOp 1 = Primitive result, 0 = Reference result
+        val destReg = if (subOp == 1) pArgStart else rArgStart
+        func.invoke(pMem, rMem, bp, bpRef, pArgStart, rArgStart, destReg)
     } catch (t: Throwable) {
+```
         // Convert ANY JVM exception to a Nox exception
         handleException(NoxException(classify(t), t.message, pc))
     }

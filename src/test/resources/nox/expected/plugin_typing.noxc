@@ -1,0 +1,162 @@
+;  Nox Bytecode Disassembly
+;  Source:   plugin_typing.nox
+;  Program:  "plugin_typing"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "__T[]_push!int"
+  #1   str   "__T[]_pop!int"
+  #2   str   "__T[]_length!int"
+  #3   str   "ints"
+  #4   str   "a"
+  #5   str   "b"
+  #6   str   "strings"
+  #7   str   "__json_getIntArray"
+  #8   str   "__json_getStringArray"
+  #9   str   "x"
+  #10  str   "y"
+  #11  str   "__T[]_push!json"
+  #12  str   "__T[]_length!json"
+  #13  str   "n: "
+  #14  str   ", len: "
+  #15  str   ", ja[0]: "
+  #16  str   ", sa[0]: "
+  #17  str   ", nested_len: "
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=4  rMem=8
+
+.func main
+  ;
+  ; line 6  int[] nums = [1, 2];
+  0000:  NEW_ARRAY r1                          ; nums:r1 = []
+  0001:  LDI       p0, 1                       ; p0 = 1
+  0002:  ARR_PUSH  SET_INT, r1, p0             ; nums:r1.push(p0)
+  0003:  LDI       p0, 2                       ; p0 = 2
+  0004:  ARR_PUSH  SET_INT, r1, p0             ; nums:r1.push(p0)
+  ;
+  ; line 7  nums.push(3);
+  0005:  MOVR      r3, r1                      ; r3 = nums:r1
+  0006:  LDI       p1, 3                       ; p1 = 3
+  0007:  SCALL     __T[]_push!int, p1, r3      ; scall __T[]_push!int(p1..., r3...)
+  ;
+  ; line 8  int n = nums.pop();
+  0008:  MOVR      r3, r1                      ; r3 = nums:r1
+  0009:  SCALL     __T[]_pop!int, p1, r3       ; p1 = scall __T[]_pop!int(p2..., r3...)
+  0010:  MOV       p0, p1                      ; n:p0 = p1
+  ;
+  ; line 9  int len = nums.length();
+  0011:  MOVR      r3, r1                      ; r3 = nums:r1
+  0012:  SCALL     __T[]_length!int, p2, r3    ; p2 = scall __T[]_length!int(p3..., r3...)
+  0013:  MOV       p1, p2                      ; len:p1 = p2
+  ;
+  ; line 12  json data = {ints: [10, 20], strings: ["a", "b"]};
+  0014:  NEW_OBJ   r1                          ; data:r1 = {}
+  0015:  NEW_ARRAY r2                          ; r2 = []
+  0016:  LDI       p2, 10                      ; p2 = 10
+  0017:  ARR_PUSH  SET_INT, r2, p2             ; r2.push(p2)
+  0018:  LDI       p2, 20                      ; p2 = 20
+  0019:  ARR_PUSH  SET_INT, r2, p2             ; r2.push(p2)
+  0020:  OBJ_SET   SET_INT, r1, "ints", p2     ; data:r1.ints = p2
+  0021:  NEW_ARRAY r2                          ; r2 = []
+  0022:  LDC       r3, #4                      ; r3 = "a"
+  0023:  ARR_PUSH  SET_STR, r2, r3             ; r2.push(r3)
+  0024:  LDC       r3, #5                      ; r3 = "b"
+  0025:  ARR_PUSH  SET_STR, r2, r3             ; r2.push(r3)
+  0026:  OBJ_SET   SET_STR, r1, "strings", r2  ; data:r1.strings = r2
+  ;
+  ; line 13  int[] ja = data.getIntArray("ints", []);
+  0027:  MOVR      r5, r1                      ; r5 = data:r1
+  0028:  LDC       r6, #3                      ; r6 = "ints"
+  0029:  NEW_ARRAY r7                          ; r7 = []
+  0030:  SCALL     __json_getIntArray, p3, r4  ; r4 = scall __json_getIntArray(p3..., r5...)
+  0031:  MOVR      r2, r4                      ; ja:r2 = r4
+  ;
+  ; line 14  string[] sa = data.getStringArray("strings", []);
+  0032:  MOVR      r5, r1                      ; r5 = data:r1
+  0033:  LDC       r6, #6                      ; r6 = "strings"
+  0034:  NEW_ARRAY r7                          ; r7 = []
+  0035:  SCALL     __json_getStringArray, p3, r4; r4 = scall __json_getStringArray(p3..., r5...)
+  0036:  MOVR      r3, r4                      ; sa:r3 = r4
+  ;
+  ; line 17  json[] nested = [{x: 1}];
+  0037:  NEW_ARRAY r1                          ; nested:r1 = []
+  0038:  NEW_OBJ   r4                          ; r4 = {}
+  0039:  LDI       p2, 1                       ; p2 = 1
+  0040:  OBJ_SET   SET_INT, r4, "x", p2        ; r4.x = p2
+  0041:  ARR_PUSH  SET_OBJ, r1, r4             ; nested:r1.push(r4)
+  ;
+  ; line 18  json item = {y: 2};
+  0042:  NEW_OBJ   r4                          ; item:r4 = {}
+  0043:  LDI       p2, 2                       ; p2 = 2
+  0044:  OBJ_SET   SET_INT, r4, "y", p2        ; item:r4.y = p2
+  ;
+  ; line 19  nested.push(item);
+  0045:  MOVR      r6, r1                      ; r6 = nested:r1
+  0046:  MOVR      r7, r4                      ; r7 = item:r4
+  0047:  SCALL     __T[]_push!json, p3, r6     ; scall __T[]_push!json(p3..., r6...)
+  ;
+  ; line 20  int nested_len = nested.length();
+  0048:  MOVR      r6, r1                      ; r6 = nested:r1
+  0049:  SCALL     __T[]_length!json, p3, r6   ; p3 = scall __T[]_length!json(p4..., r6...)
+  0050:  MOV       p2, p3                      ; nested_len:p2 = p3
+  ;
+  ; line 22  return `n: ${n}, len: ${len}, ja[0]: ${ja[0]}, sa[0]: ${sa[0]}, nested_len: ${nested_len}`;
+  0051:  LDC       r5, #13                     ; r5 = "n: "
+  0052:  MOVR      r1, r5                      ; nested:r1 = r5
+  0053:  I2S       r5, p0                      ; r5 = toString(n:p0)
+  0054:  SCONCAT   r1, r1, r5                  ; nested:r1 = nested:r1 + r5
+  0055:  LDC       r5, #14                     ; r5 = ", len: "
+  0056:  SCONCAT   r1, r1, r5                  ; nested:r1 = nested:r1 + r5
+  0057:  I2S       r5, p1                      ; r5 = toString(len:p1)
+  0058:  SCONCAT   r1, r1, r5                  ; nested:r1 = nested:r1 + r5
+  0059:  LDC       r5, #15                     ; r5 = ", ja[0]: "
+  0060:  SCONCAT   r1, r1, r5                  ; nested:r1 = nested:r1 + r5
+  0061:  LDI       p0, 0                       ; n:p0 = 0
+  0062:  AGET_IDX  r1, r2, p0                  ; nested:r1 = ja:r2[n:p0]
+  0063:  I2S       r2, p1                      ; ja:r2 = toString(len:p1)
+  0064:  SCONCAT   r1, r1, r2                  ; nested:r1 = nested:r1 + ja:r2
+  0065:  LDC       r2, #16                     ; ja:r2 = ", sa[0]: "
+  0066:  SCONCAT   r1, r1, r2                  ; nested:r1 = nested:r1 + ja:r2
+  0067:  LDI       p1, 0                       ; len:p1 = 0
+  0068:  AGET_IDX  r2, r3, p1                  ; ja:r2 = sa:r3[len:p1]
+  0069:  MOVR      r3, r2                      ; sa:r3 = ja:r2
+  0070:  SCONCAT   r1, r1, r3                  ; nested:r1 = nested:r1 + sa:r3
+  0071:  LDC       r3, #17                     ; sa:r3 = ", nested_len: "
+  0072:  SCONCAT   r1, r1, r3                  ; nested:r1 = nested:r1 + sa:r3
+  0073:  I2S       r3, p2                      ; sa:r3 = toString(nested_len:p2)
+  0074:  SCONCAT   r1, r1, r3                  ; nested:r1 = nested:r1 + sa:r3
+  0075:  KILL_REF  r2                          ; ja:r2 = null (GC)
+  0076:  KILL_REF  r3                          ; sa:r3 = null (GC)
+  0077:  KILL_REF  r4                          ; item:r4 = null (GC)
+  0078:  KILL_REF  r5                          ; r5 = null (GC)
+  0079:  KILL_REF  r6                          ; r6 = null (GC)
+  0080:  KILL_REF  r7                          ; r7 = null (GC)
+  0081:  RET       r1                          ; return nested:r1
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 82
+  constants:    18
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     656 bytes

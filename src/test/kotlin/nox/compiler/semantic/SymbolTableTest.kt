@@ -5,7 +5,9 @@ import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import nox.compiler.types.*
+import nox.compiler.types.SymbolTable
+import nox.compiler.types.TypeRef
+import nox.compiler.types.VarSymbol
 
 /**
  * Tests for [SymbolTable] scope-chain mechanics.

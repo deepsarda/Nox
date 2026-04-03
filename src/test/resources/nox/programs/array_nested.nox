@@ -1,0 +1,8 @@
+// @test:result "10"
+type Box {
+    int value;
+}
+main() {
+    Box[] boxes = [{ value: 5 }, { value: 10 }];
+    return boxes[1].value;
+}

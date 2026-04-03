@@ -1,0 +1,53 @@
+;  Nox Bytecode Disassembly
+;  Source:   yield_streaming.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "a"
+  #1   str   "b"
+  #2   str   "c"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=0  rMem=2
+
+.func main
+  ;
+  ; line 4  yield "a";
+  0000:  LDC       r1, #0                      ; r1 = "a"
+  0001:  YIELD     r1                          ; yield r1
+  ;
+  ; line 5  yield "b";
+  0002:  LDC       r1, #1                      ; r1 = "b"
+  0003:  YIELD     r1                          ; yield r1
+  ;
+  ; line 6  return "c";
+  0004:  LDC       r1, #2                      ; r1 = "c"
+  0005:  RET       r1                          ; return r1
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 6
+  constants:    3
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     48 bytes

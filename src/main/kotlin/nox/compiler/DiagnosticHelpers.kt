@@ -1,6 +1,7 @@
 package nox.compiler
 
-import nox.compiler.types.*
+import nox.compiler.DiagnosticHelpers.MAX_EDIT_DISTANCE
+import nox.compiler.types.TypeRef
 import kotlin.math.min
 
 /**

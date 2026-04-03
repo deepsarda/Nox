@@ -1,0 +1,4 @@
+// @test:error "QuotaExceededError"
+main() {
+    while (true) {}
+}

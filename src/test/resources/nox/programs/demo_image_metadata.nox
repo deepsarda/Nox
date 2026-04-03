@@ -1,0 +1,29 @@
+// @test:result "ok"
+
+type Meta {
+    int flags;
+    string name;
+}
+
+main() {
+    json arr = Json.parse("[{\"flags\": 1, \"name\": \"a.png\"}, {\"flags\": 2, \"name\": \"b.png\"}, {\"flags\": 3, \"name\": \"c.png\"}]");
+    Meta[] images = arr as Meta[];
+
+    int count = 0;
+    foreach (Meta m in images) {
+        if (m.flags == 2) {
+            continue;
+        }
+        if (m.flags == 3) {
+            count = count + 1;
+            break;
+        }
+        count = count + 1;
+    }
+
+    if (count == 2) {
+        return "ok";
+    }
+
+    return "error";
+}

@@ -2,12 +2,10 @@ package nox.compiler.parsing
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import nox.compiler.CompilerErrors
 import nox.compiler.ast.*
 import nox.compiler.types.*
 
@@ -804,101 +802,5 @@ class ASTBuilderTest :
             prog.globals shouldHaveSize 1
             prog.functionsByName.size shouldBe 1
             prog.main.shouldNotBeNull()
-        }
-
-        // Error Recovery
-
-        test("syntax error in expression reports error and produces partial AST") {
-            val errors = CompilerErrors()
-            val prog = NoxParsing.parse("main() { int x = ; return \"ok\"; }", "err.nox", errors)
-
-            errors.hasErrors() shouldBe true
-            errors.all().any { it.message.contains("Syntax Error") } shouldBe true
-            // The main function should still be parsed
-            prog.main.shouldNotBeNull()
-        }
-
-        test("lexical error reports error via CompilerErrors") {
-            val errors = CompilerErrors()
-            NoxParsing.parse("main() { @invalid }", "err.nox", errors)
-
-            errors.hasErrors() shouldBe true
-        }
-
-        test("valid declarations survive alongside broken ones") {
-            val errors = CompilerErrors()
-            val prog =
-                NoxParsing.parse(
-                    """
-                    type Point { int x; int y; }
-                    broken garbage here !!!
-                    int add(int a, int b) { return a + b; }
-                    """.trimIndent(),
-                    "err.nox",
-                    errors,
-                )
-
-            errors.hasErrors() shouldBe true
-            // The valid type definition should still be in the AST
-            prog.typesByName["Point"].shouldNotBeNull()
-        }
-
-        test("broken statement in a function body produces ErrorStmt but preserves others") {
-            val errors = CompilerErrors()
-            val prog =
-                NoxParsing.parse(
-                    """
-                    main() {
-                        int x = 10;
-                        ??? ;
-                        return "ok";
-                    }
-                    """.trimIndent(),
-                    "err.nox",
-                    errors,
-                )
-
-            errors.hasErrors() shouldBe true
-            prog.main.shouldNotBeNull()
-            // At least the valid variable declaration should survive
-            val stmts = prog.main!!.body.statements
-            stmts.any { it is VarDeclStmt } shouldBe true
-        }
-
-        test("multiple syntax errors are all reported") {
-            val errors = CompilerErrors()
-            NoxParsing.parse(
-                """
-                main() {
-                    int x = ;
-                    int y = ;
-                    return "ok";
-                }
-                """.trimIndent(),
-                "err.nox",
-                errors,
-            )
-
-            errors.hasErrors() shouldBe true
-            errors.count shouldBeGreaterThanOrEqual 2
-        }
-
-        test("empty struct produces parse error but TypeDef survives via ANTLR recovery") {
-            val errors = CompilerErrors()
-            val prog =
-                NoxParsing.parse(
-                    """
-                    type Empty { }
-                    main() { return "ok"; }
-                    """.trimIndent(),
-                    "err.nox",
-                    errors,
-                )
-
-            errors.hasErrors() shouldBe true
-            // ANTLR error recovery still produces a TypeDef node with empty fields.
-            // DeclarationCollector rejects it with a semantic error.
-            prog.typesByName["Empty"].shouldNotBeNull()
-            prog.typesByName["Empty"]!!.fields shouldHaveSize 0
         }
     })

@@ -1,0 +1,4 @@
+// @test:result "4.0"
+main() {
+    return Math.sqrt(16.0);
+}

@@ -81,6 +81,9 @@ interface RuntimeContext {
 
     /** Request permission for a sensitive operation (suspends the coroutine) */
     suspend fun requestPermission(request: PermissionRequest): PermissionResponse
+
+    /** Request resource limit extension when a guard trips (suspends the coroutine) */
+    suspend fun requestResourceExtension(request: ResourceRequest): ResourceResponse
 }
 ```
 
@@ -218,8 +221,13 @@ The complete lifecycle of a `.nox` execution:
     │                                          │
     │◀── requestPermission(File.Read(path)) ───│
     │   (Host pattern-matches request)         │   (Coroutine suspended)
-    │── Granted.Unconstrained ─────────────────▶│
+    │── Granted.Unconstrained ────────────────▶│
     │                                          │── Resume execution...
+    │                                          │
+    │◀── requestResourceExtension(Instruction)─│
+    │   (Host evaluates resource policy)       │   (Coroutine suspended)
+    │── Granted(1_000_000) ───────────────────▶│
+    │                                          │── Resume with new limit...
     │                                          │
     │◀── returnResult("done") ─────────────────│
     │                                          ╳ (Coroutine completes)

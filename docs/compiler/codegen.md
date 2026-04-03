@@ -534,13 +534,13 @@ int result = add(x, y);
 ```
     MOV   argStart+0, x_reg       // Copy arg 1
     MOV   argStart+1, y_reg       // Copy arg 2
-    CALL  funcId, argStart        // Push frame, jump to function
+    CALL  [subOp] funcId, primArgStart, refArgStart // Push frame, jump to function
     MOV   dest_reg, retReg        // Extract return value
 ```
 
 The `CALL` instruction:
 1. Pushes a new call frame (saves `bp`, `bpRef`, return `pc`)
-2. Slides `bp` and `bpRef` forward by the caller's frame size
+2. Slides `bp` and `bpRef` forward by the caller's frame size (`primArgStart` and `refArgStart`)
 3. Arguments are already in the new frame's register 0, 1, 2, ...
 4. Jumps to the function's `entryPC`
 
@@ -552,10 +552,10 @@ double root = Math.sqrt(144);
 
 ```
     LDI   arg_reg, 144
-    SCALL dest_reg, funcId, arg_reg
+    SCALL [subOp] funcId, primArgStart, refArgStart
 ```
 
-`SCALL` invokes the linked `NoxNativeFunc` directly via `MethodHandle`. No frame push, the Kotlin function runs on the same coroutine.
+`SCALL` invokes the linked `NoxNativeFunc` directly via `MethodHandle`. No frame push, the Kotlin function runs on the same coroutine. `subOp` determines if the result is primitive (1) or reference (0).
 
 ### Method Call (Resolution-Dependent)
 
@@ -842,13 +842,12 @@ gMem[slot]       // Global primitives (int, double, boolean)
 gMemRef[slot]    // Global references (string, json, structs, arrays)
 ```
 
-Accessing a global uses a different opcode or a flag on the load/store:
+Accessing a global uses the `[G]` flag (bit 15) on instruction operands. When set, the operand reads from or writes to `gMem`/`gMemRef` instead of the local frame:
 
 ```
-GLOAD    dest_reg, globalSlot     // Load global into register
-GSTORE   globalSlot, source_reg   // Store register into global
-GLOADR   dest_reg, globalSlot     // Reference variant
-GSTORER  globalSlot, source_reg   // Reference variant
+LDI    [G]slot, 42                 // gMem[slot] = 42  (direct global write)
+MOV    localReg, [G]slot           // pMem[bp+localReg] = gMem[slot]  (global → local)
+IADD   [G]slot, [G]slot, localReg  // gMem[slot] += pMem[bp+localReg]
 ```
  
 ## Module Initialization
@@ -880,9 +879,9 @@ For each `GlobalVarDecl` in the module, **in declaration order**:
 
 | Initializer | Action | Example |
 |---|---|---|
-| **None** | Skip — `gMem`/`gMemRef` are zero/null-filled at allocation | `int count;` → already `0` |
-| **Literal** | Emit `LDI` + `GSTORE` or `LDC` + `GSTORER` | `int x = 42;` → `LDI p0, 42; GSTORE 0, p0` |
-| **Expression** | Emit the full expression, then `GSTORE` the result | `int x = add(1,2);` → `LDI p0,1; LDI p1,2; CALL add,p0; GSTORE 0,p0` |
+| **None** | Skip since `gMem`/`gMemRef` are zero/null-filled at allocation | `int count;` → already `0` |
+| **Literal** | Emit `LDI [G]slot, value` or `LDC [G]slot, poolIdx` | `int x = 42;` → `LDI [G]0, 42` |
+| **Expression** | Emit expression with global-flagged dest | `int x = add(1,2);` becomes `LDI p0,1; LDI p1,2; CALL add,p0; MOV [G]0,p0` |
 
 When **all** globals in a module either have no initializer or are primitives with the value `0`, no `<module_init>` is emitted because the zero-filled memory is sufficient.
 
@@ -891,11 +890,11 @@ When **all** globals in a module either have no initializer or are primitives wi
 Within a single file, globals are initialized **top-to-bottom**. A global may reference only globals declared **before** it in the same file:
 
 ```c
-// VALID — b references a, which is already initialized
+// VALID: b references a, which is already initialized
 int a = 10;
 int b = a + 5;
 
-// INVALID — a references b, which hasn't been initialized yet
+// INVALID: a references b, which hasn't been initialized yet
 int a = b + 5;     // Compile error: forward reference to global 'b'
 int b = 10;
 ```
@@ -981,13 +980,11 @@ main() {
   ; source:  constants.nox
   ;
   ; constants.nox:1  double PI = 3.14159;
-  0000:  LDC       p0, #0                   ; p0 = 3.14159
-  0001:  GSTORE    g0, p0                   ; g0 = PI
+  0000:  LDC       g0, #0                   ; g0 = 3.14159
   ;
   ; constants.nox:2  int MAX_RETRIES = 5;
-  0002:  LDI       p0, 5                    ; p0 = 5
-  0003:  GSTORE    g1, p0                   ; g1 = MAX_RETRIES
-  0004:  RET                                ; return (void)
+  0001:  LDI       g1, 5                    ; g1 = MAX_RETRIES
+  0002:  RET                                ; return (void)
 
 .init main
   ; globals: gr0=PREFIX (string)
@@ -995,16 +992,14 @@ main() {
   ; note:    g2=counter (int) skipped, default is 0
   ;
   ; main.nox:5  string PREFIX = "item_";
-  0005:  LDC       r0, #1                   ; r0 = "item_"
-  0006:  GSTORER   gr0, r0                  ; gr0 = PREFIX
-  0007:  RET                                ; return (void)
+  0003:  LDC       gr0, #1                  ; gr0 = "item_"
+  0004:  RET                                ; return (void)
 
 .func main
   ;
   ; main.nox:8  return `${PREFIX}${counter}`;
-  0008:  GLOADR    r0, gr0                  ; r0 = gr0
-  0009:  GLOAD     p0, g2                   ; p0 = g2
-  0010:  I2S       r1, p0                   ; r1 = toString(p0)
+  0005:  MOV       r0, gr0                  ; r0 = gr0  (via [G] flag)
+  0006:  I2S       r1, g2                   ; r1 = toString(g2)  (via [G] flag)
   0011:  SCONCAT   r0, r0, r1               ; r0 = r0 + r1
   0012:  KILL_REF  r1                       ; r1 = null (GC)
   0013:  KILL_REF  r0                       ; r0 = null (GC)
@@ -1058,16 +1053,14 @@ Func 2: "main"           entry=6   params=2  pFrame=4  rFrame=2
   ; globals: g0=MULTIPLIER (int)
   ;
   ; adder.nox:4  int MULTIPLIER = 2;
-  0000:  LDI       p0, 2                    ; p0 = 2
-  0001:  GSTORE    g0, p0                   ; g0 = MULTIPLIER
-  0002:  RET                                ; return (void)
+  0000:  LDI       g0, 2                    ; g0 = MULTIPLIER
+  0001:  RET                                ; return (void)
 
 .func double_it
   ; params: p0=x
   ;
   ; adder.nox:7  return x * MULTIPLIER;
-  0003:  GLOAD     p1, g0                   ; p1 = MULTIPLIER
-  0004:  IMUL      p1, p0, p1               ; p1 = x:p0 * p1
+  0002:  IMUL      p1, p0, g0               ; p1 = x:p0 * g0  (g0 via [G] flag)
   0005:  RET       p1                       ; return p1
 
 .func main
@@ -1090,7 +1083,7 @@ Func 2: "main"           entry=6   params=2  pFrame=4  rFrame=2
   0015:  RET       r0                       ; return r0
 ```
 
-**Execution sequence:** VM calls `<module_init>` (0–2), then `main` (6–13). `main` calls `double_it` (3–5) which reads the global `MULTIPLIER` via `GLOAD`.
+**Execution sequence:** VM calls `<module_init>` (0–1), then `main`. `main` calls `double_it` which reads the global `MULTIPLIER` directly via the `[G]` flag on the operand.
  
 ## Compilation Metrics
 

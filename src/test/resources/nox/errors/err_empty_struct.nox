@@ -1,0 +1,6 @@
+// @test:error "CompilationError"
+type Empty {}
+main() {
+    Empty e = {};
+    return 1;
+}

@@ -1,0 +1,61 @@
+;  Nox Bytecode Disassembly
+;  Source:   default_params.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "World"
+  #1   str   "greet"
+
+
+; Functions
+
+;  Function: greet
+;    Entry PC:   0
+;    Params:     1
+;    Frame:      pMem=0  rMem=2
+
+.func greet
+  ; params: r1=name
+  ;
+  ; line 3  return name;
+  0000:  RET       r1                          ; return name:r1
+
+;  Function: main
+;    Entry PC:   1
+;    Params:     0
+;    Frame:      pMem=0  rMem=4
+
+.func main
+  ;
+  ; line 2  string greet(string name = "World") {
+  0001:  LDC       r3, #0                      ; r3 = "World"
+  ;
+  ; line 7  return greet();
+  0002:  CALL      greet, p0, r2               ; r2 = call greet(p0..., r3...)
+  0003:  MOVR      r1, r2                      ; r1 = r2
+  0004:  KILL_REF  r2                          ; r2 = null (GC)
+  0005:  KILL_REF  r3                          ; r3 = null (GC)
+  0006:  RET       r1                          ; return r1
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    2
+  instructions: 7
+  constants:    2
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     56 bytes

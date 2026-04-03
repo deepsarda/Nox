@@ -1,0 +1,11 @@
+// @test:result "10"
+main() {
+    int i = 0;
+    while (true) {
+        i++;
+        if (i == 10) {
+            break;
+        }
+    }
+    return i;
+}
