@@ -1,6 +1,6 @@
 package nox.compiler.types
 
-import nox.compiler.ast.FuncDef
+import nox.compiler.ast.RawFuncDef
 
 /**
  * A single parameter in a [CallTarget] signature.
@@ -33,5 +33,5 @@ data class CallTarget(
     val name: String,
     val params: List<NoxParam>,
     val returnType: TypeRef,
-    val astNode: FuncDef? = null,
+    val astNode: RawFuncDef? = null,
 )

@@ -39,7 +39,7 @@ data class VarSymbol(
 data class ParamSymbol(
     override val name: String,
     override val type: TypeRef,
-    val defaultValue: Expr?,
+    val defaultValue: RawExpr?,
     val isVarargs: Boolean = false,
 ) : Symbol {
     /** Register assigned by the register allocator. Set during codegen. */
@@ -68,7 +68,7 @@ data class FuncSymbol(
     override val name: String,
     val returnType: TypeRef,
     val params: List<ParamSymbol>,
-    val astNode: FuncDef,
+    val astNode: RawFuncDef,
 ) : Symbol {
     override val type: TypeRef get() = returnType
 }
@@ -82,7 +82,16 @@ data class FuncSymbol(
 data class TypeSymbol(
     override val name: String,
     val fields: LinkedHashMap<String, TypeRef>,
-    val astNode: TypeDef,
+    val astNode: RawTypeDef,
 ) : Symbol {
     override val type: TypeRef get() = TypeRef(name)
+}
+
+/**
+ * A namespace reference (imported module or built-in).
+ */
+data class NamespaceSymbol(
+    override val name: String,
+) : Symbol {
+    override val type: TypeRef get() = TypeRef.JSON
 }

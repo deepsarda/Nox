@@ -68,7 +68,7 @@ class NoxcEmitter {
         val ts = timestamp.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
         sb.appendLine(";  Nox Bytecode Disassembly")
         sb.appendLine(";  Source:   $sourceFile")
-        sb.appendLine(";  Program:  \"$programName\"")
+        sb.appendLine(";  TypedProgram:  \"$programName\"")
         sb.appendLine(";  Compiled: $ts")
 
         val names = program.modules.joinToString(", ") { it.namespace }

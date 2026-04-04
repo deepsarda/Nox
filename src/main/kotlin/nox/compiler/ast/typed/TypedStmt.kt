@@ -1,4 +1,6 @@
-package nox.compiler.ast
+package nox.compiler.ast.typed
+
+import nox.compiler.types.* 
 
 import nox.compiler.types.*
 
@@ -9,7 +11,7 @@ import nox.compiler.types.*
  *
  * @property loc source position of this statement
  */
-sealed class Stmt(
+sealed class TypedStmt(
     val loc: SourceLocation,
 )
 
@@ -20,17 +22,15 @@ sealed class Stmt(
  *
  * [register] is assigned by the register allocator.
  */
-class VarDeclStmt(
+class TypedVarDeclStmt(
     val type: TypeRef,
     val name: String,
-    val initializer: Expr,
+    val initializer: TypedExpr,
     loc: SourceLocation,
-) : Stmt(loc) {
-    /** Register assigned to this local variable. Set by register allocator. */
-    var register: Int = -1
+    val resolvedSymbol: Symbol,
+    var register: Int = -1,
+) : TypedStmt(loc) {
 
-    /** Back-link to the VarSymbol created in the type resolver. Set during semantic analysis. */
-    var resolvedSymbol: Symbol? = null
 }
 
 // Assignment & Mutation
@@ -38,23 +38,23 @@ class VarDeclStmt(
 /**
  * Assignment statement: `target = value;` or `target += value;`
  *
- * [target] must be a valid l-value (IdentifierExpr, FieldAccessExpr, or IndexAccessExpr).
+ * [target] must be a valid l-value (TypedIdentifierExpr, TypedFieldAccessExpr, or TypedIndexAccessExpr).
  */
-class AssignStmt(
-    val target: Expr,
+class TypedAssignStmt(
+    val target: TypedExpr,
     val op: AssignOp,
-    val value: Expr,
+    val value: TypedExpr,
     loc: SourceLocation,
-) : Stmt(loc)
+) : TypedStmt(loc)
 
 /**
  * Increment / decrement statement: `i++;` or `i--;`
  */
-class IncrementStmt(
-    val target: Expr,
+class TypedIncrementStmt(
+    val target: TypedExpr,
     val op: PostfixOp,
     loc: SourceLocation,
-) : Stmt(loc)
+) : TypedStmt(loc)
 
 // Control Flow
 
@@ -63,16 +63,16 @@ class IncrementStmt(
  *
  * [elseBlock] is `null` when there is no `else` clause.
  */
-class IfStmt(
-    val condition: Expr,
-    val thenBlock: Block,
+class TypedIfStmt(
+    val condition: TypedExpr,
+    val thenBlock: TypedBlock,
     val elseIfs: List<ElseIf>,
-    val elseBlock: Block?,
+    val elseBlock: TypedBlock?,
     loc: SourceLocation,
-) : Stmt(loc) {
+) : TypedStmt(loc) {
     data class ElseIf(
-        val condition: Expr,
-        val body: Block,
+        val condition: TypedExpr,
+        val body: TypedBlock,
         val loc: SourceLocation,
     )
 }
@@ -80,11 +80,11 @@ class IfStmt(
 /**
  * While loop: `while (cond) { body }`
  */
-class WhileStmt(
-    val condition: Expr,
-    val body: Block,
+class TypedWhileStmt(
+    val condition: TypedExpr,
+    val body: TypedBlock,
     loc: SourceLocation,
-) : Stmt(loc)
+) : TypedStmt(loc)
 
 /**
  * C-style for loop: `for (init; condition; update) { body }`
@@ -92,70 +92,70 @@ class WhileStmt(
  * All three parts (init, condition, update) are optional,
  * allowing infinite loops via `for (;;) { ... }`.
  */
-class ForStmt(
-    val init: Stmt?,
-    val condition: Expr?,
-    val update: Stmt?,
-    val body: Block,
+class TypedForStmt(
+    val init: TypedStmt?,
+    val condition: TypedExpr?,
+    val update: TypedStmt?,
+    val body: TypedBlock,
     loc: SourceLocation,
-) : Stmt(loc)
+) : TypedStmt(loc)
 
 /**
  * Foreach loop: `foreach (Type name in iterable) { body }`
  *
  * [elementRegister] is assigned by the register allocator for the loop variable.
  */
-class ForEachStmt(
+class TypedForEachStmt(
     val elementType: TypeRef,
     val elementName: String,
-    val iterable: Expr,
-    val body: Block,
+    val iterable: TypedExpr,
+    val body: TypedBlock,
     loc: SourceLocation,
-) : Stmt(loc) {
-    /** Register for the loop variable. Set by register allocator. */
-    var elementRegister: Int = -1
+    val resolvedSymbol: Symbol,
+    var elementRegister: Int = -1,
+) : TypedStmt(loc) {
 }
 
 // Jumps
 
 /** `return value;` or bare `return;` (when [value] is `null`). */
-class ReturnStmt(
-    val value: Expr?,
+class TypedReturnStmt(
+    val value: TypedExpr?,
     loc: SourceLocation,
-) : Stmt(loc)
+) : TypedStmt(loc)
 
 /** `yield value;` sends streaming output to the host. */
-class YieldStmt(
-    val value: Expr,
+class TypedYieldStmt(
+    val value: TypedExpr,
     loc: SourceLocation,
-) : Stmt(loc)
+) : TypedStmt(loc)
 
 /** `break;` exits the innermost loop. */
-class BreakStmt(
+class TypedBreakStmt(
     loc: SourceLocation,
-) : Stmt(loc)
+) : TypedStmt(loc)
 
 /** `continue;` jumps to the next iteration of the innermost loop. */
-class ContinueStmt(
+class TypedContinueStmt(
     loc: SourceLocation,
-) : Stmt(loc)
+) : TypedStmt(loc)
 
 // Exception Handling
 
 /** `throw value;` */
-class ThrowStmt(
-    val value: Expr,
+class TypedThrowStmt(
+    val value: TypedExpr,
     loc: SourceLocation,
-) : Stmt(loc)
+) : TypedStmt(loc)
 
 /**
  * Try-catch statement with one or more catch clauses.
  */
-class TryCatchStmt(
-    val tryBlock: Block,
-    val catchClauses: List<CatchClause>,
+class TypedTryCatchStmt(
+    val tryBlock: TypedBlock,
+    val catchClauses: List<TypedCatchClause>,
     loc: SourceLocation,
-) : Stmt(loc)
+) : TypedStmt(loc)
 
 /**
  * A single catch clause.
@@ -163,37 +163,36 @@ class TryCatchStmt(
  * @property exceptionType the error type name to match, or `null` for a catch-all
  * @property variableName  the name bound to the error message string
  */
-data class CatchClause(
+data class TypedCatchClause(
     val exceptionType: String?,
     val variableName: String,
-    val body: Block,
+    val body: TypedBlock,
     val loc: SourceLocation,
 )
 
 // Expression Statement
 
 /** An expression used as a statement: `func();` */
-class ExprStmt(
-    val expression: Expr,
+class TypedExprStmt(
+    val expression: TypedExpr,
     loc: SourceLocation,
-) : Stmt(loc)
+) : TypedStmt(loc)
 
-// Block
+// TypedBlock
 
 /**
  * A braced block: `{ stmt; stmt; ... }`
  *
  * [scopeDepth] is assigned by the semantic analyzer to track nested scopes.
  */
-class Block(
-    val statements: List<Stmt>,
+class TypedBlock(
+    val statements: List<TypedStmt>,
     loc: SourceLocation,
-) : Stmt(loc) {
-    /** Nesting depth of this scope. Set by semantic analyzer. */
-    var scopeDepth: Int = -1
+    val scopeDepth: Int = -1,
+) : TypedStmt(loc) {
 }
 
 /** Placeholder for invalid or un-parseable statements. */
-class ErrorStmt(
+class TypedErrorStmt(
     loc: SourceLocation,
-) : Stmt(loc)
+) : TypedStmt(loc)

@@ -7,9 +7,9 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import nox.compiler.CompilerErrors
+import nox.compiler.ast.RawProgram
 import nox.compiler.parsing.NoxParsing
 import nox.compiler.types.*
-import nox.compiler.types.TypeRef
 
 /**
  * Tests for [DeclarationCollector] (Pass 1).
@@ -21,7 +21,7 @@ class DeclarationCollectorTest :
     FunSpec({
 
         // Helper: parse source and run declaration collection
-        fun collect(source: String): Triple<SymbolTable, CompilerErrors, nox.compiler.ast.Program> {
+        fun collect(source: String): Triple<SymbolTable, CompilerErrors, RawProgram> {
             val errors = CompilerErrors()
             val program = NoxParsing.parse(source, "test.nox", errors)
             val globalScope = SymbolTable()
@@ -218,7 +218,7 @@ class DeclarationCollectorTest :
         }
 
         test("assigns globalSlot on the GlobalVarDecl AST node") {
-            val (_, errors, program) =
+            val (scope, errors, program) =
                 collect(
                     """
                     int a = 1;
@@ -228,8 +228,8 @@ class DeclarationCollectorTest :
                 )
 
             errors.hasErrors() shouldBe false
-            program.globals[0].globalSlot shouldBe 0
-            program.globals[1].globalSlot shouldBe 1
+            (scope.lookup("a") as GlobalSymbol).globalSlot shouldBe 0
+            (scope.lookup("b") as GlobalSymbol).globalSlot shouldBe 1
         }
 
         test("handles program with no declarations") {

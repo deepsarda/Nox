@@ -17,7 +17,7 @@ class ControlFlowValidatorTest :
         data class ValidationResult(
             val errors: CompilerErrors,
             val warnings: CompilerWarnings,
-            val program: Program,
+            val program: nox.compiler.ast.typed.TypedProgram,
         )
 
         /** Helper: parse to Pass 1 to Pass 2 to Pass 3. */
@@ -27,9 +27,11 @@ class ControlFlowValidatorTest :
             val program = NoxParsing.parse(source, "test.nox", errors)
             val globalScope = SymbolTable()
             DeclarationCollector(globalScope, errors).collect(program)
-            TypeResolver(globalScope, errors).resolve(program)
-            ControlFlowValidator(errors, warnings).validate(program)
-            return ValidationResult(errors, warnings, program)
+            val (typedProgram, _) = TypeResolver(globalScope, errors).resolve(program)
+            if (!errors.hasErrors()) {
+                ControlFlowValidator(errors, warnings).validate(typedProgram)
+            }
+            return ValidationResult(errors, warnings, typedProgram)
         }
 
         /** Shorthand: validate and expect no errors and no warnings. */

@@ -21,6 +21,7 @@ data class TypeRef(
         val STRING = TypeRef("string")
         val JSON = TypeRef("json")
         val VOID = TypeRef("void")
+        val NULL = TypeRef("null")
     }
 
     /** Whether this is an array type (any depth). */
@@ -52,7 +53,7 @@ data class TypeRef(
      * arrays, strings, json, and user-defined struct types.
      * Primitives (`int`, `double`, `boolean`) are never nullable.
      */
-    fun isNullable(): Boolean = isArray || name in NULLABLE_VALUE_NAMES || isStructType()
+    fun isNullable(): Boolean = name == "null" || isArray || name in NULLABLE_VALUE_NAMES || isStructType()
 
     /**
      * Whether this type is numeric (`int` or `double`, non-array).
@@ -63,7 +64,7 @@ data class TypeRef(
      * Whether this type represents a user-defined struct.
      *
      * A struct type is any non-array type whose name is not a built-in
-     * type name (`int`, `double`, `boolean`, `string`, `json`, `void`).
+     * type name (`int`, `double`, `boolean`, `string`, `json`, `void`, `null`).
      */
     fun isStructType(): Boolean = !isArray && name !in BUILTIN_TYPE_NAMES
 
@@ -72,12 +73,13 @@ data class TypeRef(
      *
      * Comparability rules:
      * - Same type is always comparable.
-     * - `null` (represented as `null` TypeRef) is comparable with any nullable type.
+     * - `null` is comparable with any nullable type.
      * - Struct and json are comparable (struct implicitly upcasts to json).
      */
     fun isComparable(other: TypeRef?): Boolean {
-        if (other == null) return isNullable()
+        if (other == null || other == NULL) return isNullable()
         if (this == other) return true
+        if (this == NULL) return other.isNullable()
         // Struct and json are comparable (implicit upcast)
         if (this == JSON && other.isStructType()) return true
         if (this.isStructType() && other == JSON) return true
@@ -96,7 +98,7 @@ data class TypeRef(
      */
     fun isAssignableFrom(value: TypeRef?): Boolean {
         // null to any nullable type
-        if (value == null) return isNullable()
+        if (value == null || value == NULL) return isNullable()
 
         // Same type always ok
         if (this == value) return true

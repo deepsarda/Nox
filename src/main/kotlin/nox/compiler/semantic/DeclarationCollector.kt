@@ -7,7 +7,7 @@ import nox.compiler.types.*
 /**
  * Pass 1: Declaration Collection.
  *
- * Scans all top-level declarations in a [Program] and registers them
+ * Scans all top-level declarations in a [RawProgram] and registers them
  * in the global [SymbolTable] scope. After this pass, every type name,
  * function name, and global variable is known, enabling forward
  * references in subsequent passes.
@@ -36,15 +36,15 @@ class DeclarationCollector(
      * After this method returns, [globalScope] contains a [TypeSymbol],
      * [FuncSymbol], or [GlobalSymbol] for every valid declaration.
      */
-    fun collect(program: Program) {
+    fun collect(program: RawProgram) {
         for (decl in program.declarations) {
             when (decl) {
-                is TypeDef -> collectType(decl)
-                is FuncDef -> collectFunction(decl)
-                is MainDef -> collectMain(decl, program)
-                is GlobalVarDecl -> collectGlobal(decl)
-                is ImportDecl -> {} // Handled by ImportResolver
-                is ErrorDecl -> {} // Already reported during parsing
+                is RawTypeDef -> collectType(decl)
+                is RawFuncDef -> collectFunction(decl)
+                is RawMainDef -> collectMain(decl, program)
+                is RawGlobalVarDecl -> collectGlobal(decl)
+                is RawImportDecl -> {} // Handled by ImportResolver
+                is RawErrorDecl -> {} // Already reported during parsing
             }
         }
     }
@@ -54,7 +54,7 @@ class DeclarationCollector(
      *
      * @param decl the type definition to collect
      */
-    private fun collectType(decl: TypeDef) {
+    private fun collectType(decl: RawTypeDef) {
         if (decl.fields.isEmpty()) {
             // Grammar requires fieldDeclaration+ but ANTLR error recovery
             // can still produce a TypeDef with zero fields. Skip it.
@@ -82,7 +82,7 @@ class DeclarationCollector(
      *
      * @param decl the function definition to collect
      */
-    private fun collectFunction(decl: FuncDef) {
+    private fun collectFunction(decl: RawFuncDef) {
         var optionalSeen = false
         var varargsSeen = false
 
@@ -145,8 +145,8 @@ class DeclarationCollector(
      * @param program the program to update
      */
     private fun collectMain(
-        decl: MainDef,
-        program: Program,
+        decl: RawMainDef,
+        program: RawProgram,
     ) {
         if (mainSeen) {
             errors.report(
@@ -157,7 +157,6 @@ class DeclarationCollector(
             return
         }
         mainSeen = true
-        program.main = decl
     }
 
     /**
@@ -165,7 +164,7 @@ class DeclarationCollector(
      *
      * @param decl the global variable definition to collect
      */
-    private fun collectGlobal(decl: GlobalVarDecl) {
+    private fun collectGlobal(decl: RawGlobalVarDecl) {
         val symbol = GlobalSymbol(decl.name, decl.type, globalSlotCounter)
         if (!globalScope.define(decl.name, symbol)) {
             errors.report(
@@ -175,7 +174,6 @@ class DeclarationCollector(
             )
             return
         }
-
-        decl.globalSlot = globalSlotCounter++
+        globalSlotCounter++
     }
 }

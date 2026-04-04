@@ -1,7 +1,7 @@
 package nox.compiler.codegen
 
-import nox.compiler.ast.*
-import nox.compiler.semantic.ResolvedModule
+import nox.compiler.ast.typed.*
+import nox.compiler.semantic.TypedModule
 import nox.compiler.types.*
 import nox.plugin.LibraryRegistry
 
@@ -11,7 +11,7 @@ import nox.plugin.LibraryRegistry
  * See docs/compiler/codegen.md for the full design.
  */
 class CodeGenerator(
-    private val modules: List<ResolvedModule> = emptyList(),
+    private val modules: List<TypedModule> = emptyList(),
     private val registry: LibraryRegistry = LibraryRegistry.createDefault(),
 ) {
     // Builder state
@@ -28,7 +28,7 @@ class CodeGenerator(
      * @param program The program to generate a compiled version of.
      * @return The compiled program.
      */
-    fun generate(program: Program): CompiledProgram {
+    fun generate(program: TypedProgram): CompiledProgram {
         // Assign global slots for root module globals
         assignGlobalSlots(program)
 
@@ -98,7 +98,7 @@ class CodeGenerator(
         )
     }
 
-    private fun assignGlobalSlots(program: Program) {
+    private fun assignGlobalSlots(program: TypedProgram) {
         var primSlot = 0
         var refSlot = 0
         for (global in program.globals) {
@@ -112,7 +112,7 @@ class CodeGenerator(
     }
 
     private fun emitModuleInit(
-        program: Program,
+        program: TypedProgram,
         ns: String,
         sourcePath: String = "",
     ): Int {
@@ -170,8 +170,8 @@ class CodeGenerator(
     }
 
     private fun emitFunction(
-        program: Program,
-        func: FuncDef,
+        program: TypedProgram,
+        func: TypedFuncDef,
         sourcePath: String = "",
     ): Int {
         val liveness = LivenessAnalyzer().also { it.analyze(func) }
@@ -190,8 +190,8 @@ class CodeGenerator(
     }
 
     private fun emitMain(
-        program: Program,
-        main: MainDef,
+        program: TypedProgram,
+        main: TypedMainDef,
         sourcePath: String = "",
     ): Int {
         val liveness = LivenessAnalyzer().also { it.analyze(main) }
@@ -218,9 +218,9 @@ class CodeGenerator(
      */
     private fun emitFunctionBody(
         name: String,
-        params: List<Param>,
-        body: Block,
-        program: Program,
+        params: List<TypedParam>,
+        body: TypedBlock,
+        program: TypedProgram,
         sourcePath: String,
         liveness: LivenessAnalyzer,
         implicitVoidReturn: Boolean,

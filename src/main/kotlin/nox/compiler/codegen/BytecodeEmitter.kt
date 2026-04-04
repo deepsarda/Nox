@@ -1,7 +1,7 @@
 package nox.compiler.codegen
 
-import nox.compiler.ast.*
-import nox.compiler.semantic.ResolvedModule
+import nox.compiler.ast.typed.*
+import nox.compiler.semantic.TypedModule
 import nox.compiler.types.*
 import nox.plugin.LibraryRegistry
 
@@ -17,8 +17,8 @@ import nox.plugin.LibraryRegistry
 class BytecodeEmitter(
     internal val allocator: RegisterAllocator,
     internal val pool: ConstantPool,
-    internal val program: Program,
-    internal val modules: List<ResolvedModule> = emptyList(),
+    internal val program: TypedProgram,
+    internal val modules: List<TypedModule> = emptyList(),
     private val freeAtNode: Map<Any, List<Symbol>> = emptyMap(),
     private val registry: LibraryRegistry = LibraryRegistry.createDefault(),
 ) {
@@ -56,7 +56,7 @@ class BytecodeEmitter(
      * Records parameter name events at localPC=0. Must be called before emitting
      * any instructions so that parameter names are available from the start.
      */
-    fun recordParamNames(params: List<Param>) {
+    fun recordParamNames(params: List<TypedParam>) {
         for (param in params) {
             val isPrim = param.type.isPrimitive()
             val reg =
@@ -78,7 +78,7 @@ class BytecodeEmitter(
      * [StatementEmitter.emitReturn] has already emitted the KILL_REFs before the [Opcode.RET].
      */
     fun emitBlock(
-        block: Block,
+        block: TypedBlock,
         srcLine: Int = -1,
     ) {
         val refsBeforeBlock = mutableSetOf<Int>()
@@ -92,7 +92,7 @@ class BytecodeEmitter(
         // Skip KILL_REF emission if the block exits via return, already emitted
         // by emitReturn before the RET instruction.
         val lastStmt = block.statements.lastOrNull()
-        if (lastStmt is ReturnStmt) return
+        if (lastStmt is TypedReturnStmt) return
 
         // Emit KILL_REF for any rMem reg that was first allocated inside this block
         for (reg in allocator.allRefRegs) {
@@ -103,11 +103,11 @@ class BytecodeEmitter(
     }
 
     /** Emit a single statement (delegates to [StatementEmitter]). */
-    fun emitStmt(stmt: Stmt) = statements.emitStmt(stmt)
+    fun emitStmt(stmt: TypedStmt) = statements.emitStmt(stmt)
 
     /** Emit an expression into [dest] register (delegates to [ExpressionEmitter]). */
     fun emitExpr(
-        expr: Expr,
+        expr: TypedExpr,
         dest: Int,
         srcLine: Int = expr.loc.line,
     ) = expressions.emitExpr(expr, dest, srcLine)
@@ -171,9 +171,9 @@ class BytecodeEmitter(
      * Returns the local/param register backing [expr], or `null` if not a simple reference.
      * This is used for direct-register operations like `IINC`, compound assign, etc.
      */
-    internal fun resolveRegister(expr: Expr): Int? =
+    internal fun resolveRegister(expr: TypedExpr): Int? =
         when (expr) {
-            is IdentifierExpr ->
+            is TypedIdentifierExpr ->
                 when (val sym = expr.resolvedSymbol) {
                     is VarSymbol -> sym.register.takeIf { it >= 0 }
                     is ParamSymbol -> sym.register.takeIf { it >= 0 }
@@ -198,7 +198,7 @@ class BytecodeEmitter(
         visited[typeName]?.let { return it }
         pool.getTypeDescriptorId(typeName)?.let { return it }
 
-        // Find the TypeDef (local or imported)
+        // Find the TypedTypeDef (local or imported)
         val typeDef =
             program.typesByName[typeName]
                 ?: modules.firstNotNullOfOrNull { it.program.typesByName[typeName] }

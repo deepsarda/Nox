@@ -1,4 +1,6 @@
-package nox.compiler.ast
+package nox.compiler.ast.typed
+
+import nox.compiler.types.* 
 
 import nox.compiler.types.*
 
@@ -18,26 +20,27 @@ import nox.compiler.types.*
  * @property imports      import declarations
  * @property declarations all top-level declarations
  */
-class Program(
+class TypedProgram(
     val fileName: String,
-    val headers: List<Header>,
-    val imports: List<ImportDecl>,
-    val declarations: List<Decl>,
+    val headers: List<TypedHeader>,
+    val imports: List<TypedImportDecl>,
+    val declarations: List<TypedDecl>,
 ) {
     /** Type definitions indexed by name. Populated during AST construction. */
-    val typesByName: MutableMap<String, TypeDef> = mutableMapOf()
+    val typesByName: MutableMap<String, TypedTypeDef> = mutableMapOf()
 
     /** Function definitions indexed by name. Populated during AST construction. */
-    val functionsByName: MutableMap<String, FuncDef> = mutableMapOf()
+    val functionsByName: MutableMap<String, TypedFuncDef> = mutableMapOf()
 
-    /** The `main` entry point, if present. */
-    var main: MainDef? = null
 
     /** All global variable declarations, in order. */
-    val globals: MutableList<GlobalVarDecl> = mutableListOf()
+    val globals: MutableList<TypedGlobalVarDecl> = mutableListOf()
+
+    /** The main entry point, if any. */
+    val main: TypedMainDef? get() = declarations.filterIsInstance<TypedMainDef>().firstOrNull()
 
     /** All function definitions, in declaration order (convenience view of [functionsByName]). */
-    val functions: Collection<FuncDef> get() = functionsByName.values
+    val functions: Collection<TypedFuncDef> get() = functionsByName.values
 
     /**
      * Original source lines of this file, populated by the parser for use by the disassembler.
@@ -56,7 +59,7 @@ class Program(
  * @property value the header value string
  * @property loc   source position
  */
-data class Header(
+data class TypedHeader(
     val key: String,
     val value: String,
     val loc: SourceLocation,

@@ -1,6 +1,6 @@
 package nox.compiler.codegen
 
-import nox.compiler.ast.*
+import nox.compiler.ast.typed.*
 import nox.compiler.types.*
 import nox.plugin.LibraryRegistry
 
@@ -29,30 +29,30 @@ class StatementEmitter(
 
     private val loopStack = ArrayDeque<LoopContext>()
 
-    fun emitStmt(stmt: Stmt) {
+    fun emitStmt(stmt: TypedStmt) {
         when (stmt) {
-            is VarDeclStmt -> emitVarDecl(stmt)
-            is AssignStmt -> emitAssign(stmt)
-            is IncrementStmt -> emitIncrement(stmt)
-            is IfStmt -> emitIf(stmt)
-            is WhileStmt -> emitWhile(stmt)
-            is ForStmt -> emitFor(stmt)
-            is ForEachStmt -> emitForEach(stmt)
-            is ReturnStmt -> emitReturn(stmt)
-            is YieldStmt -> emitYield(stmt)
-            is BreakStmt -> emitBreak()
-            is ContinueStmt -> emitContinue()
-            is ThrowStmt -> emitThrow(stmt)
-            is TryCatchStmt -> emitTryCatch(stmt)
-            is ExprStmt -> {
-                val type = stmt.expression.resolvedType ?: TypeRef.INT
+            is TypedVarDeclStmt -> emitVarDecl(stmt)
+            is TypedAssignStmt -> emitAssign(stmt)
+            is TypedIncrementStmt -> emitIncrement(stmt)
+            is TypedIfStmt -> emitIf(stmt)
+            is TypedWhileStmt -> emitWhile(stmt)
+            is TypedForStmt -> emitFor(stmt)
+            is TypedForEachStmt -> emitForEach(stmt)
+            is TypedReturnStmt -> emitReturn(stmt)
+            is TypedYieldStmt -> emitYield(stmt)
+            is TypedBreakStmt -> emitBreak()
+            is TypedContinueStmt -> emitContinue()
+            is TypedThrowStmt -> emitThrow(stmt)
+            is TypedTryCatchStmt -> emitTryCatch(stmt)
+            is TypedExprStmt -> {
+                val type = stmt.expression.type
                 val tmp = ctx.alloc(type)
                 ctx.emitExpr(stmt.expression, tmp)
                 ctx.free(type, tmp)
             }
 
-            is Block -> ctx.emitBlock(stmt)
-            is ErrorStmt -> { // skip
+            is TypedBlock -> ctx.emitBlock(stmt)
+            is TypedErrorStmt -> { // skip
             }
         }
         ctx.freeNodeRegisters(stmt)
@@ -60,14 +60,14 @@ class StatementEmitter(
 
     // Declarations & Assignment
 
-    private fun emitVarDecl(stmt: VarDeclStmt) {
+    private fun emitVarDecl(stmt: TypedVarDeclStmt) {
         val line = stmt.loc.line
         val reg = ctx.allocator.allocVar(stmt)
         ctx.regNameEvents.add(RegNameEvent(ctx.pc, stmt.type.isPrimitive(), reg, stmt.name))
         ctx.emitExpr(stmt.initializer, reg, line)
     }
 
-    private fun emitAssign(stmt: AssignStmt) {
+    private fun emitAssign(stmt: TypedAssignStmt) {
         val line = stmt.loc.line
         when (stmt.op) {
             AssignOp.ASSIGN -> emitSimpleAssign(stmt, line)
@@ -81,12 +81,12 @@ class StatementEmitter(
     }
 
     private fun emitSimpleAssign(
-        stmt: AssignStmt,
+        stmt: TypedAssignStmt,
         line: Int,
     ) {
-        val targetType = stmt.value.resolvedType ?: TypeRef.INT
+        val targetType = stmt.value.type
         when (val target = stmt.target) {
-            is IdentifierExpr -> {
+            is TypedIdentifierExpr -> {
                 when (val sym = target.resolvedSymbol) {
                     is GlobalSymbol -> {
                         val valResolved = ctx.resolveRegister(stmt.value)
@@ -114,12 +114,12 @@ class StatementEmitter(
                 }
             }
 
-            is FieldAccessExpr -> {
-                val objType = target.target.resolvedType ?: TypeRef.JSON
+            is TypedFieldAccessExpr -> {
+                val objType = target.target.type
                 val objReg = ctx.alloc(objType)
                 ctx.emitExpr(target.target, objReg, line)
 
-                val valType = stmt.value.resolvedType ?: TypeRef.JSON
+                val valType = stmt.value.type
                 val valResolved = ctx.resolveRegister(stmt.value)
                 val valReg =
                     if (valResolved != null) {
@@ -138,15 +138,15 @@ class StatementEmitter(
                 ctx.free(objType, objReg)
             }
 
-            is IndexAccessExpr -> {
-                val targetType2 = target.target.resolvedType ?: TypeRef.JSON
+            is TypedIndexAccessExpr -> {
+                val targetType2 = target.target.type
                 val tReg = ctx.alloc(targetType2)
                 ctx.emitExpr(target.target, tReg, line)
-                val idxType = target.index.resolvedType ?: TypeRef.INT
+                val idxType = target.index.type
                 val iReg = ctx.alloc(idxType)
                 ctx.emitExpr(target.index, iReg, line)
 
-                val valType = stmt.value.resolvedType ?: TypeRef.JSON
+                val valType = stmt.value.type
                 val valResolved = ctx.resolveRegister(stmt.value)
                 val valReg =
                     if (valResolved != null) {
@@ -170,12 +170,12 @@ class StatementEmitter(
     }
 
     private fun emitCompoundAssign(
-        stmt: AssignStmt,
+        stmt: TypedAssignStmt,
         line: Int,
     ) {
-        val targetType = stmt.target.resolvedType ?: TypeRef.INT
+        val targetType = stmt.target.type
         val reg = ctx.resolveRegister(stmt.target) ?: return
-        val valType = stmt.value.resolvedType ?: TypeRef.INT
+        val valType = stmt.value.type
 
         val valResolved = ctx.resolveRegister(stmt.value)
         val valReg =
@@ -204,10 +204,10 @@ class StatementEmitter(
         if (valReg != valResolved) ctx.free(valType, valReg)
     }
 
-    private fun emitIncrement(stmt: IncrementStmt) {
+    private fun emitIncrement(stmt: TypedIncrementStmt) {
         val line = stmt.loc.line
         val reg = ctx.resolveRegister(stmt.target) ?: return
-        val type = stmt.target.resolvedType ?: TypeRef.INT
+        val type = stmt.target.type
         val opcode =
             when (stmt.op) {
                 PostfixOp.INCREMENT -> if (type == TypeRef.DOUBLE) Opcode.DINC else Opcode.IINC
@@ -218,7 +218,7 @@ class StatementEmitter(
 
     // Control Flow
 
-    private fun emitIf(stmt: IfStmt) {
+    private fun emitIf(stmt: TypedIfStmt) {
         val line = stmt.loc.line
 
         val condResolved = ctx.resolveRegister(stmt.condition)
@@ -272,7 +272,7 @@ class StatementEmitter(
         for (j in jumpsToEnd) ctx.patch(j, endPc)
     }
 
-    private fun emitWhile(stmt: WhileStmt) {
+    private fun emitWhile(stmt: TypedWhileStmt) {
         val line = stmt.loc.line
         val seq = ++ctx.labelSeq
         ctx.addLabel("loop_start_$seq")
@@ -306,7 +306,7 @@ class StatementEmitter(
         loopStack.removeLast()
     }
 
-    private fun emitFor(stmt: ForStmt) {
+    private fun emitFor(stmt: TypedForStmt) {
         val line = stmt.loc.line
 
         // Init
@@ -354,9 +354,9 @@ class StatementEmitter(
         loopStack.removeLast()
     }
 
-    private fun emitForEach(stmt: ForEachStmt) {
+    private fun emitForEach(stmt: TypedForEachStmt) {
         val line = stmt.loc.line
-        val iterType = stmt.iterable.resolvedType ?: TypeRef.JSON
+        val iterType = stmt.iterable.type
 
         val arrReg = ctx.alloc(iterType)
         ctx.emitExpr(stmt.iterable, arrReg, line)
@@ -431,7 +431,7 @@ class StatementEmitter(
 
     // Exit / Exception
 
-    private fun emitReturn(stmt: ReturnStmt) {
+    private fun emitReturn(stmt: TypedReturnStmt) {
         val line = stmt.loc.line
 
         // Emit KILL_REF for all live rMem registers before returning.
@@ -442,7 +442,7 @@ class StatementEmitter(
         if (stmt.value == null) {
             ctx.emit(Opcode.RET, 0, 0, 0, 0, line)
         } else {
-            val type = stmt.value.resolvedType ?: TypeRef.INT
+            val type = stmt.value.type
             val reg = ctx.resolveRegister(stmt.value)
             if (reg != null) {
                 ctx.freeNodeRegisters(stmt.value)
@@ -456,9 +456,9 @@ class StatementEmitter(
         }
     }
 
-    private fun emitYield(stmt: YieldStmt) {
+    private fun emitYield(stmt: TypedYieldStmt) {
         val line = stmt.loc.line
-        val type = stmt.value.resolvedType ?: TypeRef.STRING
+        val type = stmt.value.type
         val reg = ctx.resolveRegister(stmt.value)
         if (reg != null) {
             ctx.freeNodeRegisters(stmt.value)
@@ -471,9 +471,9 @@ class StatementEmitter(
         }
     }
 
-    private fun emitThrow(stmt: ThrowStmt) {
+    private fun emitThrow(stmt: TypedThrowStmt) {
         val line = stmt.loc.line
-        val type = stmt.value.resolvedType ?: TypeRef.STRING
+        val type = stmt.value.type
         val reg = ctx.resolveRegister(stmt.value)
         if (reg != null) {
             ctx.freeNodeRegisters(stmt.value)
@@ -486,7 +486,7 @@ class StatementEmitter(
         }
     }
 
-    private fun emitTryCatch(stmt: TryCatchStmt) {
+    private fun emitTryCatch(stmt: TypedTryCatchStmt) {
         val tryStart = ctx.pc
         ctx.emitBlock(stmt.tryBlock)
         val tryEnd = ctx.pc

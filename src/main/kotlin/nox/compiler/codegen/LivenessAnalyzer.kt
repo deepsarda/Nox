@@ -1,6 +1,6 @@
 package nox.compiler.codegen
 
-import nox.compiler.ast.*
+import nox.compiler.ast.typed.*
 import nox.compiler.types.*
 
 /**
@@ -15,28 +15,28 @@ class LivenessAnalyzer {
     private val live = mutableSetOf<Symbol>()
 
     /** Run the analyzer on a function definition. */
-    fun analyze(func: FuncDef) {
+    fun analyze(func: TypedFuncDef) {
         live.clear()
         freeAtNode.clear()
         analyzeBlock(func.body)
     }
 
     /** Run the analyzer on the main definition. */
-    fun analyze(main: MainDef) {
+    fun analyze(main: TypedMainDef) {
         live.clear()
         freeAtNode.clear()
         analyzeBlock(main.body)
     }
 
-    private fun analyzeBlock(block: Block) {
+    private fun analyzeBlock(block: TypedBlock) {
         for (i in block.statements.indices.reversed()) {
             analyzeStmt(block.statements[i])
         }
     }
 
-    private fun analyzeStmt(stmt: Stmt) {
+    private fun analyzeStmt(stmt: TypedStmt) {
         when (stmt) {
-            is VarDeclStmt -> {
+            is TypedVarDeclStmt -> {
                 // Initialize value
                 analyzeExpr(stmt.initializer, stmt)
 
@@ -44,8 +44,8 @@ class LivenessAnalyzer {
                 stmt.resolvedSymbol?.let { live.remove(it) }
             }
 
-            is AssignStmt -> {
-                if (stmt.target is IdentifierExpr && stmt.op == AssignOp.ASSIGN) {
+            is TypedAssignStmt -> {
+                if (stmt.target is TypedIdentifierExpr && stmt.op == AssignOp.ASSIGN) {
                     // Definition: Simple assignment overwrites. Kill the target.
                     stmt.target.resolvedSymbol?.let { live.remove(it) }
                 } else {
@@ -55,11 +55,11 @@ class LivenessAnalyzer {
                 analyzeExpr(stmt.value, stmt)
             }
 
-            is IncrementStmt -> {
+            is TypedIncrementStmt -> {
                 analyzeExpr(stmt.target, stmt)
             }
 
-            is IfStmt -> {
+            is TypedIfStmt -> {
                 val liveAfterIf = live.toSet()
 
                 analyzeBlock(stmt.thenBlock)
@@ -95,7 +95,7 @@ class LivenessAnalyzer {
                 analyzeExpr(stmt.condition, stmt.condition)
             }
 
-            is WhileStmt -> {
+            is TypedWhileStmt -> {
                 val liveAfterLoop = live.toSet()
                 var currentLiveIn = liveAfterLoop.toSet()
                 var iteration = 0
@@ -116,7 +116,7 @@ class LivenessAnalyzer {
                 } while (currentLiveIn != previousLiveIn && iteration < 10)
             }
 
-            is ForStmt -> {
+            is TypedForStmt -> {
                 val liveAfterLoop = live.toSet()
                 var currentLiveIn = liveAfterLoop.toSet()
                 var iteration = 0
@@ -137,7 +137,7 @@ class LivenessAnalyzer {
                 stmt.init?.let { analyzeStmt(it) }
             }
 
-            is ForEachStmt -> {
+            is TypedForEachStmt -> {
                 val liveAfterLoop = live.toSet()
                 var currentLiveIn = liveAfterLoop.toSet()
                 var iteration = 0
@@ -156,13 +156,13 @@ class LivenessAnalyzer {
                 analyzeExpr(stmt.iterable, stmt.iterable)
             }
 
-            is ReturnStmt -> stmt.value?.let { analyzeExpr(it, stmt) }
-            is YieldStmt -> analyzeExpr(stmt.value, stmt)
-            is BreakStmt, is ContinueStmt -> { // Control flow skip
+            is TypedReturnStmt -> stmt.value?.let { analyzeExpr(it, stmt) }
+            is TypedYieldStmt -> analyzeExpr(stmt.value, stmt)
+            is TypedBreakStmt, is TypedContinueStmt -> { // Control flow skip
             }
 
-            is ThrowStmt -> analyzeExpr(stmt.value, stmt)
-            is TryCatchStmt -> {
+            is TypedThrowStmt -> analyzeExpr(stmt.value, stmt)
+            is TypedTryCatchStmt -> {
                 val liveAfter = live.toSet()
                 val allLive = mutableSetOf<Symbol>()
                 allLive.addAll(liveAfter)
@@ -179,18 +179,18 @@ class LivenessAnalyzer {
                 analyzeBlock(stmt.tryBlock)
             }
 
-            is ExprStmt -> analyzeExpr(stmt.expression, stmt)
-            is Block -> analyzeBlock(stmt)
-            is ErrorStmt -> {}
+            is TypedExprStmt -> analyzeExpr(stmt.expression, stmt)
+            is TypedBlock -> analyzeBlock(stmt)
+            is TypedErrorStmt -> {}
         }
     }
 
     private fun analyzeExpr(
-        expr: Expr,
+        expr: TypedExpr,
         @Suppress("UNUSED_PARAMETER") parentNode: Any,
     ) {
         when (expr) {
-            is IdentifierExpr -> {
+            is TypedIdentifierExpr -> {
                 val sym = expr.resolvedSymbol
                 if (sym != null && (sym is VarSymbol || sym is ParamSymbol)) {
                     if (sym !in live) {
@@ -200,48 +200,48 @@ class LivenessAnalyzer {
                 }
             }
 
-            is BinaryExpr -> {
+            is TypedBinaryExpr -> {
                 // Evaluate left-to-right, so backward scan is right-to-left
                 analyzeExpr(expr.right, expr)
                 analyzeExpr(expr.left, expr)
             }
 
-            is UnaryExpr -> analyzeExpr(expr.operand, expr)
-            is PostfixExpr -> analyzeExpr(expr.operand, expr)
-            is CastExpr -> analyzeExpr(expr.operand, expr)
-            is FuncCallExpr -> {
+            is TypedUnaryExpr -> analyzeExpr(expr.operand, expr)
+            is TypedPostfixExpr -> analyzeExpr(expr.operand, expr)
+            is TypedCastExpr -> analyzeExpr(expr.operand, expr)
+            is TypedFuncCallExpr -> {
                 for (arg in expr.args.reversed()) analyzeExpr(arg, expr)
             }
 
-            is MethodCallExpr -> {
+            is TypedMethodCallExpr -> {
                 for (arg in expr.args.reversed()) analyzeExpr(arg, expr)
                 analyzeExpr(expr.target, expr)
             }
 
-            is FieldAccessExpr -> analyzeExpr(expr.target, expr)
-            is IndexAccessExpr -> {
+            is TypedFieldAccessExpr -> analyzeExpr(expr.target, expr)
+            is TypedIndexAccessExpr -> {
                 analyzeExpr(expr.index, expr)
                 analyzeExpr(expr.target, expr)
             }
 
-            is ArrayLiteralExpr -> {
+            is TypedArrayLiteralExpr -> {
                 for (el in expr.elements.reversed()) analyzeExpr(el, expr)
             }
 
-            is StructLiteralExpr -> {
+            is TypedStructLiteralExpr -> {
                 for (field in expr.fields.reversed()) analyzeExpr(field.value, expr)
             }
 
-            is TemplateLiteralExpr -> {
+            is TypedTemplateLiteralExpr -> {
                 for (part in expr.parts.reversed()) {
-                    if (part is TemplatePart.Interpolation) {
+                    if (part is TypedTemplatePart.Interpolation) {
                         analyzeExpr(part.expression, expr)
                     }
                 }
             }
 
-            is IntLiteralExpr, is DoubleLiteralExpr, is StringLiteralExpr,
-            is BoolLiteralExpr, is NullLiteralExpr, is ErrorExpr,
+            is TypedIntLiteralExpr, is TypedDoubleLiteralExpr, is TypedStringLiteralExpr,
+            is TypedBoolLiteralExpr, is TypedNullLiteralExpr, is TypedErrorExpr,
             -> {
                 // Literals don't depend on any other variables
             }

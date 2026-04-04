@@ -2,7 +2,7 @@ package nox.compiler.semantic
 
 import nox.compiler.CompilerErrors
 import nox.compiler.CompilerWarnings
-import nox.compiler.ast.*
+import nox.compiler.ast.typed.*
 import nox.compiler.types.TypeRef
 
 /**
@@ -32,10 +32,10 @@ class ControlFlowValidator(
      * Checks return paths for every non-void function, then walks every
      * function body (including `main`) for loop-context and dead-code issues.
      */
-    fun validate(program: Program) {
+    fun validate(program: TypedProgram) {
         // Return path analysis for non-void functions
         for (decl in program.declarations) {
-            if (decl is FuncDef && decl.returnType != TypeRef.VOID) {
+            if (decl is TypedFuncDef && decl.returnType != TypeRef.VOID) {
                 if (!allPathsReturn(decl.body)) {
                     errors.report(
                         decl.loc,
@@ -50,7 +50,7 @@ class ControlFlowValidator(
         // Walk every function body for loop-context and dead-code checks
         for (decl in program.declarations) {
             when (decl) {
-                is FuncDef -> validateBlock(decl.body)
+                is TypedFuncDef -> validateBlock(decl.body)
                 else -> {} // TypeDef, GlobalVarDecl, ImportDecl, ErrorDecl, etc don't have bodies.
             }
         }
@@ -63,7 +63,7 @@ class ControlFlowValidator(
      * Returns `true` if every execution path through [block] ends with
      * a `return` or `throw` statement.
      */
-    private fun allPathsReturn(block: Block): Boolean {
+    private fun allPathsReturn(block: TypedBlock): Boolean {
         for (stmt in block.statements) {
             if (definitelyTerminates(stmt)) return true
         }
@@ -77,12 +77,12 @@ class ControlFlowValidator(
      * Note: `break`/`continue` are intentionally excluded since they terminate
      * the current loop iteration, not the enclosing function.
      */
-    private fun definitelyTerminates(stmt: Stmt): Boolean =
+    private fun definitelyTerminates(stmt: TypedStmt): Boolean =
         when (stmt) {
-            is ReturnStmt -> true
-            is ThrowStmt -> true
+            is TypedReturnStmt -> true
+            is TypedThrowStmt -> true
 
-            is IfStmt -> {
+            is TypedIfStmt -> {
                 // Only terminates if all branches exist and all terminate.
                 if (stmt.elseBlock == null) {
                     false // No else, there's a path that falls through
@@ -94,12 +94,12 @@ class ControlFlowValidator(
                 }
             }
 
-            is TryCatchStmt -> {
+            is TypedTryCatchStmt -> {
                 allPathsReturn(stmt.tryBlock) &&
                     stmt.catchClauses.all { allPathsReturn(it.body) }
             }
 
-            is Block -> allPathsReturn(stmt)
+            is TypedBlock -> allPathsReturn(stmt)
 
             // Loops, variable declarations, expressions, etc. don't guarantee termination
             else -> false
@@ -110,7 +110,7 @@ class ControlFlowValidator(
      * - `break`/`continue` outside a loop
      * - dead code after terminating statements
      */
-    private fun validateBlock(block: Block) {
+    private fun validateBlock(block: TypedBlock) {
         var terminated = false
 
         for (stmt in block.statements) {
@@ -128,7 +128,7 @@ class ControlFlowValidator(
             validateStmt(stmt)
 
             // Mark as terminated if this statement always exits the block
-            if (stmt is BreakStmt || stmt is ContinueStmt || definitelyTerminates(stmt)) {
+            if (stmt is TypedBreakStmt || stmt is TypedContinueStmt || definitelyTerminates(stmt)) {
                 terminated = true
             }
         }
@@ -138,10 +138,10 @@ class ControlFlowValidator(
      * Validate a single statement for loop context and recurse into
      * child blocks.
      */
-    private fun validateStmt(stmt: Stmt) {
+    private fun validateStmt(stmt: TypedStmt) {
         when (stmt) {
             // Loop context checks
-            is BreakStmt -> {
+            is TypedBreakStmt -> {
                 if (loopDepth == 0) {
                     errors.report(
                         stmt.loc,
@@ -151,7 +151,7 @@ class ControlFlowValidator(
                 }
             }
 
-            is ContinueStmt -> {
+            is TypedContinueStmt -> {
                 if (loopDepth == 0) {
                     errors.report(
                         stmt.loc,
@@ -161,26 +161,26 @@ class ControlFlowValidator(
             }
 
             // Loops: increment depth, validate body, decrement
-            is WhileStmt -> {
+            is TypedWhileStmt -> {
                 loopDepth++
                 validateBlock(stmt.body)
                 loopDepth--
             }
 
-            is ForStmt -> {
+            is TypedForStmt -> {
                 loopDepth++
                 validateBlock(stmt.body)
                 loopDepth--
             }
 
-            is ForEachStmt -> {
+            is TypedForEachStmt -> {
                 loopDepth++
                 validateBlock(stmt.body)
                 loopDepth--
             }
 
             // Recurse into child blocks
-            is IfStmt -> {
+            is TypedIfStmt -> {
                 validateBlock(stmt.thenBlock)
                 for (elseIf in stmt.elseIfs) {
                     validateBlock(elseIf.body)
@@ -188,19 +188,19 @@ class ControlFlowValidator(
                 stmt.elseBlock?.let { validateBlock(it) }
             }
 
-            is TryCatchStmt -> {
+            is TypedTryCatchStmt -> {
                 validateBlock(stmt.tryBlock)
                 for (cc in stmt.catchClauses) {
                     validateBlock(cc.body)
                 }
             }
 
-            is Block -> validateBlock(stmt)
+            is TypedBlock -> validateBlock(stmt)
 
             // Leaf statements nothing to recurse into
-            is VarDeclStmt, is AssignStmt, is IncrementStmt,
-            is ReturnStmt, is YieldStmt, is ThrowStmt,
-            is ExprStmt, is ErrorStmt,
+            is TypedVarDeclStmt, is TypedAssignStmt, is TypedIncrementStmt,
+            is TypedReturnStmt, is TypedYieldStmt, is TypedThrowStmt,
+            is TypedExprStmt, is TypedErrorStmt,
             -> {
             }
         }

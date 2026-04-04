@@ -1,6 +1,6 @@
 package nox.compiler.codegen
 
-import nox.compiler.ast.*
+import nox.compiler.ast.typed.*
 import nox.compiler.types.*
 
 /**
@@ -15,29 +15,29 @@ class ExpressionEmitter(
     private val ctx: BytecodeEmitter,
 ) {
     fun emitExpr(
-        expr: Expr,
+        expr: TypedExpr,
         dest: Int,
         srcLine: Int = expr.loc.line,
     ) {
         when (expr) {
-            is IntLiteralExpr -> emitIntLiteral(expr, dest)
-            is DoubleLiteralExpr -> emitDoubleLiteral(expr, dest)
-            is BoolLiteralExpr -> ctx.emit(Opcode.LDI, 0, dest, if (expr.value) 1 else 0, 0, srcLine)
-            is StringLiteralExpr -> emitStringLiteral(expr, dest)
-            is NullLiteralExpr -> ctx.emit(Opcode.KILL_REF, 0, dest, 0, 0, srcLine)
-            is TemplateLiteralExpr -> emitTemplate(expr, dest)
-            is BinaryExpr -> emitBinary(expr, dest)
-            is UnaryExpr -> emitUnary(expr, dest)
-            is PostfixExpr -> emitPostfix(expr, dest)
-            is CastExpr -> emitCast(expr, dest)
-            is IdentifierExpr -> emitLoad(expr, dest)
-            is FieldAccessExpr -> emitFieldAccess(expr, dest)
-            is IndexAccessExpr -> emitIndexAccess(expr, dest)
-            is FuncCallExpr -> emitFuncCall(expr, dest)
-            is MethodCallExpr -> emitMethodCall(expr, dest)
-            is ArrayLiteralExpr -> emitArrayLiteral(expr, dest)
-            is StructLiteralExpr -> emitStructLiteral(expr, dest)
-            is ErrorExpr -> { /* skip */ }
+            is TypedIntLiteralExpr -> emitIntLiteral(expr, dest)
+            is TypedDoubleLiteralExpr -> emitDoubleLiteral(expr, dest)
+            is TypedBoolLiteralExpr -> ctx.emit(Opcode.LDI, 0, dest, if (expr.value) 1 else 0, 0, srcLine)
+            is TypedStringLiteralExpr -> emitStringLiteral(expr, dest)
+            is TypedNullLiteralExpr -> ctx.emit(Opcode.KILL_REF, 0, dest, 0, 0, srcLine)
+            is TypedTemplateLiteralExpr -> emitTemplate(expr, dest)
+            is TypedBinaryExpr -> emitBinary(expr, dest)
+            is TypedUnaryExpr -> emitUnary(expr, dest)
+            is TypedPostfixExpr -> emitPostfix(expr, dest)
+            is TypedCastExpr -> emitCast(expr, dest)
+            is TypedIdentifierExpr -> emitLoad(expr, dest)
+            is TypedFieldAccessExpr -> emitFieldAccess(expr, dest)
+            is TypedIndexAccessExpr -> emitIndexAccess(expr, dest)
+            is TypedFuncCallExpr -> emitFuncCall(expr, dest)
+            is TypedMethodCallExpr -> emitMethodCall(expr, dest)
+            is TypedArrayLiteralExpr -> emitArrayLiteral(expr, dest)
+            is TypedStructLiteralExpr -> emitStructLiteral(expr, dest)
+            is TypedErrorExpr -> { /* skip */ }
         }
         ctx.freeNodeRegisters(expr)
     }
@@ -45,7 +45,7 @@ class ExpressionEmitter(
     // Literals
 
     private fun emitIntLiteral(
-        expr: IntLiteralExpr,
+        expr: TypedIntLiteralExpr,
         dest: Int,
     ) {
         val v = expr.value
@@ -58,7 +58,7 @@ class ExpressionEmitter(
     }
 
     private fun emitDoubleLiteral(
-        expr: DoubleLiteralExpr,
+        expr: TypedDoubleLiteralExpr,
         dest: Int,
     ) {
         val idx = ctx.pool.add(expr.value)
@@ -66,7 +66,7 @@ class ExpressionEmitter(
     }
 
     private fun emitStringLiteral(
-        expr: StringLiteralExpr,
+        expr: TypedStringLiteralExpr,
         dest: Int,
     ) {
         val idx = ctx.pool.add(expr.value)
@@ -76,7 +76,7 @@ class ExpressionEmitter(
     // Template literals
 
     private fun emitTemplate(
-        expr: TemplateLiteralExpr,
+        expr: TypedTemplateLiteralExpr,
         dest: Int,
     ) {
         val line = expr.loc.line
@@ -84,7 +84,7 @@ class ExpressionEmitter(
         var first = true
         for (part in expr.parts) {
             when (part) {
-                is TemplatePart.Text -> {
+                is TypedTemplatePart.Text -> {
                     if (part.value.isEmpty()) continue
                     val idx = ctx.pool.add(part.value)
                     val tmp = ctx.allocr()
@@ -98,8 +98,8 @@ class ExpressionEmitter(
                     ctx.freer(tmp)
                 }
 
-                is TemplatePart.Interpolation -> {
-                    val exprType = part.expression.resolvedType ?: TypeRef.STRING
+                is TypedTemplatePart.Interpolation -> {
+                    val exprType = part.expression.type
                     val pResolved = ctx.resolveRegister(part.expression)
                     val tmp =
                         if (pResolved != null) {
@@ -128,7 +128,7 @@ class ExpressionEmitter(
                     ctx.freer(strTmp)
                 }
 
-                is TemplatePart.ErrorPart -> { /* skip */ }
+                is TypedTemplatePart.ErrorPart -> { /* skip */ }
             }
         }
         // If all parts were empty / none existed
@@ -141,13 +141,13 @@ class ExpressionEmitter(
     // Binary / Unary / Postfix
 
     private fun emitBinary(
-        expr: BinaryExpr,
+        expr: TypedBinaryExpr,
         dest: Int,
     ) {
         val line = expr.loc.line
-        val leftType = expr.left.resolvedType ?: TypeRef.INT
-        val rightType = expr.right.resolvedType ?: TypeRef.INT
-        val resultType = expr.resolvedType ?: TypeRef.INT
+        val leftType = expr.left.type
+        val rightType = expr.right.type
+        val resultType = expr.type
 
         val lResolved = ctx.resolveRegister(expr.left)
         val rResolved = ctx.resolveRegister(expr.right)
@@ -207,11 +207,11 @@ class ExpressionEmitter(
     }
 
     private fun emitUnary(
-        expr: UnaryExpr,
+        expr: TypedUnaryExpr,
         dest: Int,
     ) {
         val line = expr.loc.line
-        val operandType = expr.operand.resolvedType ?: TypeRef.INT
+        val operandType = expr.operand.type
 
         val opResolved = ctx.resolveRegister(expr.operand)
         val opReg =
@@ -240,12 +240,12 @@ class ExpressionEmitter(
     }
 
     private fun emitPostfix(
-        expr: PostfixExpr,
+        expr: TypedPostfixExpr,
         dest: Int,
     ) {
         val line = expr.loc.line
         val reg = ctx.resolveRegister(expr.operand) ?: return
-        val type = expr.operand.resolvedType ?: TypeRef.INT
+        val type = expr.operand.type
         // In expression context, copy current value to dest first
         if (type.isPrimitive()) {
             ctx.emit(Opcode.MOV, 0, dest, reg, 0, line)
@@ -261,11 +261,11 @@ class ExpressionEmitter(
     }
 
     private fun emitCast(
-        expr: CastExpr,
+        expr: TypedCastExpr,
         dest: Int,
     ) {
         val line = expr.loc.line
-        val srcType = expr.operand.resolvedType ?: TypeRef.JSON
+        val srcType = expr.operand.type
 
         val opResolved = ctx.resolveRegister(expr.operand)
         val opReg =
@@ -289,7 +289,7 @@ class ExpressionEmitter(
     }
 
     private fun emitLoad(
-        expr: IdentifierExpr,
+        expr: TypedIdentifierExpr,
         dest: Int,
     ) {
         val line = expr.loc.line
@@ -330,11 +330,11 @@ class ExpressionEmitter(
     }
 
     private fun emitFieldAccess(
-        expr: FieldAccessExpr,
+        expr: TypedFieldAccessExpr,
         dest: Int,
     ) {
         val line = expr.loc.line
-        val targetType = expr.target.resolvedType ?: TypeRef.JSON
+        val targetType = expr.target.type
 
         // Attempt AGET_PATH collapse for deep json chains
         if (targetType == TypeRef.JSON || targetType.isStructType()) {
@@ -370,7 +370,7 @@ class ExpressionEmitter(
                     emitExpr(expr.target, r, line)
                     r
                 }
-            val fieldType = expr.resolvedType ?: TypeRef.STRING
+            val fieldType = expr.type
             val subOp = OpcodeSelector.subOpForGet(fieldType)
             val keyIdx = ctx.pool.add(expr.fieldName)
             ctx.emit(Opcode.HACC, subOp, dest, tReg, keyIdx, line)
@@ -379,11 +379,11 @@ class ExpressionEmitter(
     }
 
     /** Returns (root, "a.b.c") if [expr] is a pure json field chain, else null. */
-    private fun collectFieldPath(expr: FieldAccessExpr): Pair<Expr, String>? {
+    private fun collectFieldPath(expr: TypedFieldAccessExpr): Pair<TypedExpr, String>? {
         val parts = mutableListOf(expr.fieldName)
-        var cur: Expr = expr.target
-        while (cur is FieldAccessExpr) {
-            val t = cur.target.resolvedType ?: return null
+        var cur: TypedExpr = expr.target
+        while (cur is TypedFieldAccessExpr) {
+            val t = cur.target.type
             if (t != TypeRef.JSON && !t.isStructType()) return null
             parts.add(0, cur.fieldName)
             cur = cur.target
@@ -393,12 +393,12 @@ class ExpressionEmitter(
     }
 
     private fun emitIndexAccess(
-        expr: IndexAccessExpr,
+        expr: TypedIndexAccessExpr,
         dest: Int,
     ) {
         val line = expr.loc.line
 
-        val targetType = expr.target.resolvedType ?: TypeRef.JSON
+        val targetType = expr.target.type
         val tResolved = ctx.resolveRegister(expr.target)
         val tReg =
             if (tResolved != null) {
@@ -410,7 +410,7 @@ class ExpressionEmitter(
                 r
             }
 
-        val idxType = expr.index.resolvedType ?: TypeRef.INT
+        val idxType = expr.index.type
         val iResolved = ctx.resolveRegister(expr.index)
         val iReg =
             if (iResolved != null) {
@@ -428,11 +428,11 @@ class ExpressionEmitter(
     }
 
     private fun emitFuncCall(
-        expr: FuncCallExpr,
+        expr: TypedFuncCallExpr,
         dest: Int,
     ) {
         val line = expr.loc.line
-        val funcDef = expr.resolvedFunction ?: return
+        val funcDef = expr.resolvedFunction
         val argStart = ctx.allocator.allocTempPrim() // will track frame start slot
         emitArgs(expr.args, funcDef.params, argStart, line)
         val funcIdx = ctx.pool.add(funcDef.name)
@@ -450,8 +450,8 @@ class ExpressionEmitter(
     }
 
     private fun emitArgs(
-        args: List<Expr>,
-        params: List<Param>,
+        args: List<TypedExpr>,
+        params: List<ParamSymbol>,
         argStart: Int,
         line: Int,
     ) {
@@ -463,14 +463,14 @@ class ExpressionEmitter(
     }
 
     private fun emitMethodCall(
-        expr: MethodCallExpr,
+        expr: TypedMethodCallExpr,
         dest: Int,
     ) {
         val line = expr.loc.line
         when (expr.resolution) {
-            MethodCallExpr.Resolution.NAMESPACE -> emitNamespaceCall(expr, dest, line)
-            MethodCallExpr.Resolution.TYPE_BOUND -> emitTypeBoundCall(expr, dest, line)
-            MethodCallExpr.Resolution.UFCS -> emitUfcsCall(expr, dest, line)
+            TypedMethodCallExpr.Resolution.NAMESPACE -> emitNamespaceCall(expr, dest, line)
+            TypedMethodCallExpr.Resolution.TYPE_BOUND -> emitTypeBoundCall(expr, dest, line)
+            TypedMethodCallExpr.Resolution.UFCS -> emitUfcsCall(expr, dest, line)
             null -> {
                 // TODO: this should be a warning inside the compiler. Or error since this should never have happened.
                 println("Unresolved method call: ${expr.methodName}")
@@ -479,7 +479,7 @@ class ExpressionEmitter(
     }
 
     private fun emitNamespaceCall(
-        expr: MethodCallExpr,
+        expr: TypedMethodCallExpr,
         dest: Int,
         line: Int,
     ) {
@@ -495,7 +495,7 @@ class ExpressionEmitter(
             val funcIdx = ctx.pool.add(target.name)
             ctx.emit(Opcode.CALL, 0, funcIdx, argStart, 0, line)
             if (dest != argStart) {
-                if ((expr.resolvedType ?: TypeRef.INT).isPrimitive()) {
+                if (expr.type.isPrimitive()) {
                     ctx.emit(Opcode.MOV, 0, dest, argStart, 0, line)
                 } else {
                     ctx.emit(Opcode.MOVR, 0, dest, argStart, 0, line)
@@ -516,7 +516,7 @@ class ExpressionEmitter(
     }
 
     private fun emitTypeBoundCall(
-        expr: MethodCallExpr,
+        expr: TypedMethodCallExpr,
         dest: Int,
         line: Int,
     ) {
@@ -532,7 +532,7 @@ class ExpressionEmitter(
     }
 
     private fun emitUfcsCall(
-        expr: MethodCallExpr,
+        expr: TypedMethodCallExpr,
         dest: Int,
         line: Int,
     ) {
@@ -548,7 +548,7 @@ class ExpressionEmitter(
         val funcIdx = ctx.pool.add(target.name)
         ctx.emit(Opcode.CALL, 0, funcIdx, argStart, 0, line)
 
-        val retType = expr.resolvedType ?: TypeRef.VOID
+        val retType = expr.type
         if (retType != TypeRef.VOID && dest != argStart) {
             if (retType.isPrimitive()) {
                 ctx.emit(Opcode.MOV, 0, dest, argStart, 0, line)
@@ -623,17 +623,17 @@ class ExpressionEmitter(
     // Composite literals
 
     private fun emitArrayLiteral(
-        expr: ArrayLiteralExpr,
+        expr: TypedArrayLiteralExpr,
         dest: Int,
     ) {
         val line = expr.loc.line
 
         ctx.emit(Opcode.NEW_ARRAY, 0, dest, 0, 0, line)
 
-        val elemType = expr.elementType ?: TypeRef.JSON
+        val elemType = expr.elementType
 
         for (elem in expr.elements) {
-            val elemResolvedType = elem.resolvedType
+            val elemResolvedType = elem.type
             // Widen int to double if the array element type requires it
             if (elemType == TypeRef.DOUBLE && elemResolvedType == TypeRef.INT) {
                 val eResolved = ctx.resolveRegister(elem)
@@ -674,14 +674,14 @@ class ExpressionEmitter(
     }
 
     private fun emitStructLiteral(
-        expr: StructLiteralExpr,
+        expr: TypedStructLiteralExpr,
         dest: Int,
     ) {
         val line = expr.loc.line
         ctx.emit(Opcode.NEW_OBJ, 0, dest, 0, 0, line)
 
         for (field in expr.fields) {
-            val fieldType = field.value.resolvedType ?: TypeRef.JSON
+            val fieldType = field.value.type
             val fResolved = ctx.resolveRegister(field.value)
 
             val tmp =

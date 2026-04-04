@@ -61,7 +61,7 @@ class ImportResolverTest :
             resolver.resolveImports(program)
 
             errors.hasErrors() shouldBe false
-            program.imports[0].resolvedPath shouldBe
+            resolver.modules[0].sourcePath shouldBe
                 Path.of("/project/utils/helpers.nox").normalize().toString()
         }
 

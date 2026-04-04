@@ -1,6 +1,6 @@
 package nox.compiler.semantic
 
-import nox.compiler.ast.Program
+import nox.compiler.ast.RawProgram
 
 /**
  * A fully resolved import module, ready for codegen.
@@ -17,7 +17,8 @@ import nox.compiler.ast.Program
 data class ResolvedModule(
     val namespace: String,
     val sourcePath: String,
-    val program: Program,
+    val program: RawProgram,
     val globalBaseOffset: Int,
     val globalCount: Int,
+    var typedProgram: nox.compiler.ast.typed.TypedProgram? = null,
 )

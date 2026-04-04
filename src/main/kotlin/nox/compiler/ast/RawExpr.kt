@@ -12,71 +12,67 @@ import nox.compiler.types.*
  * See docs/compiler/ast.md for the full design rationale.
  * @property loc source position of this expression
  */
-sealed class Expr(
+sealed class RawExpr(
     val loc: SourceLocation,
 ) {
-    /** Resolved type of this expression. Set by the semantic analyzer. */
-    var resolvedType: TypeRef? = null
 
-    /** Assigned register index. Set by the register allocator (`-1` = unassigned). */
-    var register: Int = -1
 }
 
 // Literals
 
-class IntLiteralExpr(
+class RawIntLiteralExpr(
     val value: Long,
     loc: SourceLocation,
-) : Expr(loc)
+) : RawExpr(loc)
 
-class DoubleLiteralExpr(
+class RawDoubleLiteralExpr(
     val value: Double,
     loc: SourceLocation,
-) : Expr(loc)
+) : RawExpr(loc)
 
-class BoolLiteralExpr(
+class RawBoolLiteralExpr(
     val value: Boolean,
     loc: SourceLocation,
-) : Expr(loc)
+) : RawExpr(loc)
 
 /**
  * A string literal with escape sequences already resolved.
  * For example, the source `"hello\n"` produces `value = "hello" + newline`.
  */
-class StringLiteralExpr(
+class RawStringLiteralExpr(
     val value: String,
     loc: SourceLocation,
-) : Expr(loc)
+) : RawExpr(loc)
 
-class NullLiteralExpr(
+class RawNullLiteralExpr(
     loc: SourceLocation,
-) : Expr(loc)
+) : RawExpr(loc)
 
 // Template Literals
 
 /**
  * A backtick-delimited template literal: `` `text ${expr} text` ``
  *
- * Decomposed into an ordered list of [TemplatePart]s during AST construction.
+ * Decomposed into an ordered list of [RawTemplatePart]s during AST construction.
  */
-class TemplateLiteralExpr(
-    val parts: List<TemplatePart>,
+class RawTemplateLiteralExpr(
+    val parts: List<RawTemplatePart>,
     loc: SourceLocation,
-) : Expr(loc)
+) : RawExpr(loc)
 
 /**
  * A segment of a template literal, either raw text or an interpolated expression.
  */
-sealed interface TemplatePart {
+sealed interface RawTemplatePart {
     data class Text(
         val value: String,
-    ) : TemplatePart
+    ) : RawTemplatePart
 
     data class Interpolation(
-        val expression: Expr,
-    ) : TemplatePart
+        val expression: RawExpr,
+    ) : RawTemplatePart
 
-    data object ErrorPart : TemplatePart
+    data object ErrorPart : RawTemplatePart
 }
 
 // Composite Literals
@@ -86,12 +82,10 @@ sealed interface TemplatePart {
  *
  * [elementType] is inferred by the semantic analyzer from the element expressions.
  */
-class ArrayLiteralExpr(
-    val elements: List<Expr>,
+class RawArrayLiteralExpr(
+    val elements: List<RawExpr>,
     loc: SourceLocation,
-) : Expr(loc) {
-    /** Inferred element type. Set by the semantic analyzer. */
-    var elementType: TypeRef? = null
+) : RawExpr(loc) {
 }
 
 /**
@@ -99,53 +93,51 @@ class ArrayLiteralExpr(
  *
  * [structType] is inferred from assignment context during semantic analysis.
  */
-class StructLiteralExpr(
-    val fields: List<FieldInit>,
+class RawStructLiteralExpr(
+    val fields: List<RawFieldInit>,
     loc: SourceLocation,
-) : Expr(loc) {
-    /** Inferred struct type. Set by the semantic analyzer. */
-    var structType: TypeRef? = null
+) : RawExpr(loc) {
 }
 
 /**
  * A single field initializer within a struct literal.
  */
-data class FieldInit(
+data class RawFieldInit(
     val name: String,
-    val value: Expr,
+    val value: RawExpr,
     val loc: SourceLocation,
 )
 
 // Operators
 
 /** Binary expression: `left op right` */
-class BinaryExpr(
-    val left: Expr,
+class RawBinaryExpr(
+    val left: RawExpr,
     val op: BinaryOp,
-    val right: Expr,
+    val right: RawExpr,
     loc: SourceLocation,
-) : Expr(loc)
+) : RawExpr(loc)
 
 /** Unary prefix expression: `op operand` (e.g. `-x`, `!flag`) */
-class UnaryExpr(
+class RawUnaryExpr(
     val op: UnaryOp,
-    val operand: Expr,
+    val operand: RawExpr,
     loc: SourceLocation,
-) : Expr(loc)
+) : RawExpr(loc)
 
 /** Postfix expression: `operand++` or `operand--` */
-class PostfixExpr(
-    val operand: Expr,
+class RawPostfixExpr(
+    val operand: RawExpr,
     val op: PostfixOp,
     loc: SourceLocation,
-) : Expr(loc)
+) : RawExpr(loc)
 
 /** Cast expression: `expr as Type` */
-class CastExpr(
-    val operand: Expr,
+class RawCastExpr(
+    val operand: RawExpr,
     val targetType: TypeRef,
     loc: SourceLocation,
-) : Expr(loc)
+) : RawExpr(loc)
 
 // References
 
@@ -155,26 +147,22 @@ class CastExpr(
  * [resolvedSymbol] is populated by the semantic analyzer to link
  * this identifier to its declaration.
  */
-class IdentifierExpr(
+class RawIdentifierExpr(
     val name: String,
     loc: SourceLocation,
-) : Expr(loc) {
-    /** Resolved symbol (VarSymbol, ParamSymbol, GlobalSymbol). Set by semantic analyzer. */
-    var resolvedSymbol: Symbol? = null
+) : RawExpr(loc) {
 }
 
 /**
  * Function call: `func(args)`
  *
- * [resolvedFunction] links to the AST [FuncDef] node after semantic analysis.
+ * [resolvedFunction] links to the AST [RawFuncDef] node after semantic analysis.
  */
-class FuncCallExpr(
+class RawFuncCallExpr(
     val name: String,
-    val args: List<Expr>,
+    val args: List<RawExpr>,
     loc: SourceLocation,
-) : Expr(loc) {
-    /** Resolved function definition. Set by semantic analyzer. */
-    var resolvedFunction: FuncDef? = null
+) : RawExpr(loc) {
 }
 
 /**
@@ -183,12 +171,12 @@ class FuncCallExpr(
  * Could resolve to a namespace function, built-in type method,
  * plugin type method, or UFCS free function.
  */
-class MethodCallExpr(
-    val target: Expr,
+class RawMethodCallExpr(
+    val target: RawExpr,
     val methodName: String,
-    val args: List<Expr>,
+    val args: List<RawExpr>,
     loc: SourceLocation,
-) : Expr(loc) {
+) : RawExpr(loc) {
     /** How this method call was resolved. */
     enum class Resolution {
         UFCS,
@@ -196,25 +184,23 @@ class MethodCallExpr(
         NAMESPACE,
     }
 
-    var resolution: Resolution? = null
-    var resolvedTarget: CallTarget? = null
 }
 
 /** Field access: `target.field` */
-class FieldAccessExpr(
-    val target: Expr,
+class RawFieldAccessExpr(
+    val target: RawExpr,
     val fieldName: String,
     loc: SourceLocation,
-) : Expr(loc)
+) : RawExpr(loc)
 
 /** Index access: `target[index]` */
-class IndexAccessExpr(
-    val target: Expr,
-    val index: Expr,
+class RawIndexAccessExpr(
+    val target: RawExpr,
+    val index: RawExpr,
     loc: SourceLocation,
-) : Expr(loc)
+) : RawExpr(loc)
 
 /** Placeholder for invalid or un-parseable expressions. */
-class ErrorExpr(
+class RawErrorExpr(
     loc: SourceLocation,
-) : Expr(loc)
+) : RawExpr(loc)

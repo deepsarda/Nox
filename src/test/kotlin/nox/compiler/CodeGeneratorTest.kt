@@ -25,6 +25,10 @@ class CodeGeneratorTest :
         /** Compile source and assert no errors, returning the CompilationResult. */
         fun compileOk(source: String): NoxCompiler.CompilationResult {
             val result = NoxCompiler.compile(source.trimIndent(), "test.nox")
+            if (result.errors.hasErrors()) {
+                println("Compilation failed for source:\n$source")
+                result.errors.all().forEach { println("  ERROR: ${it.message} at ${it.loc}") }
+            }
             result.errors.hasErrors() shouldBe false
             result.compiledProgram shouldNotBe null
             return result

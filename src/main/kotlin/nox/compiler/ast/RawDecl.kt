@@ -16,23 +16,23 @@ import nox.compiler.types.*
  *
  * @property loc source position of this declaration
  */
-sealed class Decl(
+sealed class RawDecl(
     val loc: SourceLocation,
 )
 
 /**
  * User-defined struct type: `type Point { int x; int y; }`
  */
-class TypeDef(
+class RawTypeDef(
     val name: String,
-    val fields: List<FieldDecl>,
+    val fields: List<RawFieldDecl>,
     loc: SourceLocation,
-) : Decl(loc)
+) : RawDecl(loc)
 
 /**
- * A single field within a [TypeDef].
+ * A single field within a [RawTypeDef].
  */
-data class FieldDecl(
+data class RawFieldDecl(
     val type: TypeRef,
     val name: String,
     val loc: SourceLocation,
@@ -47,18 +47,14 @@ data class FieldDecl(
  * Mutable [maxPrimitiveRegisters] and [maxReferenceRegisters] are
  * populated by the register allocator to size the call frame.
  */
-class FuncDef(
+class RawFuncDef(
     val returnType: TypeRef,
     val name: String,
-    val params: List<Param>,
-    val body: Block,
+    val params: List<RawParam>,
+    val body: RawBlock,
     loc: SourceLocation,
-) : Decl(loc) {
-    /** Frame size for pMem. Set by register allocator. */
-    var maxPrimitiveRegisters: Int = 0
+) : RawDecl(loc) {
 
-    /** Frame size for rMem. Set by register allocator. */
-    var maxReferenceRegisters: Int = 0
 }
 
 /**
@@ -69,16 +65,12 @@ class FuncDef(
  *
  * `main` always implicitly returns `string`.
  */
-class MainDef(
-    val params: List<Param>,
-    val body: Block,
+class RawMainDef(
+    val params: List<RawParam>,
+    val body: RawBlock,
     loc: SourceLocation,
-) : Decl(loc) {
-    /** Frame size for pMem. Set by register allocator. */
-    var maxPrimitiveRegisters: Int = 0
+) : RawDecl(loc) {
 
-    /** Frame size for rMem. Set by register allocator. */
-    var maxReferenceRegisters: Int = 0
 }
 
 /**
@@ -87,14 +79,12 @@ class MainDef(
  * [initializer] is `null` when the variable is uninitialized (uses type default).
  * [globalSlot] is the index into global memory, offset by the module's `globalBaseOffset`.
  */
-class GlobalVarDecl(
+class RawGlobalVarDecl(
     val type: TypeRef,
     val name: String,
-    val initializer: Expr?,
+    val initializer: RawExpr?,
     loc: SourceLocation,
-) : Decl(loc) {
-    /** Index in global memory. Set by semantic analyzer / import resolver. */
-    var globalSlot: Int = -1
+) : RawDecl(loc) {
 }
 
 /**
@@ -102,13 +92,11 @@ class GlobalVarDecl(
  *
  * [resolvedPath] is set by the import resolver to the absolute file path.
  */
-class ImportDecl(
+class RawImportDecl(
     val path: String,
     val namespace: String,
     loc: SourceLocation,
-) : Decl(loc) {
-    /** Absolute resolved path. Set by import resolver. */
-    var resolvedPath: String? = null
+) : RawDecl(loc) {
 }
 
 /**
@@ -120,18 +108,16 @@ class ImportDecl(
  * @property isVarargs   whether this is a varargs parameter (`int ...values[]`)
  * @property loc         source position
  */
-data class Param(
+data class RawParam(
     val type: TypeRef,
     val name: String,
-    val defaultValue: Expr?,
+    val defaultValue: RawExpr?,
     val isVarargs: Boolean,
     val loc: SourceLocation,
 ) {
-    /** ParamSymbol created by the type resolver. Set during semantic analysis. */
-    var resolvedSymbol: Symbol? = null
 }
 
 /** Placeholder for invalid or un-parseable declarations. */
-class ErrorDecl(
+class RawErrorDecl(
     loc: SourceLocation,
-) : Decl(loc)
+) : RawDecl(loc)

@@ -1,8 +1,8 @@
 package nox.compiler.semantic
 
 import nox.compiler.CompilerErrors
-import nox.compiler.ast.ImportDecl
-import nox.compiler.ast.Program
+import nox.compiler.ast.RawImportDecl
+import nox.compiler.ast.RawProgram
 import nox.compiler.parsing.NoxParsing
 import java.nio.file.Path
 import kotlin.io.path.pathString
@@ -53,16 +53,15 @@ internal class ImportResolver(
      * 5. Otherwise, parse and recursively resolve the imported file
      * 6. Register the module with its global slot offset
      */
-    fun resolveImports(program: Program) {
+    fun resolveImports(program: RawProgram) {
         for (imp in program.imports) {
             resolveImport(imp)
         }
     }
 
-    private fun resolveImport(imp: ImportDecl) {
+    private fun resolveImport(imp: RawImportDecl) {
         // 1. Resolve path relative to importing file's directory
         val resolved = basePath.parent.resolve(imp.path).normalize()
-        imp.resolvedPath = resolved.pathString
 
         // 2. Validate namespace name
         if (!validateNamespace(imp)) return
@@ -162,7 +161,7 @@ internal class ImportResolver(
      *
      * @return `true` if valid, `false` if an error was reported
      */
-    private fun validateNamespace(imp: ImportDecl): Boolean =
+    private fun validateNamespace(imp: RawImportDecl): Boolean =
         when (val name = imp.namespace) {
             in builtinNamespaces -> {
                 errors.report(
@@ -203,7 +202,7 @@ internal class ImportResolver(
  * re-parsing and re-resolving the file.
  */
 internal data class ResolvedFile(
-    val program: nox.compiler.ast.Program,
+    val program: nox.compiler.ast.RawProgram,
     val globalBaseOffset: Int,
     val globalCount: Int,
 )

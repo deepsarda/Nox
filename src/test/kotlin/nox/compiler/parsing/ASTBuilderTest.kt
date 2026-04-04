@@ -19,9 +19,9 @@ class ASTBuilderTest :
     FunSpec({
 
         // Helpers
-        fun parse(source: String): Program = NoxParsing.parse(source, "test.nox")
+        fun parse(source: String): RawProgram = NoxParsing.parse(source, "test.nox")
 
-        // Program structure
+        // RawProgram structure
 
         test("empty program produces empty declarations list") {
             val prog = parse("")
@@ -142,8 +142,8 @@ class ASTBuilderTest :
                 )
             val func = prog.functionsByName["greet"]!!
             func.params[0].defaultValue.shouldNotBeNull()
-            func.params[0].defaultValue.shouldBeInstanceOf<StringLiteralExpr>()
-            (func.params[0].defaultValue as StringLiteralExpr).value shouldBe "World"
+            func.params[0].defaultValue.shouldBeInstanceOf<RawStringLiteralExpr>()
+            (func.params[0].defaultValue as RawStringLiteralExpr).value shouldBe "World"
         }
 
         test("function with varargs parameter") {
@@ -190,7 +190,7 @@ class ASTBuilderTest :
                 .params[0]
                 .defaultValue
                 .shouldNotBeNull()
-            val default = prog.main!!.params[0].defaultValue as IntLiteralExpr
+            val default = prog.main!!.params[0].defaultValue as RawIntLiteralExpr
             default.value shouldBe 5L
         }
 
@@ -215,15 +215,15 @@ class ASTBuilderTest :
 
         test("integer literal") {
             val prog = parse("main() { return 42; }")
-            val ret = prog.main!!.body.statements[0] as ReturnStmt
-            val lit = ret.value as IntLiteralExpr
+            val ret = prog.main!!.body.statements[0] as RawReturnStmt
+            val lit = ret.value as RawIntLiteralExpr
             lit.value shouldBe 42L
         }
 
         test("double literal") {
             val prog = parse("main() { return 3.14; }")
-            val ret = prog.main!!.body.statements[0] as ReturnStmt
-            val lit = ret.value as DoubleLiteralExpr
+            val ret = prog.main!!.body.statements[0] as RawReturnStmt
+            val lit = ret.value as RawDoubleLiteralExpr
             lit.value shouldBe 3.14
         }
 
@@ -239,8 +239,8 @@ class ASTBuilderTest :
                     """.trimIndent(),
                 )
             val stmts = prog.main!!.body.statements
-            val a = (stmts[0] as VarDeclStmt).initializer as BoolLiteralExpr
-            val b = (stmts[1] as VarDeclStmt).initializer as BoolLiteralExpr
+            val a = (stmts[0] as RawVarDeclStmt).initializer as RawBoolLiteralExpr
+            val b = (stmts[1] as RawVarDeclStmt).initializer as RawBoolLiteralExpr
             a.value shouldBe true
             b.value shouldBe false
         }
@@ -252,8 +252,8 @@ class ASTBuilderTest :
                     main() { return "hello\tworld\n"; }
                     """.trimIndent(),
                 )
-            val ret = prog.main!!.body.statements[0] as ReturnStmt
-            val lit = ret.value as StringLiteralExpr
+            val ret = prog.main!!.body.statements[0] as RawReturnStmt
+            val lit = ret.value as RawStringLiteralExpr
             lit.value shouldBe "hello\tworld\n"
         }
 
@@ -267,8 +267,8 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val decl = prog.main!!.body.statements[0] as VarDeclStmt
-            decl.initializer.shouldBeInstanceOf<NullLiteralExpr>()
+            val decl = prog.main!!.body.statements[0] as RawVarDeclStmt
+            decl.initializer.shouldBeInstanceOf<RawNullLiteralExpr>()
         }
 
         // Array and struct literals
@@ -283,16 +283,16 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val decl = prog.main!!.body.statements[0] as VarDeclStmt
-            val arr = decl.initializer as ArrayLiteralExpr
+            val decl = prog.main!!.body.statements[0] as RawVarDeclStmt
+            val arr = decl.initializer as RawArrayLiteralExpr
             arr.elements shouldHaveSize 3
-            (arr.elements[0] as IntLiteralExpr).value shouldBe 1L
+            (arr.elements[0] as RawIntLiteralExpr).value shouldBe 1L
         }
 
         test("empty array literal") {
             val prog = parse("main() { int[] arr = []; return \"ok\"; }")
-            val decl = prog.main!!.body.statements[0] as VarDeclStmt
-            val arr = decl.initializer as ArrayLiteralExpr
+            val decl = prog.main!!.body.statements[0] as RawVarDeclStmt
+            val arr = decl.initializer as RawArrayLiteralExpr
             arr.elements shouldHaveSize 0
         }
 
@@ -307,8 +307,8 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val decl = prog.main!!.body.statements[0] as VarDeclStmt
-            val struct = decl.initializer as StructLiteralExpr
+            val decl = prog.main!!.body.statements[0] as RawVarDeclStmt
+            val struct = decl.initializer as RawStructLiteralExpr
             struct.fields shouldHaveSize 2
             struct.fields[0].name shouldBe "x"
             struct.fields[1].name shouldBe "y"
@@ -325,36 +325,36 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val ret = prog.main!!.body.statements[0] as ReturnStmt
-            val tpl = ret.value as TemplateLiteralExpr
+            val ret = prog.main!!.body.statements[0] as RawReturnStmt
+            val tpl = ret.value as RawTemplateLiteralExpr
             tpl.parts shouldHaveSize 3
-            (tpl.parts[0] as TemplatePart.Text).value shouldBe "Hello "
-            (tpl.parts[1] as TemplatePart.Interpolation).expression.shouldBeInstanceOf<IdentifierExpr>()
-            (tpl.parts[2] as TemplatePart.Text).value shouldBe "!"
+            (tpl.parts[0] as RawTemplatePart.Text).value shouldBe "Hello "
+            (tpl.parts[1] as RawTemplatePart.Interpolation).expression.shouldBeInstanceOf<RawIdentifierExpr>()
+            (tpl.parts[2] as RawTemplatePart.Text).value shouldBe "!"
         }
 
         // Binary expressions
 
         test("arithmetic binary expression") {
             val prog = parse("main() { int x = 1 + 2; return \"ok\"; }")
-            val decl = prog.main!!.body.statements[0] as VarDeclStmt
-            val bin = decl.initializer as BinaryExpr
+            val decl = prog.main!!.body.statements[0] as RawVarDeclStmt
+            val bin = decl.initializer as RawBinaryExpr
             bin.op shouldBe BinaryOp.ADD
-            (bin.left as IntLiteralExpr).value shouldBe 1L
-            (bin.right as IntLiteralExpr).value shouldBe 2L
+            (bin.left as RawIntLiteralExpr).value shouldBe 1L
+            (bin.right as RawIntLiteralExpr).value shouldBe 2L
         }
 
         test("comparison expression") {
             val prog = parse("main() { boolean x = 1 < 2; return \"ok\"; }")
-            val decl = prog.main!!.body.statements[0] as VarDeclStmt
-            val bin = decl.initializer as BinaryExpr
+            val decl = prog.main!!.body.statements[0] as RawVarDeclStmt
+            val bin = decl.initializer as RawBinaryExpr
             bin.op shouldBe BinaryOp.LT
         }
 
         test("logical expression") {
             val prog = parse("main() { boolean x = true && false; return \"ok\"; }")
-            val decl = prog.main!!.body.statements[0] as VarDeclStmt
-            val bin = decl.initializer as BinaryExpr
+            val decl = prog.main!!.body.statements[0] as RawVarDeclStmt
+            val bin = decl.initializer as RawBinaryExpr
             bin.op shouldBe BinaryOp.AND
         }
 
@@ -374,29 +374,29 @@ class ASTBuilderTest :
                     """.trimIndent(),
                 )
             val stmts = prog.main!!.body.statements
-            (stmts[0] as VarDeclStmt)
+            (stmts[0] as RawVarDeclStmt)
                 .initializer
-                .shouldBeInstanceOf<BinaryExpr>()
+                .shouldBeInstanceOf<RawBinaryExpr>()
                 .op shouldBe BinaryOp.BIT_AND
-            (stmts[1] as VarDeclStmt)
+            (stmts[1] as RawVarDeclStmt)
                 .initializer
-                .shouldBeInstanceOf<BinaryExpr>()
+                .shouldBeInstanceOf<RawBinaryExpr>()
                 .op shouldBe BinaryOp.BIT_OR
-            (stmts[2] as VarDeclStmt)
+            (stmts[2] as RawVarDeclStmt)
                 .initializer
-                .shouldBeInstanceOf<BinaryExpr>()
+                .shouldBeInstanceOf<RawBinaryExpr>()
                 .op shouldBe BinaryOp.BIT_XOR
-            (stmts[3] as VarDeclStmt)
+            (stmts[3] as RawVarDeclStmt)
                 .initializer
-                .shouldBeInstanceOf<BinaryExpr>()
+                .shouldBeInstanceOf<RawBinaryExpr>()
                 .op shouldBe BinaryOp.SHL
-            (stmts[4] as VarDeclStmt)
+            (stmts[4] as RawVarDeclStmt)
                 .initializer
-                .shouldBeInstanceOf<BinaryExpr>()
+                .shouldBeInstanceOf<RawBinaryExpr>()
                 .op shouldBe BinaryOp.SHR
-            (stmts[5] as VarDeclStmt)
+            (stmts[5] as RawVarDeclStmt)
                 .initializer
-                .shouldBeInstanceOf<BinaryExpr>()
+                .shouldBeInstanceOf<RawBinaryExpr>()
                 .op shouldBe BinaryOp.USHR
         }
 
@@ -404,22 +404,22 @@ class ASTBuilderTest :
 
         test("unary negation") {
             val prog = parse("main() { int x = -5; return \"ok\"; }")
-            val decl = prog.main!!.body.statements[0] as VarDeclStmt
-            val unary = decl.initializer as UnaryExpr
+            val decl = prog.main!!.body.statements[0] as RawVarDeclStmt
+            val unary = decl.initializer as RawUnaryExpr
             unary.op shouldBe UnaryOp.NEG
         }
 
         test("unary not") {
             val prog = parse("main() { boolean x = !true; return \"ok\"; }")
-            val decl = prog.main!!.body.statements[0] as VarDeclStmt
-            val unary = decl.initializer as UnaryExpr
+            val decl = prog.main!!.body.statements[0] as RawVarDeclStmt
+            val unary = decl.initializer as RawUnaryExpr
             unary.op shouldBe UnaryOp.NOT
         }
 
         test("bitwise complement") {
             val prog = parse("main() { int x = ~42; return \"ok\"; }")
-            val decl = prog.main!!.body.statements[0] as VarDeclStmt
-            val unary = decl.initializer as UnaryExpr
+            val decl = prog.main!!.body.statements[0] as RawVarDeclStmt
+            val unary = decl.initializer as RawUnaryExpr
             unary.op shouldBe UnaryOp.BIT_NOT
         }
 
@@ -435,17 +435,17 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val stmtInc = prog.main!!.body.statements[1] as IncrementStmt
+            val stmtInc = prog.main!!.body.statements[1] as RawIncrementStmt
             stmtInc.op shouldBe PostfixOp.INCREMENT
 
-            val stmtDec = prog.main!!.body.statements[2] as IncrementStmt
+            val stmtDec = prog.main!!.body.statements[2] as RawIncrementStmt
             stmtDec.op shouldBe PostfixOp.DECREMENT
         }
 
         test("postfix decrement as expression") {
             val prog = parse("main() { int i = 5; int j = i--; return \"ok\"; }")
-            val decl = prog.main!!.body.statements[1] as VarDeclStmt
-            val postfix = decl.initializer as PostfixExpr
+            val decl = prog.main!!.body.statements[1] as RawVarDeclStmt
+            val postfix = decl.initializer as RawPostfixExpr
             postfix.op shouldBe PostfixOp.DECREMENT
         }
 
@@ -463,8 +463,8 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val decl = prog.main!!.body.statements[1] as VarDeclStmt
-            val cast = decl.initializer as CastExpr
+            val decl = prog.main!!.body.statements[1] as RawVarDeclStmt
+            val cast = decl.initializer as RawCastExpr
             cast.targetType shouldBe TypeRef("Config")
         }
 
@@ -481,10 +481,10 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val decl = prog.main!!.body.statements[1] as VarDeclStmt
-            val call = decl.initializer as MethodCallExpr
+            val decl = prog.main!!.body.statements[1] as RawVarDeclStmt
+            val call = decl.initializer as RawMethodCallExpr
             call.methodName shouldBe "upper"
-            call.target.shouldBeInstanceOf<IdentifierExpr>()
+            call.target.shouldBeInstanceOf<RawIdentifierExpr>()
         }
 
         test("field access expression") {
@@ -499,8 +499,8 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val decl = prog.main!!.body.statements[1] as VarDeclStmt
-            val acc = decl.initializer as FieldAccessExpr
+            val decl = prog.main!!.body.statements[1] as RawVarDeclStmt
+            val acc = decl.initializer as RawFieldAccessExpr
             acc.fieldName shouldBe "x"
         }
 
@@ -515,8 +515,8 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val decl = prog.main!!.body.statements[1] as VarDeclStmt
-            decl.initializer.shouldBeInstanceOf<IndexAccessExpr>()
+            val decl = prog.main!!.body.statements[1] as RawVarDeclStmt
+            decl.initializer.shouldBeInstanceOf<RawIndexAccessExpr>()
         }
 
         // Control flow
@@ -537,14 +537,14 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val ifStmt = prog.main!!.body.statements[1] as IfStmt
+            val ifStmt = prog.main!!.body.statements[1] as RawIfStmt
             ifStmt.elseIfs shouldHaveSize 1
             ifStmt.elseBlock.shouldNotBeNull()
         }
 
         test("if statement without else") {
             val prog = parse("main() { if (true) { yield 1; } return \"ok\"; }")
-            val ifStmt = prog.main!!.body.statements[0] as IfStmt
+            val ifStmt = prog.main!!.body.statements[0] as RawIfStmt
             ifStmt.elseIfs shouldHaveSize 0
             ifStmt.elseBlock.shouldBeNull()
         }
@@ -562,8 +562,8 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val whileStmt = prog.main!!.body.statements[1] as WhileStmt
-            whileStmt.condition.shouldBeInstanceOf<BinaryExpr>()
+            val whileStmt = prog.main!!.body.statements[1] as RawWhileStmt
+            whileStmt.condition.shouldBeInstanceOf<RawBinaryExpr>()
         }
 
         test("for loop") {
@@ -578,7 +578,7 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val forStmt = prog.main!!.body.statements[0] as ForStmt
+            val forStmt = prog.main!!.body.statements[0] as RawForStmt
             forStmt.init.shouldNotBeNull()
             forStmt.condition.shouldNotBeNull()
             forStmt.update.shouldNotBeNull()
@@ -586,7 +586,7 @@ class ASTBuilderTest :
 
         test("infinite for loop (empty clauses)") {
             val prog = parse("main() { for (;;) { break; } return \"ok\"; }")
-            val forStmt = prog.main!!.body.statements[0] as ForStmt
+            val forStmt = prog.main!!.body.statements[0] as RawForStmt
             forStmt.init.shouldBeNull()
             forStmt.condition.shouldBeNull()
             forStmt.update.shouldBeNull()
@@ -605,7 +605,7 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val forEach = prog.main!!.body.statements[1] as ForEachStmt
+            val forEach = prog.main!!.body.statements[1] as RawForEachStmt
             forEach.elementType shouldBe TypeRef.INT
             forEach.elementName shouldBe "n"
         }
@@ -628,11 +628,11 @@ class ASTBuilderTest :
                     """.trimIndent(),
                 )
             val stmts = prog.main!!.body.statements
-            (stmts[1] as AssignStmt).op shouldBe AssignOp.ADD_ASSIGN
-            (stmts[2] as AssignStmt).op shouldBe AssignOp.SUB_ASSIGN
-            (stmts[3] as AssignStmt).op shouldBe AssignOp.MUL_ASSIGN
-            (stmts[4] as AssignStmt).op shouldBe AssignOp.DIV_ASSIGN
-            (stmts[5] as AssignStmt).op shouldBe AssignOp.MOD_ASSIGN
+            (stmts[1] as RawAssignStmt).op shouldBe AssignOp.ADD_ASSIGN
+            (stmts[2] as RawAssignStmt).op shouldBe AssignOp.SUB_ASSIGN
+            (stmts[3] as RawAssignStmt).op shouldBe AssignOp.MUL_ASSIGN
+            (stmts[4] as RawAssignStmt).op shouldBe AssignOp.DIV_ASSIGN
+            (stmts[5] as RawAssignStmt).op shouldBe AssignOp.MOD_ASSIGN
         }
 
         // Exception handling
@@ -653,7 +653,7 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val tc = prog.main!!.body.statements[0] as TryCatchStmt
+            val tc = prog.main!!.body.statements[0] as RawTryCatchStmt
             tc.catchClauses shouldHaveSize 2
             tc.catchClauses[0].exceptionType shouldBe "NetworkError"
             tc.catchClauses[0].variableName shouldBe "e"
@@ -671,8 +671,8 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val throwStmt = prog.main!!.body.statements[0] as ThrowStmt
-            (throwStmt.value as StringLiteralExpr).value shouldBe "something went wrong"
+            val throwStmt = prog.main!!.body.statements[0] as RawThrowStmt
+            (throwStmt.value as RawStringLiteralExpr).value shouldBe "something went wrong"
         }
 
         // Jump statements
@@ -690,10 +690,10 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val whileStmt = prog.main!!.body.statements[0] as WhileStmt
+            val whileStmt = prog.main!!.body.statements[0] as RawWhileStmt
             val body = whileStmt.body.statements
-            body[0].shouldBeInstanceOf<BreakStmt>()
-            body[1].shouldBeInstanceOf<ContinueStmt>()
+            body[0].shouldBeInstanceOf<RawBreakStmt>()
+            body[1].shouldBeInstanceOf<RawContinueStmt>()
         }
 
         test("yield statement") {
@@ -706,8 +706,8 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val yieldStmt = prog.main!!.body.statements[0] as YieldStmt
-            (yieldStmt.value as StringLiteralExpr).value shouldBe "progress"
+            val yieldStmt = prog.main!!.body.statements[0] as RawYieldStmt
+            (yieldStmt.value as RawStringLiteralExpr).value shouldBe "progress"
         }
 
         test("return without value") {
@@ -720,7 +720,7 @@ class ASTBuilderTest :
                     """.trimIndent(),
                 )
             val func = prog.functionsByName["nothing"]!!
-            val ret = func.body.statements[0] as ReturnStmt
+            val ret = func.body.statements[0] as RawReturnStmt
             ret.value.shouldBeNull()
         }
 
@@ -737,8 +737,8 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            val exprStmt = prog.main!!.body.statements[0] as ExprStmt
-            exprStmt.expression.shouldBeInstanceOf<FuncCallExpr>()
+            val exprStmt = prog.main!!.body.statements[0] as RawExprStmt
+            exprStmt.expression.shouldBeInstanceOf<RawFuncCallExpr>()
         }
 
         // Source locations
@@ -755,7 +755,7 @@ class ASTBuilderTest :
                 )
             prog.main!!.loc.file shouldBe "test.nox"
             prog.main!!.loc.line shouldBe 1
-            val varDecl = prog.main!!.body.statements[0] as VarDeclStmt
+            val varDecl = prog.main!!.body.statements[0] as RawVarDeclStmt
             varDecl.loc.line shouldBe 2
         }
 
@@ -763,9 +763,9 @@ class ASTBuilderTest :
 
         test("parenthesized expressions are unwrapped") {
             val prog = parse("main() { int x = (1 + 2); return \"ok\"; }")
-            val decl = prog.main!!.body.statements[0] as VarDeclStmt
-            // Should be a BinaryExpr, not a ParenExpr
-            decl.initializer.shouldBeInstanceOf<BinaryExpr>()
+            val decl = prog.main!!.body.statements[0] as RawVarDeclStmt
+            // Should be a RawBinaryExpr, not a ParenExpr
+            decl.initializer.shouldBeInstanceOf<RawBinaryExpr>()
         }
 
         // Complex program
@@ -843,7 +843,7 @@ class ASTBuilderTest :
             prog.typesByName["Point"].shouldNotBeNull()
         }
 
-        test("broken statement in a function body produces ErrorStmt but preserves others") {
+        test("broken statement in a function body produces RawErrorStmt but preserves others") {
             val errors = CompilerErrors()
             val prog =
                 NoxParsing.parse(
@@ -862,7 +862,7 @@ class ASTBuilderTest :
             prog.main.shouldNotBeNull()
             // At least the valid variable declaration should survive
             val stmts = prog.main!!.body.statements
-            stmts.any { it is VarDeclStmt } shouldBe true
+            stmts.any { it is RawVarDeclStmt } shouldBe true
         }
 
         test("multiple syntax errors are all reported") {
@@ -883,7 +883,7 @@ class ASTBuilderTest :
             errors.count shouldBeGreaterThanOrEqual 2
         }
 
-        test("empty struct produces parse error but TypeDef survives via ANTLR recovery") {
+        test("empty struct produces parse error but RawTypeDef survives via ANTLR recovery") {
             val errors = CompilerErrors()
             val prog =
                 NoxParsing.parse(
@@ -896,7 +896,7 @@ class ASTBuilderTest :
                 )
 
             errors.hasErrors() shouldBe true
-            // ANTLR error recovery still produces a TypeDef node with empty fields.
+            // ANTLR error recovery still produces a RawTypeDef node with empty fields.
             // DeclarationCollector rejects it with a semantic error.
             prog.typesByName["Empty"].shouldNotBeNull()
             prog.typesByName["Empty"]!!.fields shouldHaveSize 0

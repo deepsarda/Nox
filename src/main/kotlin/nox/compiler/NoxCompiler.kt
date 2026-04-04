@@ -1,6 +1,7 @@
 package nox.compiler
 
-import nox.compiler.ast.Program
+import nox.compiler.ast.RawProgram
+import nox.compiler.ast.typed.TypedProgram
 import nox.compiler.codegen.CodeGenerator
 import nox.compiler.codegen.CompiledProgram
 import nox.compiler.codegen.NoxcEmitter
@@ -10,6 +11,7 @@ import nox.compiler.semantic.DeclarationCollector
 import nox.compiler.semantic.ImportResolver
 import nox.compiler.semantic.ResolvedModule
 import nox.compiler.semantic.TypeResolver
+import nox.compiler.semantic.TreeValidator
 import nox.compiler.types.SymbolTable
 import nox.plugin.LibraryRegistry
 import java.nio.file.Path
@@ -38,7 +40,8 @@ object NoxCompiler {
      * @property modules   resolved import modules, in depth-first order
      */
     data class CompilationResult(
-        val program: Program,
+        val program: RawProgram,
+        val typedProgram: TypedProgram?,
         val errors: CompilerErrors,
         val warnings: CompilerWarnings,
         val modules: List<ResolvedModule>,
@@ -89,7 +92,7 @@ object NoxCompiler {
 
         // Early exit if parsing or import resolution produced errors
         if (errors.hasErrors()) {
-            return CompilationResult(program, errors, warnings, modules)
+            return CompilationResult(program, null, errors, warnings, modules)
         }
 
         // Phase 3: Declaration Collection (Pass 1)
@@ -97,26 +100,30 @@ object NoxCompiler {
         DeclarationCollector(globalScope, errors).collect(program)
 
         // Phase 4: Type Resolution (Pass 2)
-        TypeResolver(globalScope, errors, modules, registry).resolve(program)
+        val (typedProgram, typedModules) = TypeResolver(globalScope, errors, modules, registry).resolve(program)
+
+        // Phase 4b: Tree Validation (Defensive Check)
+        TreeValidator(errors).validate(program, typedProgram)
 
         // Phase 5: Control Flow Validation (Pass 3)
-        ControlFlowValidator(errors, warnings).validate(program)
+        ControlFlowValidator(errors, warnings).validate(typedProgram)
 
         // Early exit if semantic analyses produced errors
         if (errors.hasErrors()) {
-            return CompilationResult(program, errors, warnings, modules)
+            return CompilationResult(program, typedProgram, errors, warnings, modules)
         }
 
         // Populate source lines for the disassembler
         program.sourceLines.addAll(source.lines())
+        typedProgram.sourceLines.addAll(source.lines())
 
         // Phase 6: Code Generation
-        val compiledProgram = CodeGenerator(modules, registry).generate(program)
+        val compiledProgram = CodeGenerator(typedModules, registry).generate(typedProgram)
 
         // Phase 7: Disassembly
         val programName = program.headers.firstOrNull { it.key == "name" }?.value ?: "(unnamed)"
         val disassembly = NoxcEmitter().emit(compiledProgram, fileName, programName, program.sourceLines)
 
-        return CompilationResult(program, errors, warnings, modules, compiledProgram, disassembly)
+        return CompilationResult(program, typedProgram, errors, warnings, modules, compiledProgram, disassembly)
     }
 }

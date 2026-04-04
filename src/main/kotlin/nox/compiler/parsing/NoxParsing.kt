@@ -1,7 +1,7 @@
 package nox.compiler.parsing
 
 import nox.compiler.CompilerErrors
-import nox.compiler.ast.Program
+import nox.compiler.ast.*
 import nox.compiler.types.SourceLocation
 import nox.parser.NoxLexer
 import nox.parser.NoxParser
@@ -15,22 +15,22 @@ import org.antlr.v4.runtime.Recognizer
  * Convenience entry point for parsing `.nox` source code into an AST.
  *
  * Handles ANTLR setup (lexer, token stream, parser) and drives the
- * [ASTBuilder] visitor to produce a [Program].
+ * [ASTBuilder] visitor to produce a [RawProgram].
  */
 object NoxParsing {
     /**
-     * Parse a `.nox` source string into a [Program] AST.
+     * Parse a `.nox` source string into a [RawProgram] AST.
      *
      * @param source   the raw source code
      * @param fileName the file name to attach to [nox.compiler.types.SourceLocation]s (defaults to `"<input>"`)
      * @param errors   [CompilerErrors] collector used to report syntax and semantic errors
-     * @return the parsed [Program]
+     * @return the parsed [RawProgram]
      */
     fun parse(
         source: String,
         fileName: String = "<input>",
         errors: CompilerErrors = CompilerErrors(),
-    ): Program {
+    ): RawProgram {
         val lexer = NoxLexer(CharStreams.fromString(source, fileName))
         val tokens = CommonTokenStream(lexer)
         val parser = NoxParser(tokens)

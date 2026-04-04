@@ -2,7 +2,7 @@ package nox.compiler
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import nox.compiler.ast.VarDeclStmt
+import nox.compiler.ast.typed.TypedVarDeclStmt
 import nox.compiler.types.TypeRef
 
 /**
@@ -20,9 +20,9 @@ class NoxCompilerTest :
                     source =
                         """
                         int add(int a, int b) { return a + b; }
-                        main() { 
+                        main() {
                             int x = add(1, 2);
-                            return "ok"; 
+                            return "ok";
                         }
                         """.trimIndent(),
                     fileName = "test.nox",
@@ -39,15 +39,15 @@ class NoxCompilerTest :
                 NoxCompiler.compile(
                     source =
                         """
-                        main() { 
-                            int x = "hello"; 
-                            return "ok"; 
+                        main() {
+                            int x = "hello";
+                            return "ok";
                         }
                         """.trimIndent(),
                     fileName = "test.nox",
                 )
             result.errors.hasErrors() shouldBe true
-            result.errors.all().any { it.message.contains("Type mismatch") } shouldBe true
+            result.errors.all().any { it.message.lowercase().contains("type mismatch") } shouldBe true
         }
 
         test("compileWithSyntaxErrors") {
@@ -55,9 +55,9 @@ class NoxCompilerTest :
                 NoxCompiler.compile(
                     source =
                         """
-                        main() { 
-                            int x = ; 
-                            return "ok"; 
+                        main() {
+                            int x = ;
+                            return "ok";
                         }
                         """.trimIndent(),
                     fileName = "test.nox",
@@ -70,18 +70,18 @@ class NoxCompilerTest :
                 NoxCompiler.compile(
                     source =
                         """
-                        main() { 
-                            int x = 42; 
-                            return "ok"; 
+                        main() {
+                            int x = 42;
+                            return "ok";
                         }
                         """.trimIndent(),
                     fileName = "test.nox",
                 )
             result.errors.hasErrors() shouldBe false
             val varDecl =
-                result.program.main!!
-                    .body.statements[0] as VarDeclStmt
-            varDecl.initializer.resolvedType shouldBe TypeRef.INT
+                result.typedProgram!!.main!!
+                    .body.statements[0] as TypedVarDeclStmt
+            varDecl.initializer.type shouldBe TypeRef.INT
         }
     })
 

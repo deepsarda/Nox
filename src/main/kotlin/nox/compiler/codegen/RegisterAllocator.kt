@@ -1,6 +1,6 @@
 package nox.compiler.codegen
 
-import nox.compiler.ast.*
+import nox.compiler.ast.typed.*
 import nox.compiler.types.*
 
 /**
@@ -16,7 +16,7 @@ import nox.compiler.types.*
  * See docs/compiler/codegen.md.
  */
 class RegisterAllocator(
-    params: List<Param>,
+    params: List<TypedParam>,
 ) {
     // Bank pools
 
@@ -62,13 +62,13 @@ class RegisterAllocator(
     fun refParamRegister(name: String): Int? = paramRefReg[name]
 
     /** Whether [param] lives in rMem. */
-    fun paramIsRef(param: Param): Boolean = !param.type.isPrimitive()
+    fun paramIsRef(param: TypedParam): Boolean = !param.type.isPrimitive()
 
     /**
      * Allocate and assign a register for a local variable declaration.
-     * Sets both [VarDeclStmt.register] and [VarSymbol.register] (via resolvedSymbol back-link).
+     * Sets both [TypedVarDeclStmt.register] and [VarSymbol.register] (via resolvedSymbol back-link).
      */
-    fun allocVar(stmt: VarDeclStmt): Int {
+    fun allocVar(stmt: TypedVarDeclStmt): Int {
         val reg = if (stmt.type.isPrimitive()) allocPrim() else allocRef()
         stmt.register = reg
         (stmt.resolvedSymbol as? VarSymbol)?.register = reg
@@ -79,7 +79,7 @@ class RegisterAllocator(
      * Write pre-allocated param registers into [ParamSymbol.register] for each param.
      * Call this after constructing the allocator, before emitting the function body.
      */
-    fun setParamSymbols(params: List<Param>) {
+    fun setParamSymbols(params: List<TypedParam>) {
         for (param in params) {
             val sym = param.resolvedSymbol as? ParamSymbol ?: continue
             val reg = primParamRegister(param.name) ?: refParamRegister(param.name) ?: continue
@@ -88,10 +88,10 @@ class RegisterAllocator(
     }
 
     /**
-     * Allocate a register for the loop variable in a [ForEachStmt].
-     * Sets [ForEachStmt.elementRegister] in-place and returns the register number.
+     * Allocate a register for the loop variable in a [TypedForEachStmt].
+     * Sets [TypedForEachStmt.elementRegister] in-place and returns the register number.
      */
-    fun allocElement(stmt: ForEachStmt): Int {
+    fun allocElement(stmt: TypedForEachStmt): Int {
         val reg = if (stmt.elementType.isPrimitive()) allocPrim() else allocRef()
         stmt.elementRegister = reg
         return reg
