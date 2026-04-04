@@ -1,6 +1,6 @@
 package nox.compiler.ast
 
-import nox.compiler.types.*
+import nox.compiler.types.SourceLocation
 
 /**
  * Root of the AST for a single `.nox` file.

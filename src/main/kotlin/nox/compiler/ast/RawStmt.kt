@@ -162,7 +162,10 @@ data class RawCatchClause(
     val variableName: String,
     val body: RawBlock,
     val loc: SourceLocation,
-)
+) {
+    var resolvedSymbol: Symbol? = null
+    var register: Int = -1
+}
 
 // Expression Statement
 

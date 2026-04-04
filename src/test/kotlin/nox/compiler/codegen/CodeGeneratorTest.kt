@@ -1245,7 +1245,7 @@ class CodeGeneratorTest :
             result.hasOpcode(Opcode.OBJ_SET) shouldBe true
         }
 
-        test("arrayPushEmitsARR_PUSH_HINV") {
+        test("arrayPushEmitsARR_PUSH") {
             val result =
                 compileOk(
                     """
@@ -1256,7 +1256,7 @@ class CodeGeneratorTest :
             }
         """,
                 )
-            result.hasOpcode(Opcode.SCALL) shouldBe true
+            result.hasOpcode(Opcode.ARR_PUSH) shouldBe true
         }
 
         // UFCS call
@@ -1379,6 +1379,23 @@ class CodeGeneratorTest :
                 )
             val cp = result.compiledProgram!!
             cp.exceptionTable.any { it.exceptionType == "TypeError" } shouldBe true
+        }
+
+        test("resourceGuardCatchEmitsKILL") {
+            val result =
+                compileOk(
+                    """
+            main() {
+                try {
+                    int x = 1;
+                } catch (QuotaExceededError e) {
+                    string m = e;
+                }
+                return "ok";
+            }
+        """,
+                )
+            result.hasOpcode(Opcode.KILL) shouldBe true
         }
 
         // Return forms

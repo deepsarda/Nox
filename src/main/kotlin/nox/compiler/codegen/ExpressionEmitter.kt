@@ -414,6 +414,7 @@ class ExpressionEmitter(
         }
 
         val tResolved = ctx.resolveRegister(expr.target)
+
         val tReg =
             if (tResolved != null) {
                 tResolved

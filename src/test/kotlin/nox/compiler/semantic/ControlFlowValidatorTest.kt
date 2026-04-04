@@ -4,7 +4,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import nox.compiler.CompilerErrors
 import nox.compiler.CompilerWarnings
-import nox.compiler.ast.*
+import nox.compiler.ast.Program
 import nox.compiler.parsing.NoxParsing
 import nox.compiler.types.SymbolTable
 
