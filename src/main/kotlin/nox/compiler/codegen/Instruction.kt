@@ -60,14 +60,31 @@ object Instruction {
     fun opC(inst: Long): Int = (inst and 0xFFFF).toInt()
 
     /**
+     * Patch the operand A field of an existing instruction.
+     * Used for `JMP` targets.
+     */
+    fun patchA(
+        inst: Long,
+        newA: Int,
+    ): Long {
+        val mask = (0xFFFFL shl 32).inv()
+        val shiftedA = (newA.toLong() and 0xFFFFL) shl 32
+        return (inst and mask) or shiftedA
+    }
+
+    /**
      * Patch the operand B field of an existing instruction.
      *
      * Used for backpatching jump targets: the first pass emits
-     * `JIF/JMP` with a placeholder B, then after the jump target PC is
+     * `JIF` with a placeholder B, then after the jump target PC is
      * known, `patchB` updates it in-place.
      */
     fun patchB(
         inst: Long,
         newB: Int,
-    ): Long = (inst and -0x10000L) or (newB.toLong() and 0xFFFF)
+    ): Long {
+        val mask = (0xFFFFL shl 16).inv()
+        val shiftedB = (newB.toLong() and 0xFFFFL) shl 16
+        return (inst and mask) or shiftedB
+    }
 }

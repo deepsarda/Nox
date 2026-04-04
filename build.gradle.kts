@@ -4,6 +4,29 @@ plugins {
     alias(libs.plugins.kover)
     antlr
     idea
+    id("org.graalvm.buildtools.native") version "0.11.1"
+}
+graalvmNative {
+    toolchainDetection.set(true)
+    binaries {
+        all {
+            verbose.set(true)
+        }
+
+        named("main") {
+            imageName.set("application")
+            mainClass.set("nox.compiler.NoxcApp")
+            buildArgs.add("-O3")
+            buildArgs.add("--initialize-at-build-time=io.github.classgraph")
+            sharedLibrary.set(false)
+            javaLauncher.set(
+                javaToolchains.launcherFor {
+                    languageVersion.set(JavaLanguageVersion.of(21))
+                    vendor.set(JvmVendorSpec.matching("GraalVM"))
+                },
+            )
+        }
+    }
 }
 
 // JVM target

@@ -1,7 +1,5 @@
 package nox.compiler.ast.typed
 
-import nox.compiler.types.* 
-
 import nox.compiler.types.*
 
 /**
@@ -29,9 +27,7 @@ class TypedVarDeclStmt(
     loc: SourceLocation,
     val resolvedSymbol: Symbol,
     var register: Int = -1,
-) : TypedStmt(loc) {
-
-}
+) : TypedStmt(loc)
 
 // Assignment & Mutation
 
@@ -113,8 +109,7 @@ class TypedForEachStmt(
     loc: SourceLocation,
     val resolvedSymbol: Symbol,
     var elementRegister: Int = -1,
-) : TypedStmt(loc) {
-}
+) : TypedStmt(loc)
 
 // Jumps
 
@@ -168,6 +163,8 @@ data class TypedCatchClause(
     val variableName: String,
     val body: TypedBlock,
     val loc: SourceLocation,
+    val resolvedSymbol: Symbol,
+    var register: Int = -1,
 )
 
 // Expression Statement
@@ -189,8 +186,7 @@ class TypedBlock(
     val statements: List<TypedStmt>,
     loc: SourceLocation,
     val scopeDepth: Int = -1,
-) : TypedStmt(loc) {
-}
+) : TypedStmt(loc)
 
 /** Placeholder for invalid or un-parseable statements. */
 class TypedErrorStmt(

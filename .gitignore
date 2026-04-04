@@ -31,10 +31,11 @@ out/
 *.log
 logs/
 
-PLAN.md
+
 
 bin/
 
 # Test output
+PLAN.md
 dummy_out.json
 migration.sql

@@ -112,13 +112,6 @@ object Opcode {
     const val SHR = 0x75
     const val USHR = 0x76
 
-    // Global Memory
-
-    const val GLOAD = 0x78
-    const val GSTORE = 0x79
-    const val GLOADR = 0x7A
-    const val GSTORER = 0x7B
-
     // Exception Handling
 
     const val THROW = 0x80
@@ -211,10 +204,6 @@ object Opcode {
             put(SHL, "SHL")
             put(SHR, "SHR")
             put(USHR, "USHR")
-            put(GLOAD, "GLOAD")
-            put(GSTORE, "GSTORE")
-            put(GLOADR, "GLOADR")
-            put(GSTORER, "GSTORER")
             put(THROW, "THROW")
             put(KILL, "KILL")
             put(NEW_ARRAY, "NEW_ARRAY")

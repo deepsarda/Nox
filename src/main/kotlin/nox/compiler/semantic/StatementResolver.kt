@@ -26,8 +26,8 @@ class StatementResolver(
         scope: SymbolTable,
         stmt: RawStmt,
         expectedReturn: TypeRef,
-    ): TypedStmt? {
-        return when (stmt) {
+    ): TypedStmt? =
+        when (stmt) {
             is RawVarDeclStmt -> resolveVarDecl(scope, stmt)
             is RawAssignStmt -> resolveAssign(scope, stmt)
             is RawIncrementStmt -> resolveIncrement(scope, stmt)
@@ -48,9 +48,11 @@ class StatementResolver(
             is RawContinueStmt -> TypedContinueStmt(stmt.loc)
             is RawErrorStmt -> TypedErrorStmt(stmt.loc)
         }
-    }
 
-    private fun resolveVarDecl(scope: SymbolTable, stmt: RawVarDeclStmt): TypedVarDeclStmt? {
+    private fun resolveVarDecl(
+        scope: SymbolTable,
+        stmt: RawVarDeclStmt,
+    ): TypedVarDeclStmt? {
         if (!stmt.type.isValidAsVariable()) {
             errors.report(
                 stmt.loc,
@@ -59,24 +61,32 @@ class StatementResolver(
             )
         }
         val init = stmt.initializer
-        val typedInit = if (init != null) {
-            exprResolver.resolveExpr(scope, init, stmt.type)
-        } else {
-            // Uninitialized variables get a default value based on their type
-            // Actually, in Nox it's handled by Codegen, but we can emit a null literal or 0
-            if (stmt.type.isPrimitive() && stmt.type == TypeRef.INT) {
-                TypedIntLiteralExpr(0, stmt.loc, stmt.type)
-            } else if (stmt.type.isPrimitive() && stmt.type == TypeRef.DOUBLE) {
-                TypedDoubleLiteralExpr(0.0, stmt.loc, stmt.type)
-            } else if (stmt.type.isPrimitive() && stmt.type == TypeRef.BOOLEAN) {
-                TypedBoolLiteralExpr(false, stmt.loc, stmt.type)
+        val typedInit =
+            if (init != null) {
+                exprResolver.resolveExpr(scope, init, stmt.type)
             } else {
-                TypedNullLiteralExpr(stmt.loc, stmt.type)
+                // Uninitialized variables get a default value based on their type
+                // Actually, in Nox it's handled by Codegen, but we can emit a null literal or 0
+                if (stmt.type.isPrimitive() && stmt.type == TypeRef.INT) {
+                    TypedIntLiteralExpr(0, stmt.loc, stmt.type)
+                } else if (stmt.type.isPrimitive() && stmt.type == TypeRef.DOUBLE) {
+                    TypedDoubleLiteralExpr(0.0, stmt.loc, stmt.type)
+                } else if (stmt.type.isPrimitive() && stmt.type == TypeRef.BOOLEAN) {
+                    TypedBoolLiteralExpr(false, stmt.loc, stmt.type)
+                } else {
+                    TypedNullLiteralExpr(stmt.loc, stmt.type)
+                }
             }
-        }
 
         if (!stmt.type.isAssignableFrom(typedInit.type)) {
-            val note = if (typedInit.type == TypeRef.NULL && !stmt.type.isNullable()) " ('${stmt.type}' is not nullable)" else ""
+            val note =
+                if (typedInit.type == TypeRef.NULL &&
+                    !stmt.type.isNullable()
+                ) {
+                    " ('${stmt.type}' is not nullable)"
+                } else {
+                    ""
+                }
             errors.report(
                 stmt.loc,
                 "Variable type mismatch: variable '${stmt.name}' is declared as '${stmt.type}' but initializer has type '${typedInit.type}'$note",
@@ -95,28 +105,38 @@ class StatementResolver(
         return TypedVarDeclStmt(stmt.type, stmt.name, typedInit, stmt.loc, symbol)
     }
 
-    private fun resolveAssign(scope: SymbolTable, stmt: RawAssignStmt): TypedAssignStmt? {
+    private fun resolveAssign(
+        scope: SymbolTable,
+        stmt: RawAssignStmt,
+    ): TypedAssignStmt? {
         val typedTarget = exprResolver.resolveExpr(scope, stmt.target)
         val typedValue = exprResolver.resolveExpr(scope, stmt.value, typedTarget.type)
 
-        if (typedTarget !is TypedIdentifierExpr && typedTarget !is TypedFieldAccessExpr && typedTarget !is TypedIndexAccessExpr) {
-             errors.report(stmt.loc, "Invalid assignment target: expression is not a valid assignment target")
+        if (typedTarget !is TypedIdentifierExpr &&
+            typedTarget !is TypedFieldAccessExpr &&
+            typedTarget !is TypedIndexAccessExpr
+        ) {
+            errors.report(stmt.loc, "Invalid assignment target: expression is not a valid assignment target")
         }
 
         if (stmt.op != AssignOp.ASSIGN) {
-            val binaryOp = when(stmt.op) {
-                AssignOp.ADD_ASSIGN -> BinaryOp.ADD
-                AssignOp.SUB_ASSIGN -> BinaryOp.SUB
-                AssignOp.MUL_ASSIGN -> BinaryOp.MUL
-                AssignOp.DIV_ASSIGN -> BinaryOp.DIV
-                AssignOp.MOD_ASSIGN -> BinaryOp.MOD
-                else -> BinaryOp.ADD
-            }
+            val binaryOp =
+                when (stmt.op) {
+                    AssignOp.ADD_ASSIGN -> BinaryOp.ADD
+                    AssignOp.SUB_ASSIGN -> BinaryOp.SUB
+                    AssignOp.MUL_ASSIGN -> BinaryOp.MUL
+                    AssignOp.DIV_ASSIGN -> BinaryOp.DIV
+                    AssignOp.MOD_ASSIGN -> BinaryOp.MOD
+                    else -> BinaryOp.ADD
+                }
             // check operators compatibility. exprResolver checks it internally if we resolve a binary expr.
             // But we already have the typedTarget and typedValue.
             // Simple check
             if (!typedTarget.type.isNumeric() || !typedValue.type.isNumeric()) {
-                if (stmt.op == AssignOp.ADD_ASSIGN && typedTarget.type == TypeRef.STRING && typedValue.type == TypeRef.STRING) {
+                if (stmt.op == AssignOp.ADD_ASSIGN &&
+                    typedTarget.type == TypeRef.STRING &&
+                    typedValue.type == TypeRef.STRING
+                ) {
                     // String concatenation is allowed
                 } else {
                     errors.report(stmt.loc, "Operator type mismatch: ${stmt.op} requires numeric or string operands")
@@ -133,70 +153,114 @@ class StatementResolver(
             }
         } else {
             if (!typedTarget.type.isAssignableFrom(typedValue.type)) {
-                errors.report(stmt.loc, "Variable type mismatch: cannot assign '${typedValue.type}' to '${typedTarget.type}'")
+                errors.report(
+                    stmt.loc,
+                    "Variable type mismatch: cannot assign '${typedValue.type}' to '${typedTarget.type}'",
+                )
             }
         }
         return TypedAssignStmt(typedTarget, stmt.op, typedValue, stmt.loc)
     }
 
-    private fun resolveIncrement(scope: SymbolTable, stmt: RawIncrementStmt): TypedIncrementStmt? {
+    private fun resolveIncrement(
+        scope: SymbolTable,
+        stmt: RawIncrementStmt,
+    ): TypedIncrementStmt? {
         val typedTarget = exprResolver.resolveExpr(scope, stmt.target)
         if (!typedTarget.type.isNumeric()) {
-             errors.report(stmt.loc, "Increment/decrement requires numeric target")
+            errors.report(stmt.loc, "Increment/decrement requires numeric target")
         }
         return TypedIncrementStmt(typedTarget, stmt.op, stmt.loc)
     }
 
-    private fun resolveIf(scope: SymbolTable, stmt: RawIfStmt, expectedReturn: TypeRef): TypedIfStmt? {
+    private fun resolveIf(
+        scope: SymbolTable,
+        stmt: RawIfStmt,
+        expectedReturn: TypeRef,
+    ): TypedIfStmt? {
         val cond = exprResolver.resolveExpr(scope, stmt.condition)
         if (cond.type != TypeRef.BOOLEAN) {
-            errors.report(stmt.condition.loc, "Condition type mismatch: if condition must be 'boolean', got '${cond.type}'")
+            errors.report(
+                stmt.condition.loc,
+                "Condition type mismatch: if condition must be 'boolean', got '${cond.type}'",
+            )
         }
         val thenBlock = resolveBlock(scope, stmt.thenBlock, expectedReturn)
-        val elseIfs = stmt.elseIfs.map {
-            val eiCond = exprResolver.resolveExpr(scope, it.condition)
-            if (eiCond.type != TypeRef.BOOLEAN) {
-                errors.report(it.condition.loc, "Condition type mismatch: if condition must be 'boolean', got '${eiCond.type}'")
+        val elseIfs =
+            stmt.elseIfs.map {
+                val eiCond = exprResolver.resolveExpr(scope, it.condition)
+                if (eiCond.type != TypeRef.BOOLEAN) {
+                    errors.report(
+                        it.condition.loc,
+                        "Condition type mismatch: if condition must be 'boolean', got '${eiCond.type}'",
+                    )
+                }
+                val eiBody = resolveBlock(scope, it.body, expectedReturn)
+                TypedIfStmt.ElseIf(eiCond, eiBody, it.loc)
             }
-            val eiBody = resolveBlock(scope, it.body, expectedReturn)
-            TypedIfStmt.ElseIf(eiCond, eiBody, it.loc)
-        }
         val elseBlock = stmt.elseBlock?.let { resolveBlock(scope, it, expectedReturn) }
         return TypedIfStmt(cond, thenBlock, elseIfs, elseBlock, stmt.loc)
     }
 
-    private fun resolveWhile(scope: SymbolTable, stmt: RawWhileStmt, expectedReturn: TypeRef): TypedWhileStmt? {
+    private fun resolveWhile(
+        scope: SymbolTable,
+        stmt: RawWhileStmt,
+        expectedReturn: TypeRef,
+    ): TypedWhileStmt? {
         val cond = exprResolver.resolveExpr(scope, stmt.condition)
         if (cond.type != TypeRef.BOOLEAN) {
-            errors.report(stmt.condition.loc, "Condition type mismatch: while condition must be 'boolean', got '${cond.type}'")
+            errors.report(
+                stmt.condition.loc,
+                "Condition type mismatch: while condition must be 'boolean', got '${cond.type}'",
+            )
         }
         val body = resolveBlock(scope, stmt.body, expectedReturn)
         return TypedWhileStmt(cond, body, stmt.loc)
     }
 
-    private fun resolveFor(scope: SymbolTable, stmt: RawForStmt, expectedReturn: TypeRef): TypedForStmt? {
+    private fun resolveFor(
+        scope: SymbolTable,
+        stmt: RawForStmt,
+        expectedReturn: TypeRef,
+    ): TypedForStmt? {
         val forScope = scope.child()
         val init = stmt.init?.let { resolveStmt(forScope, it, expectedReturn) }
         val cond = stmt.condition?.let { exprResolver.resolveExpr(forScope, it) }
         if (cond != null && cond.type != TypeRef.BOOLEAN) {
-            errors.report(stmt.condition!!.loc, "Condition type mismatch: for condition must be 'boolean', got '${cond.type}'")
+            errors.report(
+                stmt.condition!!.loc,
+                "Condition type mismatch: for condition must be 'boolean', got '${cond.type}'",
+            )
         }
         val update = stmt.update?.let { resolveStmt(forScope, it, expectedReturn) }
         val body = resolveBlock(forScope, stmt.body, expectedReturn)
         return TypedForStmt(init, cond, update, body, stmt.loc)
     }
 
-    private fun resolveForEach(scope: SymbolTable, stmt: RawForEachStmt, expectedReturn: TypeRef): TypedForEachStmt? {
+    private fun resolveForEach(
+        scope: SymbolTable,
+        stmt: RawForEachStmt,
+        expectedReturn: TypeRef,
+    ): TypedForEachStmt? {
         val iterable = exprResolver.resolveExpr(scope, stmt.iterable)
         if (!iterable.type.isArray && iterable.type != TypeRef.STRING) {
-            errors.report(stmt.iterable.loc, "Foreach type mismatch: 'foreach' requires an array type or string, got '${iterable.type}'")
+            errors.report(
+                stmt.iterable.loc,
+                "Foreach type mismatch: 'foreach' requires an array type or string, got '${iterable.type}'",
+            )
         }
         if (stmt.elementType == TypeRef.VOID) {
-            errors.report(stmt.loc, "Foreach type mismatch: Invalid type 'void' for foreach element '${stmt.elementName}'")
+            errors.report(
+                stmt.loc,
+                "Foreach type mismatch: Invalid type 'void' for foreach element '${stmt.elementName}'",
+            )
         }
         val elemType = if (iterable.type.isArray) iterable.type.elementType() else TypeRef.STRING
         if (!stmt.elementType.isAssignableFrom(elemType)) {
-            errors.report(stmt.loc, "Foreach type mismatch: Element type mismatch: declared '${stmt.elementType}' but the array contains '$elemType'")
+            errors.report(
+                stmt.loc,
+                "Foreach type mismatch: Element type mismatch: declared '${stmt.elementType}' but the array contains '$elemType'",
+            )
         }
         val loopScope = scope.child()
         val sym = VarSymbol(stmt.elementName, stmt.elementType, loopScope.depth)
@@ -205,7 +269,11 @@ class StatementResolver(
         return TypedForEachStmt(stmt.elementType, stmt.elementName, iterable, body, stmt.loc, sym)
     }
 
-    private fun resolveReturn(scope: SymbolTable, stmt: RawReturnStmt, expectedReturn: TypeRef): TypedReturnStmt? {
+    private fun resolveReturn(
+        scope: SymbolTable,
+        stmt: RawReturnStmt,
+        expectedReturn: TypeRef,
+    ): TypedReturnStmt? {
         val value = stmt.value?.let { exprResolver.resolveExpr(scope, it, expectedReturn) }
         val valType = value?.type ?: TypeRef.VOID
         if (!isMainBody && !expectedReturn.isAssignableFrom(valType)) {
@@ -214,12 +282,18 @@ class StatementResolver(
         return TypedReturnStmt(value, stmt.loc)
     }
 
-    private fun resolveYield(scope: SymbolTable, stmt: RawYieldStmt): TypedYieldStmt? {
+    private fun resolveYield(
+        scope: SymbolTable,
+        stmt: RawYieldStmt,
+    ): TypedYieldStmt? {
         val value = exprResolver.resolveExpr(scope, stmt.value)
         return TypedYieldStmt(value, stmt.loc)
     }
 
-    private fun resolveThrow(scope: SymbolTable, stmt: RawThrowStmt): TypedThrowStmt? {
+    private fun resolveThrow(
+        scope: SymbolTable,
+        stmt: RawThrowStmt,
+    ): TypedThrowStmt? {
         val value = exprResolver.resolveExpr(scope, stmt.value)
         if (value.type != TypeRef.STRING) {
             errors.report(stmt.value.loc, "Throw type mismatch: 'throw' requires a string message, got '${value.type}'")
@@ -227,15 +301,21 @@ class StatementResolver(
         return TypedThrowStmt(value, stmt.loc)
     }
 
-    private fun resolveTryCatch(scope: SymbolTable, stmt: RawTryCatchStmt, expectedReturn: TypeRef): TypedTryCatchStmt? {
+    private fun resolveTryCatch(
+        scope: SymbolTable,
+        stmt: RawTryCatchStmt,
+        expectedReturn: TypeRef,
+    ): TypedTryCatchStmt? {
         val tryBlock = resolveBlock(scope, stmt.tryBlock, expectedReturn)
-        val catchClauses = stmt.catchClauses.map {
-            val catchScope = scope.child()
-            // In Nox, all exceptions are strings currently
-            catchScope.define(it.variableName, VarSymbol(it.variableName, TypeRef.STRING, catchScope.depth))
-            val cbody = resolveBlock(catchScope, it.body, expectedReturn)
-            TypedCatchClause(it.exceptionType, it.variableName, cbody, it.loc)
-        }
+        val catchClauses =
+            stmt.catchClauses.map {
+                val catchScope = scope.child()
+                // In Nox, all exceptions are strings currently
+                val sym = VarSymbol(it.variableName, TypeRef.STRING, catchScope.depth)
+                catchScope.define(it.variableName, sym)
+                val cbody = resolveBlock(catchScope, it.body, expectedReturn)
+                TypedCatchClause(it.exceptionType, it.variableName, cbody, it.loc, sym)
+            }
         return TypedTryCatchStmt(tryBlock, catchClauses, stmt.loc)
     }
 }

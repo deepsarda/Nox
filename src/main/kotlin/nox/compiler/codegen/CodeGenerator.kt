@@ -1,5 +1,6 @@
 package nox.compiler.codegen
 
+import nox.compiler.CompilerErrors
 import nox.compiler.ast.typed.*
 import nox.compiler.semantic.TypedModule
 import nox.compiler.types.*
@@ -11,6 +12,7 @@ import nox.plugin.LibraryRegistry
  * See docs/compiler/codegen.md for the full design.
  */
 class CodeGenerator(
+    private val errors: CompilerErrors,
     private val modules: List<TypedModule> = emptyList(),
     private val registry: LibraryRegistry = LibraryRegistry.createDefault(),
 ) {
@@ -120,25 +122,16 @@ class CodeGenerator(
         if (!needsInit) return -1
 
         val entryPc = bytecode.size
-        val allocator = RegisterAllocator(emptyList())
-        val emitter = BytecodeEmitter(allocator, pool, program, modules, registry = registry)
+        val allocator = RegisterAllocator(emptyList(), TypeRef.VOID)
+        val emitter = BytecodeEmitter(allocator, pool, program, modules, registry = registry, errors = errors)
 
         for (global in program.globals) {
             val init = global.initializer ?: continue
             val line = global.loc.line
-            if (global.type.isPrimitive()) {
-                val tmp = allocator.allocTempPrim()
-                emitter.emitExpr(init, tmp, line)
-                emitter.emit(Opcode.GSTORE, 0, global.globalSlot, tmp, 0, line)
-                allocator.freeTempPrim(tmp)
-            } else {
-                val tmp = allocator.allocTempRef()
-                emitter.emitExpr(init, tmp, line)
-                emitter.emit(Opcode.GSTORER, 0, global.globalSlot, tmp, 0, line)
-                allocator.freeTempRef(tmp)
-            }
+            val gDest = BytecodeEmitter.GLOBAL_FLAG or global.globalSlot
+            emitter.emitExpr(init, gDest, line)
         }
-        emitter.emit(Opcode.RET, 0, 0, 0, 0)
+        emitter.emit(Opcode.RET, 0, 1, 0, 0) // init is always void return (A=1)
 
         appendEmitter(entryPc, emitter)
 
@@ -183,6 +176,7 @@ class CodeGenerator(
             sourcePath = sourcePath,
             liveness = liveness,
             implicitVoidReturn = func.returnType == TypeRef.VOID,
+            returnType = func.returnType,
         ).also { _ ->
             func.maxPrimitiveRegisters = funcMetas.last().primitiveFrameSize
             func.maxReferenceRegisters = funcMetas.last().referenceFrameSize
@@ -203,6 +197,7 @@ class CodeGenerator(
             sourcePath = sourcePath,
             liveness = liveness,
             implicitVoidReturn = false,
+            returnType = TypeRef.STRING,
         ).also { _ ->
             main.maxPrimitiveRegisters = funcMetas.last().primitiveFrameSize
             main.maxReferenceRegisters = funcMetas.last().referenceFrameSize
@@ -224,17 +219,18 @@ class CodeGenerator(
         sourcePath: String,
         liveness: LivenessAnalyzer,
         implicitVoidReturn: Boolean,
+        returnType: TypeRef,
     ): Int {
         val entryPc = bytecode.size
-        val allocator = RegisterAllocator(params)
+        val allocator = RegisterAllocator(params, returnType)
         allocator.setParamSymbols(params)
 
-        val emitter = BytecodeEmitter(allocator, pool, program, modules, liveness.freeAtNode, registry)
+        val emitter = BytecodeEmitter(allocator, pool, program, modules, liveness.freeAtNode, registry, errors)
         emitter.recordParamNames(params)
         emitter.emitBlock(body)
 
         if (implicitVoidReturn) {
-            emitter.emit(Opcode.RET, 0, 0, 0, 0)
+            emitter.emit(Opcode.RET, 0, 1, 0, 0) // A=1 (void)
         }
 
         appendEmitter(entryPc, emitter)
@@ -261,11 +257,23 @@ class CodeGenerator(
         emitter: BytecodeEmitter,
     ) {
         val emittedInstructions = emitter.build()
-        bytecode.addAll(emittedInstructions)
+        val base = entryPc
+
+        // Patch local jump targets to be absolute
+        val patchedInstructions =
+            emittedInstructions.map { inst ->
+                val opcode = Instruction.opcode(inst)
+                when (opcode) {
+                    Opcode.JMP -> Instruction.patchA(inst, Instruction.opA(inst) + base)
+                    Opcode.JIF, Opcode.JIT -> Instruction.patchB(inst, Instruction.opB(inst) + base)
+                    else -> inst
+                }
+            }
+
+        bytecode.addAll(patchedInstructions)
         allSrcLines.addAll(emitter.sourceLines)
 
         // Adjust exception-table PC offsets to be absolute
-        val base = entryPc
         for (ex in emitter.buildExceptionTable()) {
             exTable.add(
                 ex.copy(

@@ -24,6 +24,28 @@ data class TypeRef(
         val NULL = TypeRef("null")
     }
 
+    /**
+     * Matches this TypeRef against a pattern (e.g., "T[]").
+     * Returns a mapping of generic parameters to resolved types, or null if no match.
+     * For example, if this is `int[][]` and pattern is `T[]`, returns `{"T": int[]}`.
+     */
+    fun match(pattern: String): Map<String, TypeRef>? {
+        val patternDepth = pattern.count { it == '[' }
+        val patternBaseName = pattern.substringBefore("[")
+
+        if (this.arrayDepth < patternDepth) return null
+
+        if (patternBaseName == this.name) {
+            if (this.arrayDepth == patternDepth) return emptyMap()
+            return null
+        }
+
+        if (patternBaseName in BUILTIN_TYPE_NAMES) return null
+
+        val resolvedType = TypeRef(this.name, this.arrayDepth - patternDepth)
+        return mapOf(patternBaseName to resolvedType)
+    }
+
     /** Whether this is an array type (any depth). */
     val isArray: Boolean get() = arrayDepth > 0
 
@@ -53,7 +75,7 @@ data class TypeRef(
      * arrays, strings, json, and user-defined struct types.
      * Primitives (`int`, `double`, `boolean`) are never nullable.
      */
-    fun isNullable(): Boolean = name == "null" || isArray || name in NULLABLE_VALUE_NAMES || isStructType()
+    fun isNullable(): Boolean = isArray || name in NULLABLE_VALUE_NAMES || isStructType()
 
     /**
      * Whether this type is numeric (`int` or `double`, non-array).
@@ -138,4 +160,4 @@ val NULLABLE_VALUE_NAMES = setOf("string", "json")
 val IMMUTABLE_NAMES = setOf("int", "double", "boolean", "string")
 
 /** All built-in type names. Used by [TypeRef.isStructType] to exclude non-struct types. */
-val BUILTIN_TYPE_NAMES = setOf("int", "double", "boolean", "string", "json", "void")
+val BUILTIN_TYPE_NAMES = setOf("int", "double", "boolean", "string", "json", "void", "null")

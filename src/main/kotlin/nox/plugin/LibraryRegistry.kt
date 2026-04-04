@@ -3,12 +3,7 @@ package nox.plugin
 import nox.compiler.types.CallTarget
 import nox.compiler.types.NoxParam
 import nox.compiler.types.TypeRef
-import nox.plugin.annotations.NoxDefault
-import nox.plugin.annotations.NoxFunction
-import nox.plugin.annotations.NoxGeneric
-import nox.plugin.annotations.NoxModule
-import nox.plugin.annotations.NoxType
-import nox.plugin.annotations.NoxTypeMethod
+import nox.plugin.annotations.*
 import nox.plugin.external.NoxPluginManifest
 import nox.plugin.external.NoxTypeTag
 import nox.runtime.RuntimeContext
@@ -446,6 +441,9 @@ class LibraryRegistry {
                 .ClassGraph()
                 .acceptPackages(*scanPackages)
                 .enableAnnotationInfo()
+                // Allow working on graalvm
+                .enableClassInfo()
+                .ignoreClassVisibility()
                 .scan()
                 .use { scanResult ->
                     val annotationName = NoxModule::class.java.name

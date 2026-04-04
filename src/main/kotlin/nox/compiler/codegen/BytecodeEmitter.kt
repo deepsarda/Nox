@@ -1,5 +1,6 @@
 package nox.compiler.codegen
 
+import nox.compiler.CompilerErrors
 import nox.compiler.ast.typed.*
 import nox.compiler.semantic.TypedModule
 import nox.compiler.types.*
@@ -21,6 +22,7 @@ class BytecodeEmitter(
     internal val modules: List<TypedModule> = emptyList(),
     private val freeAtNode: Map<Any, List<Symbol>> = emptyMap(),
     private val registry: LibraryRegistry = LibraryRegistry.createDefault(),
+    internal val errors: CompilerErrors,
 ) {
     // Sub-emitters
 
@@ -135,12 +137,22 @@ class BytecodeEmitter(
         return instrPc
     }
 
-    /** Patch the B-operand of an already-emitted instruction at [instrPc]. */
+    /**
+     * Patch the jump target of an already-emitted instruction at [instrPc].
+     * Opcode-aware: JMP targets field A, JIF/JIT targets field B.
+     */
     fun patch(
         instrPc: Int,
         newTarget: Int,
     ) {
-        instructions[instrPc] = Instruction.patchB(instructions[instrPc], newTarget)
+        val inst = instructions[instrPc]
+        val opcode = Instruction.opcode(inst)
+        instructions[instrPc] =
+            if (opcode == Opcode.JMP) {
+                Instruction.patchA(inst, newTarget)
+            } else {
+                Instruction.patchB(inst, newTarget)
+            }
     }
 
     /** Add a label at the current PC. */
@@ -177,11 +189,17 @@ class BytecodeEmitter(
                 when (val sym = expr.resolvedSymbol) {
                     is VarSymbol -> sym.register.takeIf { it >= 0 }
                     is ParamSymbol -> sym.register.takeIf { it >= 0 }
+                    is GlobalSymbol -> GLOBAL_FLAG or sym.globalSlot
                     else -> null
                 }
 
             else -> null
         }
+
+    companion object {
+        /** Bit 15 flag indicating a global memory operand. */
+        const val GLOBAL_FLAG = 0x8000
+    }
 
     internal fun freeNodeRegisters(node: Any) {
         freeAtNode[node]?.forEach { sym ->

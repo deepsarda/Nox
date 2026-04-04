@@ -20,7 +20,13 @@ object OpcodeSelector {
     ): Int {
         val isDbl = result == TypeRef.DOUBLE
         return when (op) {
-            BinaryOp.ADD -> if (isDbl) Opcode.DADD else Opcode.IADD
+            BinaryOp.ADD -> {
+                when {
+                    result == TypeRef.STRING -> Opcode.SCONCAT
+                    isDbl -> Opcode.DADD
+                    else -> Opcode.IADD
+                }
+            }
             BinaryOp.SUB -> if (isDbl) Opcode.DSUB else Opcode.ISUB
             BinaryOp.MUL -> if (isDbl) Opcode.DMUL else Opcode.IMUL
             BinaryOp.DIV -> if (isDbl) Opcode.DDIV else Opcode.IDIV
