@@ -1,10 +1,12 @@
 package nox.plugin
 
+import nox.compiler.types.TypeRef
 import nox.plugin.annotations.NoxFunction
 import nox.plugin.annotations.NoxType
 import nox.plugin.annotations.NoxTypeMethod
 import nox.runtime.RuntimeContext
 import java.lang.invoke.MethodHandles
+import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.findAnnotation
@@ -47,10 +49,14 @@ object Linker {
         function: KFunction<*>,
         instance: Any?,
         nameOverride: String = "",
+        typeMapping: Map<String, TypeRef> = emptyMap(),
     ): LinkedFunc {
         val javaMethod =
             function.javaMethod
                 ?: throw IllegalArgumentException("Cannot link ${function.name}: no backing Java method")
+        val isStatic =
+            java.lang.reflect.Modifier
+                .isStatic(javaMethod.modifiers)
 
         // Use privateLookupIn so unreflect succeeds for package-private/protected methods,
         // not just public ones. publicLookup() would fail for any non-public target.
@@ -68,13 +74,13 @@ object Linker {
 
         // Analyze parameters: which are VM args vs injected RuntimeContext
         val params = function.valueParameters
-        val paramDescriptors = params.map { p -> ParamDescriptor.from(p) }
+        val paramDescriptors = params.map { p -> ParamDescriptor.from(p, typeMapping) }
 
         // Determine return type handling
-        val returnDesc = ReturnDescriptor.from(function)
+        val returnDesc = ReturnDescriptor.from(function, typeMapping)
 
         // Build the NoxNativeFunc adapter
-        val adapter = buildAdapter(handle, instance, paramDescriptors, returnDesc)
+        val adapter = buildAdapter(handle, instance, isStatic, function.isSuspend, paramDescriptors, returnDesc)
 
         return LinkedFunc(scallName, adapter)
     }
@@ -82,23 +88,25 @@ object Linker {
     /**
      * Build a NoxNativeFunc that:
      * 1. Extracts arguments from pMem/rMem based on their types
-     * 2. Injects RuntimeContext if needed. TODO: Implement this
+     * 2. Injects RuntimeContext if needed.
      * 3. Calls the target method via MethodHandle
      * 4. Stores the result in the correct register bank
      */
     private fun buildAdapter(
         handle: java.lang.invoke.MethodHandle,
         instance: Any?,
+        isStatic: Boolean,
+        isSuspend: Boolean,
         params: List<ParamDescriptor>,
         returnDesc: ReturnDescriptor,
     ): NoxNativeFunc {
         // Count only the VM-visible args (skip RuntimeContext injection)
         val vmParams = params.filter { !it.isContextInjection }
 
-        return NoxNativeFunc { pMem, rMem, bp, bpRef, argStart, destReg ->
+        return NoxNativeFunc { context, pMem, rMem, bp, bpRef, primArgStart, refArgStart, destReg ->
             // Build the argument array
             val args = mutableListOf<Any?>()
-            if (instance != null) args.add(instance)
+            if (instance != null && !isStatic) args.add(instance)
 
             var primArgIdx = 0
             var refArgIdx = 0
@@ -106,19 +114,18 @@ object Linker {
             for (param in params) {
                 if (param.isContextInjection) {
                     // RuntimeContext injection
-                    // TODO: Implement this
-                    args.add(null)
+                    args.add(context)
                     continue
                 }
 
                 when (param.bank) {
                     RegisterBank.PRIMITIVE -> {
-                        val raw = pMem[bp + argStart + primArgIdx]
+                        val raw = pMem[bp + primArgStart + primArgIdx]
                         args.add(param.extract(raw))
                         primArgIdx++
                     }
                     RegisterBank.REFERENCE -> {
-                        val raw = rMem[bpRef + argStart + refArgIdx]
+                        val raw = rMem[bpRef + refArgStart + refArgIdx]
                         args.add(raw)
                         refArgIdx++
                     }
@@ -126,7 +133,15 @@ object Linker {
             }
 
             // Invoke the target method
-            val result = handle.invokeWithArguments(args)
+            val result =
+                if (isSuspend) {
+                    suspendCoroutineUninterceptedOrReturn { cont ->
+                        args.add(cont)
+                        handle.invokeWithArguments(args)
+                    }
+                } else {
+                    handle.invokeWithArguments(args)
+                }
 
             // Store result
             when (returnDesc.bank) {
@@ -153,12 +168,16 @@ object Linker {
         val bank: RegisterBank,
         val isContextInjection: Boolean,
         val kotlinType: Class<*>,
+        val mappedType: TypeRef? = null,
     ) {
         /**
          * Extract a typed Kotlin value from a raw `Long` (pMem value).
          */
         fun extract(raw: Long): Any =
             when {
+                mappedType?.name == "int" -> raw.toInt()
+                mappedType?.name == "double" -> java.lang.Double.longBitsToDouble(raw)
+                mappedType?.name == "boolean" -> raw != 0L
                 kotlinType == Long::class.java || kotlinType == java.lang.Long::class.java -> raw
                 kotlinType == Int::class.java || kotlinType == java.lang.Integer::class.java -> raw.toInt()
                 kotlinType == Double::class.java || kotlinType == java.lang.Double::class.java ->
@@ -167,11 +186,16 @@ object Linker {
                     java.lang.Float.intBitsToFloat(raw.toInt())
                 kotlinType == Boolean::class.java || kotlinType == java.lang.Boolean::class.java ->
                     raw != 0L
-                else -> throw IllegalStateException("Cannot extract primitive type: $kotlinType")
+                else -> throw IllegalStateException(
+                    "Cannot extract primitive type: $kotlinType for mapped type $mappedType",
+                )
             }
 
         companion object {
-            fun from(param: KParameter): ParamDescriptor {
+            fun from(
+                param: KParameter,
+                typeMapping: Map<String, TypeRef>,
+            ): ParamDescriptor {
                 val javaType =
                     param.type.classifier?.let {
                         (it as? kotlin.reflect.KClass<*>)?.java
@@ -185,6 +209,12 @@ object Linker {
                 // Check for @NoxType annotation override
                 val noxType = param.findAnnotation<NoxType>()
                 if (noxType != null) {
+                    val mapped = typeMapping[noxType.value]
+                    if (mapped != null) {
+                        val bank = if (mapped.isPrimitive()) RegisterBank.PRIMITIVE else RegisterBank.REFERENCE
+                        return ParamDescriptor(bank, false, javaType, mapped)
+                    }
+
                     val bank =
                         if (noxType.value in
                             PRIMITIVE_NOX_TYPES
@@ -223,6 +253,7 @@ object Linker {
     private data class ReturnDescriptor(
         val bank: RegisterBank?,
         val kotlinType: Class<*>,
+        val mappedType: TypeRef? = null,
     ) {
         /**
          * Pack a Kotlin return value into a raw `Long` for pMem storage.
@@ -230,21 +261,31 @@ object Linker {
         fun pack(value: Any?): Long =
             when {
                 value == null -> 0L
-                kotlinType == Long::class.java || kotlinType == java.lang.Long::class.java -> value as Long
-                kotlinType == Int::class.java || kotlinType == java.lang.Integer::class.java -> (value as Int).toLong()
+                mappedType?.name == "int" -> (value as Number).toLong()
+                mappedType?.name == "double" -> java.lang.Double.doubleToRawLongBits((value as Number).toDouble())
+                mappedType?.name == "boolean" -> if (value as Boolean) 1L else 0L
+                kotlinType == Long::class.java || kotlinType == java.lang.Long::class.java -> (value as Number).toLong()
+                kotlinType == Int::class.java || kotlinType == java.lang.Integer::class.java ->
+                    (value as Number)
+                        .toLong()
                 kotlinType == Double::class.java || kotlinType == java.lang.Double::class.java ->
-                    java.lang.Double.doubleToRawLongBits(value as Double)
+                    java.lang.Double.doubleToRawLongBits((value as Number).toDouble())
                 kotlinType == Float::class.java || kotlinType == java.lang.Float::class.java ->
                     java.lang.Float
-                        .floatToRawIntBits(value as Float)
+                        .floatToRawIntBits((value as Number).toFloat())
                         .toLong()
                 kotlinType == Boolean::class.java || kotlinType == java.lang.Boolean::class.java ->
                     if (value as Boolean) 1L else 0L
-                else -> throw IllegalStateException("Cannot pack primitive type: $kotlinType")
+                else -> throw IllegalStateException(
+                    "Cannot pack primitive type: $kotlinType for mapped type $mappedType",
+                )
             }
 
         companion object {
-            fun from(function: KFunction<*>): ReturnDescriptor {
+            fun from(
+                function: KFunction<*>,
+                typeMapping: Map<String, TypeRef>,
+            ): ReturnDescriptor {
                 val returnType =
                     function.returnType.classifier?.let {
                         (it as? kotlin.reflect.KClass<*>)?.java
@@ -253,6 +294,12 @@ object Linker {
                 // Check for @NoxType on function (return type override)
                 val noxType = function.findAnnotation<NoxType>()
                 if (noxType != null) {
+                    val mapped = typeMapping[noxType.value]
+                    if (mapped != null) {
+                        val bank = if (mapped.isPrimitive()) RegisterBank.PRIMITIVE else RegisterBank.REFERENCE
+                        return ReturnDescriptor(bank, returnType, mapped)
+                    }
+
                     val bank =
                         if (noxType.value in
                             PRIMITIVE_NOX_TYPES

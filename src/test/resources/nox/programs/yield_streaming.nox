@@ -1,0 +1,7 @@
+// @test:yields [a, b]
+// @test:result "c"
+main() {
+    yield "a";
+    yield "b";
+    return "c";
+}

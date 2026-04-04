@@ -182,18 +182,15 @@ The `; source: <filename>` annotation indicates the originating source file for 
   ; globals: g0=PI (double)  g1=MAX_RETRIES (int)
   ; source: constants.nox
   ; constants.nox:1  double PI = 3.14159;
-  0000:  LDC       p0, #0                   ; p0 = 3.14159
-  0001:  GSTORE    g0, p0                   ; g0 = PI
+  0000:  LDC       g0, #0                   ; g0 = 3.14159
   ;
   ; constants.nox:2  int MAX_RETRIES = 5;
-  0002:  LDI       p0, 5                    ; p0 = 5
-  0003:  GSTORE    g1, p0                   ; g1 = MAX_RETRIES
-  0004:  RET                                ; return (void)
+  0001:  LDI       g1, 5                    ; g1 = MAX_RETRIES
+  0002:  RET                                ; return (void)
 ```
 
 Notice that init blocks:
-- Use `GSTORE`/`GSTORER` to write into global memory, not local registers
-- Use scratch registers (`p0`, `r0`) temporarily but don't retain them after `RET`
+- Write directly into global memory via the `[G]` flag on the destination operand (`g0`, `g1`, `gr0`)
 - Have no parameters (no `params:` line, replaced by `globals:` listing)
 - Can have jumps, loops, or labels (allows for complex initializer expressions)
 
@@ -561,22 +558,19 @@ main(int r = 5) {
   ; source:  constants.nox
   ;
   ; constants.nox:1  double PI = 3.14159;
-  0000:  LDC       p0, #0                   ; p0 = 3.14159
-  0001:  GSTORE    g0, p0                   ; g0 = p0
+  0000:  LDC       g0, #0                   ; g0 = 3.14159
   ;
   ; constants.nox:2  int MAX = 100;
-  0002:  LDI       p0, 100                  ; p0 = 100
-  0003:  GSTORE    g1, p0                   ; g1 = p0
-  0004:  RET                                ; return (void)
+  0001:  LDI       g1, 100                  ; g1 = 100
+  0002:  RET                                ; return (void)
 
 .init main
   ; globals: gr0=PREFIX (string)
   ; source:  main.nox
   ;
   ; main.nox:3  string PREFIX = "item_";
-  0005:  LDC       r0, #1                   ; r0 = "item_"
-  0006:  GSTORER   gr0, r0                  ; gr0 = r0
-  0007:  RET                                ; return (void)
+  0003:  LDC       gr0, #1                  ; gr0 = "item_"
+  0004:  RET                                ; return (void)
 
 
 ; Functions
@@ -590,9 +584,8 @@ main(int r = 5) {
   ; params: p0=radius
   ;
   ; main.nox:6  return c.PI * radius * radius;
-  0008:  GLOAD     p1, g0                   ; p1 = g0
-  0009:  DMUL      p1, p1, p0               ; p1 = p1 * radius:p0
-  0010:  DMUL      p1, p1, p0               ; p1 = p1 * radius:p0
+  0005:  DMUL      p1, g0, p0               ; p1 = g0 * radius:p0  (g0 via [G] flag)
+  0006:  DMUL      p1, p1, p0               ; p1 = p1 * radius:p0
   0011:  RET       p1                       ; return p1
 
 
@@ -610,7 +603,7 @@ main(int r = 5) {
   0014:  MOV       p1, p1                   ; area:p1 = p1
   ;
   ; main.nox:11  return `${PREFIX}area = ${area}`;
-  0015:  GLOADR    r0, gr0                  ; r0 = gr0
+  0012:  MOVR      r0, gr0                  ; r0 = gr0  (via [G] flag)
   0016:  LDC       r1, #2                   ; r1 = "area = "
   0017:  SCONCAT   r0, r0, r1               ; r0 = r0 + r1
   0018:  D2S       r1, p1                   ; r1 = toString(area:p1)
@@ -641,9 +634,9 @@ main(int r = 5) {
 
 NOTE:
 - **Init blocks appear before functions**, in depth-first import order (`c` before `main`)
-- **Global registers** use `g0`/`g1` (primitive) and `gr0` (reference) prefixes
-- **`GSTORE`/`GSTORER`** write into global memory; **`GLOAD`/`GLOADR`** read from it
-- `circleArea` accesses `c.PI` via `GLOAD g0` there is no namespace prefix in bytecode, just the resolved global slot
+- **Global registers** use `g0`/`g1` (primitive) and `gr0` (reference) prefixes, indicated by the `[G]` flag (bit 15) on operands
+- Instructions read/write global memory directly via the `[G]` flag
+- `circleArea` accesses `c.PI` directly as `g0` via the `[G]` flag
  
 ## Implementation
 

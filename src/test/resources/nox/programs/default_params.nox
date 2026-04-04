@@ -1,0 +1,8 @@
+// @test:result "World"
+string greet(string name = "World") {
+    return name;
+}
+
+main() {
+    return greet();
+}

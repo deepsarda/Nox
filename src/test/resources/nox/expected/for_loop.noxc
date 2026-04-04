@@ -1,0 +1,61 @@
+;  Nox Bytecode Disassembly
+;  Source:   for_loop.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  (none)
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=4  rMem=0
+
+.func main
+  ;
+  ; line 3  int count = 0;
+  0000:  LDI       p0, 0                       ; count:p0 = 0
+  ;
+  ; line 4  for (int i = 0; i < 5; i++) {
+  0001:  LDI       p1, 0                       ; i:p1 = 0
+  .loop_start_1:
+  0002:  LDI       p3, 5                       ; p3 = 5
+  0003:  ILT       p2, p1, p3                  ; p2 = i:p1 < p3
+  0004:  JIF       p2, @0008                   ; if p2==0 -> loop_exit_1
+  ;
+  ; line 5  count++;
+  0005:  IINC      p0                          ; count:p0 = count:p0 + 1
+  ;
+  ; line 4  for (int i = 0; i < 5; i++) {
+  .loop_update_1:
+  0006:  IINC      p1                          ; i:p1 = i:p1 + 1
+  0007:  JMP       @0002                       ; -> loop_start_1
+  ;
+  ; line 7  return count;
+  .loop_exit_1:
+  0008:  RET       p0                          ; return count:p0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 9
+  constants:    0
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     72 bytes

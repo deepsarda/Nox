@@ -1,0 +1,43 @@
+;  Nox Bytecode Disassembly
+;  Source:   err_no_main.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  (none)
+
+
+; Functions
+
+;  Function: foo
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=2  rMem=0
+
+.func foo
+  ;
+  ; line 3  return 1;
+  0000:  LDI       p1, 1                       ; p1 = 1
+  0001:  RET       p1                          ; return p1
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 2
+  constants:    0
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     16 bytes

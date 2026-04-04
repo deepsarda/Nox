@@ -1,0 +1,5 @@
+// @test:result "Hello Alice"
+main() {
+    string name = "Alice";
+    return `Hello ${name}`;
+}

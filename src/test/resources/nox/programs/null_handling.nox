@@ -1,0 +1,5 @@
+// @test:result "true"
+main() {
+    string s = null;
+    return s == null;
+}

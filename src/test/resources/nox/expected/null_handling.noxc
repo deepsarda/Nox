@@ -1,0 +1,49 @@
+;  Nox Bytecode Disassembly
+;  Source:   null_handling.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  (none)
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=1  rMem=3
+
+.func main
+  ;
+  ; line 3  string s = null;
+  0000:  KILL_REF  r1                          ; s:r1 = null (GC)
+  ;
+  ; line 4  return s == null;
+  0001:  KILL_REF  r2                          ; r2 = null (GC)
+  0002:  SEQ       p0, r1, r2                  ; p0 = s:r1 == r2
+  0003:  KILL_REF  r1                          ; s:r1 = null (GC)
+  0004:  KILL_REF  r2                          ; r2 = null (GC)
+  0005:  RET       p0                          ; return p0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 6
+  constants:    0
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     48 bytes

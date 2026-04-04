@@ -1,0 +1,52 @@
+;  Nox Bytecode Disassembly
+;  Source:   template_basic.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "Alice"
+  #1   str   "Hello "
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=0  rMem=4
+
+.func main
+  ;
+  ; line 3  string name = "Alice";
+  0000:  LDC       r1, #0                      ; name:r1 = "Alice"
+  ;
+  ; line 4  return `Hello ${name}`;
+  0001:  LDC       r3, #1                      ; r3 = "Hello "
+  0002:  MOVR      r2, r3                      ; r2 = r3
+  0003:  MOVR      r1, r1                      ; name:r1 = name:r1
+  0004:  SCONCAT   r2, r2, r1                  ; r2 = r2 + name:r1
+  0005:  KILL_REF  r1                          ; name:r1 = null (GC)
+  0006:  KILL_REF  r3                          ; r3 = null (GC)
+  0007:  RET       r2                          ; return r2
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 8
+  constants:    2
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     64 bytes

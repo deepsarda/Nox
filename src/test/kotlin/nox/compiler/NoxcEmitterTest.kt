@@ -5,7 +5,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
-import nox.compiler.NoxCompiler
 import java.nio.file.Path
 
 /**
@@ -253,9 +252,9 @@ class NoxcEmitterTest :
             disasm shouldContain ".end:"
         }
 
-        // GLOAD/GSTORE disassembly formatting
+        // Global variable disassembly formatting via [G] flag
 
-        test("gloadFormatShowsGlobalRegisterName") {
+        test("globalLoadShowsGlobalFlagInMOV") {
             val disasm =
                 ok(
                     """
@@ -263,12 +262,12 @@ class NoxcEmitterTest :
             main() { int x = counter; return "ok"; }
         """,
                 )
-            // GLOAD formatting: "p0, g0"
+            // Global loads use MOV with [G] flag, disassembly shows "g0" for the source operand
             disasm shouldContain "g0"
-            disasm shouldContain "GLOAD"
+            disasm shouldContain "MOV"
         }
 
-        test("gstoreFormatShowsGlobalRegisterName") {
+        test("globalInitShowsGlobalFlagInLDI") {
             val disasm =
                 ok(
                     """
@@ -276,9 +275,9 @@ class NoxcEmitterTest :
             main() { return "ok"; }
         """,
                 )
-            // GSTORE formatting: "g0, p0"
-            disasm shouldContain "GSTORE"
+            // Global init uses LDI with [G] flag on dest, disassembly shows "g0"
             disasm shouldContain "g0"
+            disasm shouldContain "LDI"
         }
 
         // Exception table section

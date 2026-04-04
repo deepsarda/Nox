@@ -1,0 +1,11 @@
+// @test:result "caught network"
+main() {
+    try {
+        Http.get("https://invalid.dummy.url");
+    } catch (NetworkError e) {
+        return "caught network";
+    } catch (err) {
+        yield err;
+        return "other";
+    }
+}

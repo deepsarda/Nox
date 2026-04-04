@@ -1,0 +1,91 @@
+;  Nox Bytecode Disassembly
+;  Source:   varargs.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "__T[]_length!int"
+  #1   str   "sum"
+
+
+; Functions
+
+;  Function: sum
+;    Entry PC:   0
+;    Params:     1
+;    Frame:      pMem=6  rMem=3
+
+.func sum
+  ; params: r0=vals
+  ;
+  ; line 3  int total = 0;
+  0000:  LDI       p1, 0                       ; total:p1 = 0
+  ;
+  ; line 4  foreach (int v in vals) {
+  0001:  MOVR      r1, r0                      ; r1 = vals:r0
+  0002:  LDI       p2, 0                       ; p2 = 0
+  0003:  MOVR      r2, r1                      ; r2 = r1
+  0004:  SCALL     __T[]_length!int, p6, r2    ; p6 = scall __T[]_length!int(p7..., r2...)
+  0005:  MOV       p3, p6                      ; p3 = p6
+  .loop_start_1:
+  0006:  ILT       p4, p2, p3                  ; p4 = p2 < p3
+  0007:  JIF       p4, @0012                   ; if p4==0 -> loop_exit_1
+  0008:  AGET_IDX  r5, r1, p2                  ; r5 = r1[p2]
+  ;
+  ; line 5  total = total + v;
+  0009:  IADD      p1, p1, p5                  ; total:p1 = total:p1 + v:p5
+  ;
+  ; line 4  foreach (int v in vals) {
+  .loop_update_1:
+  0010:  IINC      p2                          ; p2 = p2 + 1
+  0011:  JMP       @0006                       ; -> loop_start_1
+  ;
+  ; line 7  return total;
+  .loop_exit_1:
+  0012:  KILL_REF  r0                          ; vals:r0 = null (GC)
+  0013:  KILL_REF  r2                          ; r2 = null (GC)
+  0014:  RET       p1                          ; return total:p1
+
+;  Function: main
+;    Entry PC:   15
+;    Params:     0
+;    Frame:      pMem=3  rMem=2
+
+.func main
+  ;
+  ; line 11  return sum(1, 2, 3, 4);
+  0015:  NEW_ARRAY r1                          ; r1 = []
+  0016:  LDI       p2, 1                       ; p2 = 1
+  0017:  ARR_PUSH  SET_INT, r1, p2             ; r1.push(p2)
+  0018:  LDI       p2, 2                       ; p2 = 2
+  0019:  ARR_PUSH  SET_INT, r1, p2             ; r1.push(p2)
+  0020:  LDI       p2, 3                       ; p2 = 3
+  0021:  ARR_PUSH  SET_INT, r1, p2             ; r1.push(p2)
+  0022:  LDI       p2, 4                       ; p2 = 4
+  0023:  ARR_PUSH  SET_INT, r1, p2             ; r1.push(p2)
+  0024:  CALL      sum, p1, r1                 ; p1 = call sum(p2..., r1...)
+  0025:  MOV       p0, p1                      ; p0 = p1
+  0026:  KILL_REF  r1                          ; r1 = null (GC)
+  0027:  RET       p0                          ; return p0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    2
+  instructions: 28
+  constants:    2
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     224 bytes

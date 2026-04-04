@@ -1,0 +1,14 @@
+// @test:result "inner"
+main() {
+    try {
+        try {
+            throw "boom";
+        } catch (InnerError e) {
+            return "inner";
+        } catch (err) {
+            return "inner";
+        }
+    } catch (err) {
+        return "outer";
+    }
+}

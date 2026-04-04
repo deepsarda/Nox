@@ -5,9 +5,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.runBlocking
-import nox.runtime.PermissionRequest
-import nox.runtime.PermissionResponse
-import nox.runtime.RuntimeContext
+import nox.runtime.*
 import java.nio.file.Files
 
 class PermissionGatedModuleTest :
@@ -23,6 +21,9 @@ class PermissionGatedModuleTest :
 
                 override suspend fun requestPermission(request: PermissionRequest): PermissionResponse =
                     PermissionResponse.Granted.Unconstrained
+
+                override suspend fun requestResourceExtension(request: ResourceRequest): ResourceResponse =
+                    ResourceResponse.Denied()
             }
 
         fun denyAllContext(reason: String = "denied by policy"): RuntimeContext =
@@ -33,6 +34,9 @@ class PermissionGatedModuleTest :
 
                 override suspend fun requestPermission(request: PermissionRequest): PermissionResponse =
                     PermissionResponse.Denied(reason)
+
+                override suspend fun requestResourceExtension(request: ResourceRequest): ResourceResponse =
+                    ResourceResponse.Denied()
             }
 
         /** Tracks which permission types were requested. */
@@ -47,6 +51,9 @@ class PermissionGatedModuleTest :
                 requests.add(request)
                 return PermissionResponse.Granted.Unconstrained
             }
+
+            override suspend fun requestResourceExtension(request: ResourceRequest): ResourceResponse =
+                ResourceResponse.Denied()
         }
 
         /** Selectively grants/denies based on a predicate. */
@@ -62,6 +69,9 @@ class PermissionGatedModuleTest :
                     } else {
                         PermissionResponse.Denied("selective deny")
                     }
+
+                override suspend fun requestResourceExtension(request: ResourceRequest): ResourceResponse =
+                    ResourceResponse.Denied()
             }
 
         /** Returns a FileGrant with the specified constraints for all requests. */
@@ -72,6 +82,9 @@ class PermissionGatedModuleTest :
                 override fun returnResult(data: String) {}
 
                 override suspend fun requestPermission(request: PermissionRequest): PermissionResponse = grant
+
+                override suspend fun requestResourceExtension(request: ResourceRequest): ResourceResponse =
+                    ResourceResponse.Denied()
             }
 
         /** Returns an HttpGrant with the specified constraints for all requests. */
@@ -82,6 +95,9 @@ class PermissionGatedModuleTest :
                 override fun returnResult(data: String) {}
 
                 override suspend fun requestPermission(request: PermissionRequest): PermissionResponse = grant
+
+                override suspend fun requestResourceExtension(request: ResourceRequest): ResourceResponse =
+                    ResourceResponse.Denied()
             }
 
         /** Returns an EnvGrant with the specified constraints for all requests. */
@@ -92,6 +108,9 @@ class PermissionGatedModuleTest :
                 override fun returnResult(data: String) {}
 
                 override suspend fun requestPermission(request: PermissionRequest): PermissionResponse = grant
+
+                override suspend fun requestResourceExtension(request: ResourceRequest): ResourceResponse =
+                    ResourceResponse.Denied()
             }
 
         test("File.read with granted permission reads file") {

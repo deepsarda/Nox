@@ -1,0 +1,100 @@
+;  Nox Bytecode Disassembly
+;  Source:   demo_config_manager.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "{\"port\": 8080}"
+  #1   str   "dummy_config.json"
+  #2   str   "File__read"
+  #3   str   "Json__parse"
+  #4   str   "USER"
+  #5   str   "Env__get"
+  #6   str   "dummy_out.json"
+  #7   str   "{\"updated\": true}"
+  #8   str   "File__write"
+  #9   str   "ok"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=0  rMem=5
+
+.func main
+  ;
+  ; line 4  string configStr = "{\"port\": 8080}";
+  0000:  LDC       r1, #0                      ; configStr:r1 = "{\"port\": 8080}"
+  ;
+  ; line 6  configStr = File.read("dummy_config.json");
+  0001:  LDC       r3, #1                      ; r3 = "dummy_config.json"
+  0002:  SCALL     File__read, p0, r2          ; r2 = scall File__read(p0..., r3...)
+  0003:  MOVR      r1, r2                      ; configStr:r1 = r2
+  0004:  KILL_REF  r2                          ; r2 = null (GC)
+  0005:  KILL_REF  r3                          ; r3 = null (GC)
+  0006:  JMP       @0008                       ; -> end
+  .catch_all:
+  0007:  JMP       @0008                       ; -> end
+  ;
+  ; line 12  json conf = Json.parse(configStr);
+  .end:
+  0008:  MOVR      r4, r1                      ; r4 = configStr:r1
+  0009:  SCALL     Json__parse, p0, r3         ; r3 = scall Json__parse(p0..., r4...)
+  0010:  MOVR      r2, r3                      ; conf:r2 = r3
+  ;
+  ; line 13  string envName = Env.get("USER");
+  0011:  LDC       r4, #4                      ; r4 = "USER"
+  0012:  SCALL     Env__get, p0, r3            ; r3 = scall Env__get(p0..., r4...)
+  0013:  MOVR      r2, r3                      ; envName:r2 = r3
+  ;
+  ; line 15  File.write("dummy_out.json", "{\"updated\": true}");
+  0014:  LDC       r3, #6                      ; r3 = "dummy_out.json"
+  0015:  LDC       r4, #7                      ; r4 = "{\"updated\": true}"
+  0016:  SCALL     File__write, p0, r3         ; scall File__write(p0..., r3...)
+  ;
+  ; line 17  return "ok";
+  0017:  LDC       r2, #9                      ; envName:r2 = "ok"
+  0018:  KILL_REF  r1                          ; configStr:r1 = null (GC)
+  0019:  KILL_REF  r3                          ; r3 = null (GC)
+  0020:  KILL_REF  r4                          ; r4 = null (GC)
+  0021:  RET       r2                          ; return envName:r2
+  0022:  JMP       @0029                       ; -> end
+  ;
+  ; line 19  return "ok";
+  .catch_all:
+  0023:  LDC       r1, #9                      ; configStr:r1 = "ok"
+  0024:  KILL_REF  r2                          ; err:r2 = null (GC)
+  0025:  KILL_REF  r3                          ; r3 = null (GC)
+  0026:  KILL_REF  r4                          ; r4 = null (GC)
+  0027:  RET       r1                          ; return configStr:r1
+  0028:  JMP       @0029                       ; -> end
+  .end:
+  0029:  KILL_REF  r1                          ; configStr:r1 = null (GC)
+  0030:  KILL_REF  r2                          ; err:r2 = null (GC)
+  0031:  KILL_REF  r3                          ; r3 = null (GC)
+  0032:  KILL_REF  r4                          ; r4 = null (GC)
+
+
+; Exception Table
+
+.exceptions
+  [0001..0006] ANY                  -> @0007  msg=r2
+  [0008..0022] ANY                  -> @0023  msg=r2
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 33
+  constants:    10
+  exceptions:   2
+  globals:      0p + 0r
+  bytecode:     264 bytes

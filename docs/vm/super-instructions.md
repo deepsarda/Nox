@@ -138,52 +138,46 @@ GET_FIELD  R3, R2, "port"           // result = temp2.port
 For paths known at compile time, the compiler pre-parses the path into a cached string array:
 
 ```
-AGET_PATH  R_result, R_config, "server.db"
-
-// VM execution:
-String[] path = cachedPaths[pathIndex];  // ["server", "db"]
-Object current = (NoxObject) rMem[bp + R_config];
-for (String key : path) {
-    current = ((NoxObject) current).get(key);
-}
-rMem[bp + R_result] = current;
+AGET_PATH [SubOp] R_result, R_config, "server.db"
 ```
+
+The VM traverses the path and applies the `SubOp` cast, writing the result to either primitive memory (`pMem`) or reference memory (`rMem`) depending on the `SubOp`.
 
 ### `AGET_IDX` -- Dynamic Index Access
 
 For array/map access with a runtime index or key:
 
 ```
-AGET_IDX  R_result, R_collection, R_index
+AGET_IDX [SubOp] R_result, R_collection, R_index
 ```
 
-This instruction is **polymorphic**, it checks the type at runtime:
+This instruction is **polymorphic**, it checks the type at runtime and then applies the `SubOp` cast:
 
 | Type of Collection | Action |
 |---|---|
-| `List` / `ArrayList` | `list.get((int) pMem[R_index])` |
-| `NoxArray` | `noxArray.get((int) pMem[R_index])` |
-| `NoxObject` | `noxObject.get(String.valueOf(pMem[R_index]))` |
+| `List` / `ArrayList` | `list.get((int) pMem[R_index])` then cast via `SubOp` |
+| `Map` / `Struct` | `map.get(String.valueOf(rMem[R_index]))` then cast via `SubOp` |
 
 ### `AGET_KEY` -- Named Property Access
 
 For a single named property lookup:
 
 ```
-AGET_KEY  R_result, R_object, "name"
+AGET_KEY [SubOp] R_result, R_object, "name"
 
 // VM execution:
-rMem[bp + R_result] = ((NoxObject) rMem[bp + R_object]).get("name");
+Object value = ((NoxObject) rMem[bp + R_object]).get("name");
+// Cast and store in pMem/rMem based on SubOp
 ```
 
 ### Chaining Accessors
 
-To resolve `data.rows[i].value`, the compiler emits a chain:
+To resolve `data.rows[i].value` into an integer, the compiler emits a chain. Intermediate steps use `GET_OBJ` (which stores the intermediate reference in `rMem`), and the final step uses `GET_INT` (which stores the final primitive in `pMem`):
 
 ```
-AGET_KEY   R1, R_data, "rows"       // R1 = data.rows (the array)
-AGET_IDX   R2, R1, R_i              // R2 = rows[i] (one element)
-AGET_KEY   R3, R2, "value"          // R3 = element.value
+AGET_KEY [GET_OBJ] R1, R_data, "rows"       // R1 = data.rows (the array reference)
+AGET_IDX [GET_OBJ] R2, R1, R_i              // R2 = rows[i] (one element reference)
+AGET_KEY [GET_INT] R3, R2, "value"          // pMem[R3] = element.value (integer)
 ```
 
 Three clean, linear instructions. No recursion. No complex resolution logic. The VM simply executes them in sequence.

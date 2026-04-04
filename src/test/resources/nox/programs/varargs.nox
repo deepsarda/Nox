@@ -1,0 +1,12 @@
+// @test:result "10"
+int sum(int ...vals[]) {
+    int total = 0;
+    foreach (int v in vals) {
+        total = total + v;
+    }
+    return total;
+}
+
+main() {
+    return sum(1, 2, 3, 4);
+}

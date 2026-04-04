@@ -1,0 +1,67 @@
+;  Nox Bytecode Disassembly
+;  Source:   arithmetic.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  (none)
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=3  rMem=0
+
+.func main
+  ;
+  ; line 3  int a = 20 + 22;
+  0000:  LDI       p1, 20                      ; p1 = 20
+  0001:  LDI       p0, 22                      ; a:p0 = 22
+  0002:  IADD      p0, p1, p0                  ; a:p0 = p1 + a:p0
+  ;
+  ; line 4  int b = 100 - 58;
+  0003:  LDI       p1, 100                     ; p1 = 100
+  0004:  LDI       p0, 58                      ; b:p0 = 58
+  0005:  ISUB      p0, p1, p0                  ; b:p0 = p1 - b:p0
+  ;
+  ; line 5  int c = 6 * 7;
+  0006:  LDI       p1, 6                       ; p1 = 6
+  0007:  LDI       p0, 7                       ; c:p0 = 7
+  0008:  IMUL      p0, p1, p0                  ; c:p0 = p1 * c:p0
+  ;
+  ; line 6  int d = 84 / 2;
+  0009:  LDI       p2, 84                      ; p2 = 84
+  0010:  LDI       p1, 2                       ; d:p1 = 2
+  0011:  IDIV      p1, p2, p1                  ; d:p1 = p2 / d:p1
+  ;
+  ; line 7  int e = 142 % 100;
+  0012:  LDI       p2, 142                     ; p2 = 142
+  0013:  LDI       p1, 100                     ; e:p1 = 100
+  0014:  IMOD      p1, p2, p1                  ; e:p1 = p2 % e:p1
+  ;
+  ; line 8  return c;
+  0015:  RET       p0                          ; return c:p0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 16
+  constants:    0
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     128 bytes

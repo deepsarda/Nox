@@ -1,0 +1,4 @@
+// @test:error "CompilationError"
+main() {
+    return "hi".fake();
+}

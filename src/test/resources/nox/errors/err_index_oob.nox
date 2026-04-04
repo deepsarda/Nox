@@ -1,0 +1,5 @@
+// @test:error "IndexOutOfBoundsError"
+main() {
+    int[] arr = [];
+    return arr[1];
+}

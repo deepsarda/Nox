@@ -1,0 +1,5 @@
+// @test:result "ok"
+main() {
+    json j = Json.parse("{\"status\":\"ok\"}");
+    return j.getString("status", "");
+}

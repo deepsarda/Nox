@@ -34,3 +34,7 @@ logs/
 PLAN.md
 
 bin/
+
+# Test output
+dummy_out.json
+migration.sql

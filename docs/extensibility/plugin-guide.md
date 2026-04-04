@@ -84,6 +84,44 @@ fun myFunc(arg1: ParamType1, arg2: ParamType2): ReturnType { ... }
 |---|---|---|---|
 | `name` | `String` | Yes | The function name used in NSL (e.g., `namespace.name()`) |
  
+### Generic Parameters & Return Types
+
+You can use the `@NoxGeneric` annotation to define generic parameters (like `T`) for a function. This is especially useful for collections. You can then reference these placeholders in the `@NoxType` and `@NoxTypeMethod` annotations. 
+
+At compile-time, the compiler resolves the generic types based on the arguments or target object, and produces a mangled SCALL name (e.g. `push!int`). At run-time, the VM parses this mangled name and automatically generates a strongly-typed `NoxNativeFunc` adapter specific to those types.
+
+```kotlin
+@NoxModule(namespace = "_ArrayMethods")
+object ArrayMethods {
+
+    @NoxGeneric(["T"])
+    @NoxTypeMethod(targetType = "T[]", name = "push")
+    @JvmStatic
+    fun push(
+        arr: Any?,
+        @NoxType("T") item: Any?,
+    ) {
+        val list = arr as? MutableList<Any?> ?: throw NullPointerException("null array")
+        list.add(item)
+    }
+
+    @NoxGeneric(["T"])
+    @NoxTypeMethod(targetType = "T[]", name = "pop")
+    @NoxType("T")
+    @JvmStatic
+    fun pop(arr: Any?): Any? {
+        val list = arr as? MutableList<Any?> ?: throw NullPointerException("null array")
+        return list.removeAt(list.size - 1)
+    }
+}
+```
+
+**Rules for Generics:**
+- The `@NoxGeneric` annotation declares the placeholder names.
+- Use `@NoxType("T")` on parameters and functions to specify that their type is tied to the generic `T`.
+- In `@NoxTypeMethod`, the `targetType` can include placeholders like `"T[]"`.
+- The backing Kotlin type for generic variables must be `Any?`, as it could represent either a primitive (`pMem` value like Long or Double) or a reference (`rMem` value like String). The VM Linker handles boxing and unboxing correctly when generating the call adapter.
+
 ### Supported Parameter Types
 
 The linker automatically maps between NSL types and Kotlin/JVM types:
@@ -211,15 +249,15 @@ In addition to namespace-scoped functions, you can register methods that are **b
 @NoxModule(namespace = "Integer")
 object IntegerMethods {
 
-    @NoxTypeMethod(boundTo = "int", name = "toDouble")
+    @NoxTypeMethod(targetType = "int", name = "toDouble")
     @JvmStatic
     fun toDouble(value: Long): Double = value.toDouble()
 
-    @NoxTypeMethod(boundTo = "int", name = "toString")
+    @NoxTypeMethod(targetType = "int", name = "toString")
     @JvmStatic
     fun toString(value: Long): String = value.toString()
 
-    @NoxTypeMethod(boundTo = "int", name = "getNumOfDigits")
+    @NoxTypeMethod(targetType = "int", name = "getNumOfDigits")
     @JvmStatic
     fun getNumOfDigits(value: Long): Long {
         if (value == 0L) return 1L

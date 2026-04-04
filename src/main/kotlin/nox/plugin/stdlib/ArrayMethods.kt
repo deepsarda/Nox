@@ -1,5 +1,6 @@
 package nox.plugin.stdlib
 
+import nox.plugin.annotations.NoxGeneric
 import nox.plugin.annotations.NoxModule
 import nox.plugin.annotations.NoxType
 import nox.plugin.annotations.NoxTypeMethod
@@ -7,9 +8,7 @@ import nox.plugin.annotations.NoxTypeMethod
 /**
  * Nox standard library: array type-bound methods.
  *
- * These are registered as type-bound methods but are special-cased in the
- * registry since they work on any `T[]`. The [LibraryRegistry] handles
- * array methods separately through `arrayMethodNames`.
+ * These are registered as generic templates and matched at compile-time.
  *
  * The actual runtime implementations operate on `ArrayList` (the VM's
  * representation of Nox arrays).
@@ -31,11 +30,12 @@ object ArrayMethods {
      * Append an element to the end of the array.
      * The element type is checked at compile-time by the semantic analyzer.
      */
-    @NoxTypeMethod(targetType = "array", name = "push")
+    @NoxGeneric(["T"])
+    @NoxTypeMethod(targetType = "T[]", name = "push")
     @JvmStatic
     fun push(
         arr: Any?,
-        item: Any?,
+        @NoxType("T") item: Any?,
     ) {
         val list = arr as? MutableList<Any?> ?: throw NullPointerException("push() called on null array")
         list.add(item)
@@ -45,8 +45,9 @@ object ArrayMethods {
      * Remove and return the last element of the array.
      * Throws if the array is empty.
      */
-    @NoxTypeMethod(targetType = "array", name = "pop")
-    @NoxType("json") // actual type is T, resolved by registry
+    @NoxGeneric(["T"])
+    @NoxTypeMethod(targetType = "T[]", name = "pop")
+    @NoxType("T")
     @JvmStatic
     fun pop(arr: Any?): Any? {
         val list = arr as? MutableList<Any?> ?: throw NullPointerException("pop() called on null array")
@@ -57,7 +58,8 @@ object ArrayMethods {
     /**
      * Return the number of elements in the array.
      */
-    @NoxTypeMethod(targetType = "array", name = "length")
+    @NoxGeneric(["T"])
+    @NoxTypeMethod(targetType = "T[]", name = "length")
     @NoxType("int")
     @JvmStatic
     fun length(arr: Any?): Long {

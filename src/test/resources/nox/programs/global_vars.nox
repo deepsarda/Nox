@@ -1,0 +1,6 @@
+// @test:result "42"
+int GLOBAL = 42;
+
+main() {
+    return GLOBAL;
+}
