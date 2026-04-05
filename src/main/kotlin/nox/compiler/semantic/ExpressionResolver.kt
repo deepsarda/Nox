@@ -91,7 +91,7 @@ class ExpressionResolver(
                     typedElements.add(typedElem)
                     continue
                 }
-                
+
                 // Special case: mixed structs upcast to json
                 if (elementType.isStructType() && elemType.isStructType()) {
                     elementType = TypeRef.JSON
@@ -270,8 +270,6 @@ class ExpressionResolver(
 
         if (typedTarget is TypedIdentifierExpr) {
             val namespaceName = typedTarget.name
-            val module = modules.find { it.namespace == namespaceName }
-            // ... (rest of logic can stay as fallback or be removed)
 
             if (registry.isBuiltinNamespace(namespaceName)) {
                 val builtin = registry.lookupNamespaceFunc(namespaceName, call.methodName)
@@ -286,17 +284,11 @@ class ExpressionResolver(
         }
 
         val targetType = typedTarget.type
-        val builtinMethod = registry.lookupBuiltinMethod(targetType, call.methodName)
-        if (builtinMethod != null) {
-            val tExpr = TypedMethodCallExpr(typedTarget, call.methodName, typedArgs, call.loc, builtinMethod.returnType, TypedMethodCallExpr.Resolution.TYPE_BOUND, builtinMethod)
-            validateArgs(call.loc, "$targetType.${call.methodName}", builtinSpecs(builtinMethod.params), typedArgs, scope)
-            return tExpr
-        }
-
-        val typeMethod = registry.lookupTypeMethod(targetType, call.methodName)
-        if (typeMethod != null) {
-            val tExpr = TypedMethodCallExpr(typedTarget, call.methodName, typedArgs, call.loc, typeMethod.returnType, TypedMethodCallExpr.Resolution.TYPE_BOUND, typeMethod)
-            validateArgs(call.loc, "$targetType.${call.methodName}", builtinSpecs(typeMethod.params), typedArgs, scope)
+        val typeBoundMethod = registry.lookupBuiltinMethod(targetType, call.methodName)
+            ?: registry.lookupTypeMethod(targetType, call.methodName)
+        if (typeBoundMethod != null) {
+            val tExpr = TypedMethodCallExpr(typedTarget, call.methodName, typedArgs, call.loc, typeBoundMethod.returnType, TypedMethodCallExpr.Resolution.TYPE_BOUND, typeBoundMethod)
+            validateArgs(call.loc, "$targetType.${call.methodName}", builtinSpecs(typeBoundMethod.params), typedArgs, scope)
             return tExpr
         }
 

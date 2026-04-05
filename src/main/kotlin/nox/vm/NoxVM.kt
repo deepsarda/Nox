@@ -117,6 +117,55 @@ class NoxVM(
         }
     }
 
+    // Dispatch helpers
+
+    private fun readSubOpGet(
+        subOp: Int,
+        dest: Int,
+        value: Any?,
+    ) {
+        when (subOp) {
+            SubOp.GET_INT -> writeP(dest, (value as? Number)?.toLong() ?: 0L)
+            SubOp.GET_DBL -> writeP(dest, doubleToRawLongBits((value as? Number)?.toDouble() ?: 0.0))
+            SubOp.GET_STR -> writeR(dest, value as? String)
+            SubOp.GET_BOOL -> writeP(dest, if (value as? Boolean == true) 1L else 0L)
+            else -> writeR(dest, value)
+        }
+    }
+
+    private fun readValueBySubOp(
+        subOp: Int,
+        reg: Int,
+    ): Any? =
+        when (subOp) {
+            SubOp.SET_INT -> readP(reg)
+            SubOp.SET_DBL -> longBitsToDouble(readP(reg))
+            SubOp.SET_STR -> readR(reg)
+            SubOp.SET_BOOL -> readP(reg) != 0L
+            else -> readR(reg)
+        }
+
+    private fun valueToString(
+        typeTag: Int,
+        reg: Int,
+    ): String =
+        if (typeTag < 3) {
+            val raw = readP(reg)
+            when (typeTag) {
+                0 -> raw.toString()
+                1 -> longBitsToDouble(raw).toString()
+                2 -> if (raw != 0L) "true" else "false"
+                else -> raw.toString()
+            }
+        } else {
+            val obj = readR(reg)
+            if (obj != null && obj !is String) {
+                nox.runtime.json.NoxJsonWriter(prettyPrint = false).write(obj)
+            } else {
+                obj?.toString() ?: "null"
+            }
+        }
+
     // Entry point
     suspend fun execute(): NoxResult {
         val vmThread = Thread.currentThread()
@@ -645,28 +694,7 @@ class NoxVM(
                     if (csp == 0) {
                         // Returning from main/init function so end execution
                         running = false
-
-                        if (!isVoid) {
-                            returnValue =
-                                if (isPrimitive) {
-                                    val raw = readP(retReg)
-                                    when (typeTag) {
-                                        0 -> raw.toString() // INT
-                                        1 -> longBitsToDouble(raw).toString() // DOUBLE
-                                        2 -> if (raw != 0L) "true" else "false" // BOOLEAN
-                                        else -> raw.toString()
-                                    }
-                                } else {
-                                    val obj = readR(retReg)
-                                    if (typeTag == 3 && obj != null && obj !is String) {
-                                        nox.runtime.json
-                                            .NoxJsonWriter(prettyPrint = false)
-                                            .write(obj)
-                                    } else {
-                                        obj?.toString() ?: "null"
-                                    }
-                                }
-                        }
+                        if (!isVoid) returnValue = valueToString(typeTag, retReg)
                         return
                     }
 
@@ -750,16 +778,7 @@ class NoxVM(
                             ?: throw NoxException(NoxError.NullAccessError, "Cannot read property of null", pc - 1)
 
                     val key = pool[keyPoolIdx] as String
-                    val value = obj[key]
-
-                    when (subOp) {
-                        SubOp.GET_INT -> writeP(dest, (value as? Number)?.toLong() ?: 0L)
-                        SubOp.GET_DBL -> writeP(dest, doubleToRawLongBits((value as? Number)?.toDouble() ?: 0.0))
-                        SubOp.GET_STR -> writeR(dest, value as? String)
-                        SubOp.GET_BOOL -> writeP(dest, if (value as? Boolean == true) 1L else 0L)
-                        SubOp.GET_OBJ -> writeR(dest, value)
-                        else -> throw NoxException(NoxError.Error, "Unknown HACC sub-opcode: $subOp", pc - 1)
-                    }
+                    readSubOpGet(subOp, dest, obj[key])
                 }
 
                 Opcode.HMOD -> {
@@ -773,18 +792,7 @@ class NoxVM(
                         readR(objReg) as? LinkedHashMap<String, Any?>
                             ?: throw NoxException(NoxError.NullAccessError, "Cannot set property of null", pc - 1)
                     val key = pool[keyPoolIdx] as String
-
-                    when (subOp) {
-                        SubOp.SET_INT -> obj[key] = readP(valReg)
-                        SubOp.SET_DBL -> obj[key] = longBitsToDouble(readP(valReg))
-                        SubOp.SET_STR -> obj[key] = readR(valReg)
-                        SubOp.SET_BOOL -> obj[key] = readP(valReg) != 0L
-                        SubOp.SET_OBJ -> obj[key] = readR(valReg)
-                        else -> {
-                            handleException(NoxException(NoxError.Error, "Unknown HMOD sub-opcode: $subOp", pc - 1))
-                            continue
-                        }
-                    }
+                    obj[key] = readValueBySubOp(subOp, valReg)
                 }
 
                 // Access Instructions
@@ -798,14 +806,7 @@ class NoxVM(
                         readR(b) as? Map<*, *>
                             ?: throw NoxException(NoxError.NullAccessError, "Cannot access property of null", pc - 1)
                     val key = pool[c] as String
-                    val value = obj[key]
-                    when (subOp) {
-                        SubOp.GET_INT -> writeP(a, (value as? Number)?.toLong() ?: 0L)
-                        SubOp.GET_DBL -> writeP(a, doubleToRawLongBits((value as? Number)?.toDouble() ?: 0.0))
-                        SubOp.GET_STR -> writeR(a, value as? String)
-                        SubOp.GET_BOOL -> writeP(a, if (value as? Boolean == true) 1L else 0L)
-                        else -> writeR(a, value)
-                    }
+                    readSubOpGet(subOp, a, obj[key])
                 }
 
                 Opcode.AGET_IDX -> {
@@ -839,13 +840,7 @@ class NoxVM(
                             )
                         }
 
-                    when (subOp) {
-                        SubOp.GET_INT -> writeP(a, (value as? Number)?.toLong() ?: 0L)
-                        SubOp.GET_DBL -> writeP(a, doubleToRawLongBits((value as? Number)?.toDouble() ?: 0.0))
-                        SubOp.GET_STR -> writeR(a, value as? String)
-                        SubOp.GET_BOOL -> writeP(a, if (value as? Boolean == true) 1L else 0L)
-                        else -> writeR(a, value)
-                    }
+                    readSubOpGet(subOp, a, value)
                 }
 
                 Opcode.AGET_PATH -> {
@@ -873,13 +868,7 @@ class NoxVM(
                                 } // TODO: improve error message with potential misspellings
                             }
                     }
-                    when (subOp) {
-                        SubOp.GET_INT -> writeP(a, (current as? Number)?.toLong() ?: 0L)
-                        SubOp.GET_DBL -> writeP(a, doubleToRawLongBits((current as? Number)?.toDouble() ?: 0.0))
-                        SubOp.GET_STR -> writeR(a, current as? String)
-                        SubOp.GET_BOOL -> writeP(a, if (current as? Boolean == true) 1L else 0L)
-                        else -> writeR(a, current)
-                    }
+                    readSubOpGet(subOp, a, current)
                 }
 
                 Opcode.ASET_KEY -> {
@@ -893,14 +882,7 @@ class NoxVM(
                             ?: throw NoxException(NoxError.NullAccessError, "Cannot set property of null", pc - 1)
                     val key = pool[b] as String
                     val subOp = Instruction.subOp(inst)
-                    when (subOp) {
-                        SubOp.SET_INT -> obj[key] = readP(c)
-                        SubOp.SET_DBL -> obj[key] = longBitsToDouble(readP(c))
-                        SubOp.SET_STR -> obj[key] = readR(c)
-                        SubOp.SET_BOOL -> obj[key] = readP(c) != 0L
-                        SubOp.SET_OBJ -> obj[key] = readR(c)
-                        else -> obj[key] = readR(c) // fallback to reference
-                    }
+                    obj[key] = readValueBySubOp(subOp, c)
                 }
 
                 Opcode.ASET_IDX -> {
@@ -930,14 +912,7 @@ class NoxVM(
                             pc - 1,
                         )
                     }
-                    when (subOp) {
-                        SubOp.SET_INT -> list[index] = readP(c)
-                        SubOp.SET_DBL -> list[index] = longBitsToDouble(readP(c))
-                        SubOp.SET_STR -> list[index] = readR(c)
-                        SubOp.SET_BOOL -> list[index] = readP(c) != 0L
-                        SubOp.SET_OBJ -> list[index] = readR(c)
-                        else -> list[index] = readR(c) // fallback
-                    }
+                    list[index] = readValueBySubOp(subOp, c)
                 }
 
                 // Yield
@@ -945,28 +920,7 @@ class NoxVM(
                 Opcode.YIELD -> {
                     val a = Instruction.opA(inst)
                     val typeTag = Instruction.opB(inst)
-                    val isPrimitive = typeTag < 3
-
-                    val value =
-                        if (isPrimitive) {
-                            val raw = readP(a)
-                            when (typeTag) {
-                                0 -> raw.toString() // INT
-                                1 -> longBitsToDouble(raw).toString() // DOUBLE
-                                2 -> if (raw != 0L) "true" else "false" // BOOLEAN
-                                else -> raw.toString()
-                            }
-                        } else {
-                            val obj = readR(a)
-                            if (typeTag == 3 && obj != null && obj !is String) {
-                                nox.runtime.json
-                                    .NoxJsonWriter(prettyPrint = false)
-                                    .write(obj)
-                            } else {
-                                obj?.toString() ?: "null"
-                            }
-                        }
-
+                    val value = valueToString(typeTag, a)
                     yields.add(value)
                     context.yield(value)
                 }
@@ -1083,14 +1037,7 @@ class NoxVM(
                     val list =
                         readR(a) as? MutableList<Any?>
                             ?: throw NoxException(NoxError.TypeError, "Cannot push to non-array", pc - 1)
-                    when (subOp) {
-                        SubOp.SET_INT -> list.add(readP(c))
-                        SubOp.SET_DBL -> list.add(longBitsToDouble(readP(c)))
-                        SubOp.SET_STR -> list.add(readR(c))
-                        SubOp.SET_BOOL -> list.add(readP(c) != 0L)
-                        SubOp.SET_OBJ -> list.add(readR(c))
-                        else -> list.add(readR(c)) // fallback
-                    }
+                    list.add(readValueBySubOp(subOp, c))
                 }
 
                 // Struct Construction
@@ -1120,14 +1067,7 @@ class NoxVM(
                                 continue
                             }
                     val key = pool[b] as String
-                    when (subOp) {
-                        SubOp.SET_INT -> obj[key] = readP(c)
-                        SubOp.SET_DBL -> obj[key] = longBitsToDouble(readP(c))
-                        SubOp.SET_STR -> obj[key] = readR(c)
-                        SubOp.SET_BOOL -> obj[key] = readP(c) != 0L
-                        SubOp.SET_OBJ -> obj[key] = readR(c)
-                        else -> obj[key] = readR(c) // fallback
-                    }
+                    obj[key] = readValueBySubOp(subOp, c)
                 }
 
                 Opcode.CAST_STRUCT -> {

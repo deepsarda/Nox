@@ -349,87 +349,96 @@ class StatementEmitter(
         for (j in jumpsToEnd) ctx.patch(j, endPc)
     }
 
-    private fun emitWhile(stmt: TypedWhileStmt) {
-        val line = stmt.loc.line
-        val seq = ++ctx.labelSeq
-        ctx.addLabel("loop_start_$seq")
-        val loopStart = ctx.pc
-
-        val loopCtx = LoopContext(loopStart, loopStart)
-        loopStack.addLast(loopCtx)
-
-        val condResolved = ctx.resolveRegister(stmt.condition)
+    /** Evaluates [condition], emits JIF, frees temp register. Returns JIF PC for patching. */
+    private fun emitConditionJIF(
+        condition: TypedExpr,
+        line: Int,
+    ): Int {
+        val condResolved = ctx.resolveRegister(condition)
         val condReg =
             if (condResolved != null) {
-                ctx.freeNodeRegisters(stmt.condition)
+                ctx.freeNodeRegisters(condition)
                 condResolved
             } else {
                 val r = ctx.allocp()
-                ctx.emitExpr(stmt.condition, r, line)
+                ctx.emitExpr(condition, r, line)
                 r
             }
         val jumpToExit = ctx.emit(Opcode.JIF, 0, condReg, 0, 0, line)
         if (condReg != condResolved) ctx.freep(condReg)
-
-        ctx.emitBlock(stmt.body)
-        ctx.emit(Opcode.JMP, 0, loopStart, 0, 0)
-
-        ctx.addLabel("loop_exit_$seq")
-        val exitPc = ctx.pc
-        ctx.patch(jumpToExit, exitPc)
-        loopCtx.breakPatches.forEach { ctx.patch(it, exitPc) }
-        loopCtx.continuePatches.forEach { ctx.patch(it, loopStart) }
-        loopStack.removeLast()
+        return jumpToExit
     }
 
-    private fun emitFor(stmt: TypedForStmt) {
-        val line = stmt.loc.line
-
-        stmt.init?.let { emitStmt(it) }
-
+    /**
+     * Shared loop structure used by while, for, and foreach.
+     *
+     * @param emitCondition emits condition + JIF, returns JIF PC; null = infinite loop
+     * @param emitBody emits the loop body
+     * @param emitUpdate emits the update step; null = while semantics (continue -> condition)
+     */
+    private fun emitLoopCore(
+        line: Int,
+        emitCondition: (() -> Int)?,
+        emitBody: () -> Unit,
+        emitUpdate: (() -> Unit)?,
+    ) {
         val seq = ++ctx.labelSeq
         ctx.addLabel("loop_start_$seq")
         val loopStart = ctx.pc
 
-        var jumpToExit: Int? = null
-        if (stmt.condition != null) {
-            val condResolved = ctx.resolveRegister(stmt.condition)
-            val condReg =
-                if (condResolved != null) {
-                    ctx.freeNodeRegisters(stmt.condition)
-                    condResolved
-                } else {
-                    val r = ctx.allocp()
-                    ctx.emitExpr(stmt.condition, r, line)
-                    r
-                }
-            jumpToExit = ctx.emit(Opcode.JIF, 0, condReg, 0, 0, line)
-            if (condReg != condResolved) ctx.freep(condReg)
-        }
+        val jumpToExit: Int? = emitCondition?.invoke()
 
-        val loopCtx = LoopContext(loopStart, -1)
+        val hasUpdate = emitUpdate != null
+        val loopCtx = LoopContext(loopStart, if (hasUpdate) -1 else loopStart)
         loopStack.addLast(loopCtx)
 
-        ctx.emitBlock(stmt.body)
+        emitBody()
 
-        ctx.addLabel("loop_update_$seq")
-        val updatePc = ctx.pc
-        loopCtx.continuePatches.forEach { ctx.patch(it, updatePc) }
+        if (hasUpdate) {
+            ctx.addLabel("loop_update_$seq")
+            val updatePc = ctx.pc
+            loopCtx.continuePatches.forEach { ctx.patch(it, updatePc) }
+            emitUpdate()
+        }
 
-        stmt.update?.let { emitStmt(it) }
         ctx.emit(Opcode.JMP, 0, loopStart, 0, 0)
 
         ctx.addLabel("loop_exit_$seq")
         val exitPc = ctx.pc
         jumpToExit?.let { ctx.patch(it, exitPc) }
         loopCtx.breakPatches.forEach { ctx.patch(it, exitPc) }
+        if (!hasUpdate) {
+            loopCtx.continuePatches.forEach { ctx.patch(it, loopStart) }
+        }
         loopStack.removeLast()
+    }
+
+    private fun emitWhile(stmt: TypedWhileStmt) {
+        val line = stmt.loc.line
+        emitLoopCore(
+            line = line,
+            emitCondition = { emitConditionJIF(stmt.condition, line) },
+            emitBody = { ctx.emitBlock(stmt.body) },
+            emitUpdate = null,
+        )
+    }
+
+    private fun emitFor(stmt: TypedForStmt) {
+        val line = stmt.loc.line
+        stmt.init?.let { emitStmt(it) }
+        emitLoopCore(
+            line = line,
+            emitCondition = stmt.condition?.let { cond -> { emitConditionJIF(cond, line) } },
+            emitBody = { ctx.emitBlock(stmt.body) },
+            emitUpdate = stmt.update?.let { update -> { emitStmt(update) } },
+        )
     }
 
     private fun emitForEach(stmt: TypedForEachStmt) {
         val line = stmt.loc.line
         val iterType = stmt.iterable.type
 
+        // Preamble: evaluate iterable, allocate registers, get length
         val arrReg = ctx.alloc(iterType)
         ctx.emitExpr(stmt.iterable, arrReg, line)
 
@@ -438,55 +447,41 @@ class StatementEmitter(
         val condReg = ctx.allocp()
         val elemReg = ctx.allocator.allocElement(stmt)
         ctx.regNameEvents.add(RegNameEvent(ctx.pc, stmt.elementType.isPrimitive(), elemReg, stmt.elementName))
-        ctx.emit(Opcode.LDI, 0, idxReg, 0, 0, line) // idx = 0
+        ctx.emit(Opcode.LDI, 0, idxReg, 0, 0, line)
+
         val lenTarget =
             registry.lookupBuiltinMethod(iterType, "length")
                 ?: error("No 'length' method found on type '$iterType'")
-
         val lenPrimArgStart = ctx.allocator.allocArgBlockPrim(0)
         val lenRefArgStart = ctx.allocator.allocArgBlockRef(1)
         ctx.emit(Opcode.MOVR, 0, lenRefArgStart, arrReg, 0, line)
-
         val lenFuncIdx = ctx.pool.add(lenTarget.name)
         ctx.emit(Opcode.SCALL, 1, lenFuncIdx, lenPrimArgStart, lenRefArgStart, line)
         ctx.emit(Opcode.MOV, 0, lenReg, lenPrimArgStart, 0, line)
-
         ctx.allocator.freeArgBlockPrim(lenPrimArgStart, 0)
         ctx.allocator.freeArgBlockRef(lenRefArgStart, 1)
 
-        val seq = ++ctx.labelSeq
-        ctx.addLabel("loop_start_$seq")
-        val loopStart = ctx.pc
-
-        ctx.emit(Opcode.ILT, 0, condReg, idxReg, lenReg, line) // cond = idx < len
-        val jumpToExit = ctx.emit(Opcode.JIF, 0, condReg, 0, 0, line)
-
-        ctx.emit(
-            Opcode.AGET_IDX,
-            ExpressionEmitter.getSubOpFor(stmt.elementType),
-            elemReg,
-            arrReg,
-            idxReg,
-            line,
-        ) // elem = arr[idx]
-
-        val loopCtx = LoopContext(loopStart, -1)
-        loopStack.addLast(loopCtx)
-        ctx.emitBlock(stmt.body)
-
-        // continue target: IINC + JMP back
-        ctx.addLabel("loop_update_$seq")
-        val updatePc = ctx.pc
-        loopCtx.continuePatches.forEach { ctx.patch(it, updatePc) }
-
-        ctx.emit(Opcode.IINC, 0, idxReg, 0, 0, line)
-        ctx.emit(Opcode.JMP, 0, loopStart, 0, 0)
-
-        ctx.addLabel("loop_exit_$seq")
-        val exitPc = ctx.pc
-        ctx.patch(jumpToExit, exitPc)
-        loopCtx.breakPatches.forEach { ctx.patch(it, exitPc) }
-        loopStack.removeLast()
+        emitLoopCore(
+            line = line,
+            emitCondition = {
+                ctx.emit(Opcode.ILT, 0, condReg, idxReg, lenReg, line)
+                ctx.emit(Opcode.JIF, 0, condReg, 0, 0, line)
+            },
+            emitBody = {
+                ctx.emit(
+                    Opcode.AGET_IDX,
+                    ExpressionEmitter.getSubOpFor(stmt.elementType),
+                    elemReg,
+                    arrReg,
+                    idxReg,
+                    line,
+                )
+                ctx.emitBlock(stmt.body)
+            },
+            emitUpdate = {
+                ctx.emit(Opcode.IINC, 0, idxReg, 0, 0, line)
+            },
+        )
 
         ctx.freep(condReg)
         ctx.freep(lenReg)
@@ -512,6 +507,14 @@ class StatementEmitter(
 
     // Exit / Exception
 
+    private fun typeTagFor(type: TypeRef): Int =
+        when {
+            type == TypeRef.INT -> 0
+            type == TypeRef.DOUBLE -> 1
+            type == TypeRef.BOOLEAN -> 2
+            else -> 3
+        }
+
     private fun emitReturn(stmt: TypedReturnStmt) {
         val line = stmt.loc.line
 
@@ -534,13 +537,7 @@ class StatementEmitter(
                     tmp
                 }
 
-            val typeTag =
-                when {
-                    type == TypeRef.INT -> 0
-                    type == TypeRef.DOUBLE -> 1
-                    type == TypeRef.BOOLEAN -> 2
-                    else -> 3 // Reference types (string, json, struct, array)
-                }
+            val typeTag = typeTagFor(type)
 
             // Emit KILL_REF for all live rMem registers EXCEPT the return register.
             for (r in ctx.allocator.allRefRegs.sorted()) {
@@ -564,13 +561,7 @@ class StatementEmitter(
         val type = stmt.value.type
         val reg = ctx.resolveRegister(stmt.value)
 
-        val typeTag =
-            when {
-                type == TypeRef.INT -> 0
-                type == TypeRef.DOUBLE -> 1
-                type == TypeRef.BOOLEAN -> 2
-                else -> 3 // Reference types (string, json, struct, array)
-            }
+        val typeTag = typeTagFor(type)
 
         if (reg != null) {
             ctx.freeNodeRegisters(stmt.value)

@@ -14,6 +14,22 @@ import nox.compiler.types.*
 class ExpressionEmitter(
     private val ctx: BytecodeEmitter,
 ) {
+    /** Emits MOV or MOVR depending on whether [type] is primitive. No-op if dest == src. */
+    private fun emitMov(
+        dest: Int,
+        src: Int,
+        type: TypeRef,
+        line: Int,
+    ) {
+        if (dest != src) {
+            if (type.isPrimitive()) {
+                ctx.emit(Opcode.MOV, 0, dest, src, 0, line)
+            } else {
+                ctx.emit(Opcode.MOVR, 0, dest, src, 0, line)
+            }
+        }
+    }
+
     fun emitExpr(
         expr: TypedExpr,
         dest: Int,
@@ -249,11 +265,7 @@ class ExpressionEmitter(
         val reg = ctx.resolveRegister(expr.operand) ?: return
         val type = expr.operand.type
         // In expression context, copy current value to dest first
-        if (type.isPrimitive()) {
-            ctx.emit(Opcode.MOV, 0, dest, reg, 0, line)
-        } else {
-            ctx.emit(Opcode.MOVR, 0, dest, reg, 0, line)
-        }
+        emitMov(dest, reg, type, line)
         val opcode =
             when (expr.op) {
                 PostfixOp.INCREMENT -> if (type == TypeRef.DOUBLE) Opcode.DINC else Opcode.IINC
@@ -298,31 +310,15 @@ class ExpressionEmitter(
         when (val sym = expr.resolvedSymbol) {
             is GlobalSymbol -> {
                 val gReg = BytecodeEmitter.GLOBAL_FLAG or sym.globalSlot
-                if (sym.type.isPrimitive()) {
-                    ctx.emit(Opcode.MOV, 0, dest, gReg, 0, line)
-                } else {
-                    ctx.emit(Opcode.MOVR, 0, dest, gReg, 0, line)
-                }
+                emitMov(dest, gReg, sym.type, line)
             }
 
             is VarSymbol -> {
-                val reg = sym.register
-                if (reg < 0) return
-                if (sym.type.isPrimitive()) {
-                    if (dest != reg) ctx.emit(Opcode.MOV, 0, dest, reg, 0, line)
-                } else {
-                    if (dest != reg) ctx.emit(Opcode.MOVR, 0, dest, reg, 0, line)
-                }
+                if (sym.register >= 0) emitMov(dest, sym.register, sym.type, line)
             }
 
             is ParamSymbol -> {
-                val reg = sym.register
-                if (reg < 0) return
-                if (sym.type.isPrimitive()) {
-                    if (dest != reg) ctx.emit(Opcode.MOV, 0, dest, reg, 0, line)
-                } else {
-                    if (dest != reg) ctx.emit(Opcode.MOVR, 0, dest, reg, 0, line)
-                }
+                if (sym.register >= 0) emitMov(dest, sym.register, sym.type, line)
             }
 
             else -> {
@@ -493,13 +489,7 @@ class ExpressionEmitter(
 
         if (!isVoid) {
             val srcReg = if (isPrim) primArgStart else refArgStart
-            if (dest != srcReg) {
-                if (isPrim) {
-                    ctx.emit(Opcode.MOV, 0, dest, srcReg, 0, line)
-                } else {
-                    ctx.emit(Opcode.MOVR, 0, dest, srcReg, 0, line)
-                }
-            }
+            emitMov(dest, srcReg, funcDef.returnType, line)
         }
         ctx.allocator.freeArgBlockPrim(primArgStart, primArgs + pOffset)
         ctx.allocator.freeArgBlockRef(refArgStart, refArgs + rOffset)
@@ -594,51 +584,9 @@ class ExpressionEmitter(
     ) {
         val target = expr.resolvedTarget ?: return
         val isImport = ctx.modules.any { m -> m.program.functionsByName.containsKey(target.name) }
-
-        val retType = expr.type
-        val isVoid = retType == TypeRef.VOID
-        val isPrim = retType.isPrimitive()
-        val subOp =
-            if (isVoid) {
-                2
-            } else if (isPrim) {
-                1
-            } else {
-                0
-            }
-
-        val pOffset = if (subOp == 1) 1 else 0
-        val rOffset = if (subOp == 0) 1 else 0
-
-        var primArgs = 0
-        var refArgs = 0
-        for (p in target.params) {
-            if (p.type.isPrimitive()) primArgs++ else refArgs++
+        emitCallCommon(expr, dest, line, prependTarget = false) { t ->
+            if (isImport || t.astNode != null) Opcode.CALL else Opcode.SCALL
         }
-        val primArgStart = ctx.allocator.allocArgBlockPrim(primArgs + pOffset)
-        val refArgStart = ctx.allocator.allocArgBlockRef(refArgs + rOffset)
-
-        emitNoxArgs(expr.args, target.params, primArgStart, refArgStart, line, pOffset, rOffset)
-
-        val funcIdx = ctx.pool.add(target.name)
-        if (isImport || target.astNode != null) {
-            ctx.emit(Opcode.CALL, subOp, funcIdx, primArgStart, refArgStart, line)
-        } else {
-            ctx.emit(Opcode.SCALL, subOp, funcIdx, primArgStart, refArgStart, line)
-        }
-
-        if (!isVoid) {
-            val srcReg = if (isPrim) primArgStart else refArgStart
-            if (dest != srcReg) {
-                if (isPrim) {
-                    ctx.emit(Opcode.MOV, 0, dest, srcReg, 0, line)
-                } else {
-                    ctx.emit(Opcode.MOVR, 0, dest, srcReg, 0, line)
-                }
-            }
-        }
-        ctx.allocator.freeArgBlockPrim(primArgStart, primArgs + pOffset)
-        ctx.allocator.freeArgBlockRef(refArgStart, refArgs + rOffset)
     }
 
     private fun emitTypeBoundCall(
@@ -646,68 +594,7 @@ class ExpressionEmitter(
         dest: Int,
         line: Int,
     ) {
-        val target = expr.resolvedTarget ?: return
-
-        val retType = expr.type
-        val isVoid = retType == TypeRef.VOID
-        val isPrim = retType.isPrimitive()
-        val subOp =
-            if (isVoid) {
-                2
-            } else if (isPrim) {
-                1
-            } else {
-                0
-            }
-
-        val pOffset = if (subOp == 1) 1 else 0
-        val rOffset = if (subOp == 0) 1 else 0
-
-        var primArgs = 0
-        var refArgs = 0
-        val targetIsPrim = expr.target.type.isPrimitive()
-        if (targetIsPrim) primArgs++ else refArgs++
-
-        for (p in target.params) {
-            if (p.type.isPrimitive()) primArgs++ else refArgs++
-        }
-        val primArgStart = ctx.allocator.allocArgBlockPrim(primArgs + pOffset)
-        val refArgStart = ctx.allocator.allocArgBlockRef(refArgs + rOffset)
-
-        if (targetIsPrim) {
-            emitExpr(expr.target, primArgStart + pOffset, line)
-        } else {
-            emitExpr(expr.target, refArgStart + rOffset, line)
-        }
-
-        val startPrimIdx = if (targetIsPrim) 1 else 0
-        val startRefIdx = if (targetIsPrim) 0 else 1
-
-        emitNoxArgs(
-            expr.args,
-            target.params,
-            primArgStart,
-            refArgStart,
-            line,
-            startPrimIdx + pOffset,
-            startRefIdx + rOffset,
-        )
-
-        val funcIdx = ctx.pool.add(target.name)
-        ctx.emit(Opcode.SCALL, subOp, funcIdx, primArgStart, refArgStart, line)
-
-        if (!isVoid) {
-            val srcReg = if (isPrim) primArgStart else refArgStart
-            if (dest != srcReg) {
-                if (isPrim) {
-                    ctx.emit(Opcode.MOV, 0, dest, srcReg, 0, line)
-                } else {
-                    ctx.emit(Opcode.MOVR, 0, dest, srcReg, 0, line)
-                }
-            }
-        }
-        ctx.allocator.freeArgBlockPrim(primArgStart, primArgs + pOffset)
-        ctx.allocator.freeArgBlockRef(refArgStart, refArgs + rOffset)
+        emitCallCommon(expr, dest, line, prependTarget = true) { Opcode.SCALL }
     }
 
     private fun emitUfcsCall(
@@ -715,27 +602,34 @@ class ExpressionEmitter(
         dest: Int,
         line: Int,
     ) {
+        emitCallCommon(expr, dest, line, prependTarget = true) { t ->
+            if (t.astNode != null) Opcode.CALL else Opcode.SCALL
+        }
+    }
+
+    private fun emitCallCommon(
+        expr: TypedMethodCallExpr,
+        dest: Int,
+        line: Int,
+        prependTarget: Boolean,
+        resolveOpcode: (CallTarget) -> Int,
+    ) {
         val target = expr.resolvedTarget ?: return
 
         val retType = expr.type
         val isVoid = retType == TypeRef.VOID
         val isPrim = retType.isPrimitive()
-        val subOp =
-            if (isVoid) {
-                2
-            } else if (isPrim) {
-                1
-            } else {
-                0
-            }
+        val subOp = if (isVoid) 2 else if (isPrim) 1 else 0
 
         val pOffset = if (subOp == 1) 1 else 0
         val rOffset = if (subOp == 0) 1 else 0
 
         var primArgs = 0
         var refArgs = 0
-        val targetIsPrim = expr.target.type.isPrimitive()
-        if (targetIsPrim) primArgs++ else refArgs++
+        val targetIsPrim = if (prependTarget) expr.target.type.isPrimitive() else false
+        if (prependTarget) {
+            if (targetIsPrim) primArgs++ else refArgs++
+        }
 
         for (p in target.params) {
             if (p.type.isPrimitive()) primArgs++ else refArgs++
@@ -743,14 +637,17 @@ class ExpressionEmitter(
         val primArgStart = ctx.allocator.allocArgBlockPrim(primArgs + pOffset)
         val refArgStart = ctx.allocator.allocArgBlockRef(refArgs + rOffset)
 
-        if (targetIsPrim) {
-            emitExpr(expr.target, primArgStart + pOffset, line)
-        } else {
-            emitExpr(expr.target, refArgStart + rOffset, line)
+        var startPrimIdx = 0
+        var startRefIdx = 0
+        if (prependTarget) {
+            if (targetIsPrim) {
+                emitExpr(expr.target, primArgStart + pOffset, line)
+                startPrimIdx = 1
+            } else {
+                emitExpr(expr.target, refArgStart + rOffset, line)
+                startRefIdx = 1
+            }
         }
-
-        val startPrimIdx = if (targetIsPrim) 1 else 0
-        val startRefIdx = if (targetIsPrim) 0 else 1
 
         emitNoxArgs(
             expr.args,
@@ -763,21 +660,11 @@ class ExpressionEmitter(
         )
 
         val funcIdx = ctx.pool.add(target.name)
-        if (target.astNode != null) {
-            ctx.emit(Opcode.CALL, subOp, funcIdx, primArgStart, refArgStart, line)
-        } else {
-            ctx.emit(Opcode.SCALL, subOp, funcIdx, primArgStart, refArgStart, line)
-        }
+        ctx.emit(resolveOpcode(target), subOp, funcIdx, primArgStart, refArgStart, line)
 
         if (!isVoid) {
             val srcReg = if (isPrim) primArgStart else refArgStart
-            if (dest != srcReg) {
-                if (isPrim) {
-                    ctx.emit(Opcode.MOV, 0, dest, srcReg, 0, line)
-                } else {
-                    ctx.emit(Opcode.MOVR, 0, dest, srcReg, 0, line)
-                }
-            }
+            emitMov(dest, srcReg, retType, line)
         }
         ctx.allocator.freeArgBlockPrim(primArgStart, primArgs + pOffset)
         ctx.allocator.freeArgBlockRef(refArgStart, refArgs + rOffset)
