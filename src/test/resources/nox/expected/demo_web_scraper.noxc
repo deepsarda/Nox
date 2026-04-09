@@ -33,90 +33,90 @@
 .func main
   ;
   ; line 4  string html = "<html><body>Some Data</body></html>";
-  0000:  LDC       r1, #0                      ; html:r1 = "<html><body>Some Data</body></html>"
+  0000:  LDC         r1, #0                              ; html:r1 = "<html><body>Some Data</body></html>"
   ;
   ; line 7  string url = "http://dummy";
-  0001:  LDC       r2, #1                      ; url:r2 = "http://dummy"
+  0001:  LDC         r2, #1                              ; url:r2 = "http://dummy"
   ;
   ; line 8  if (url.contains("dummy")) {
-  0002:  MOVR      r3, r2                      ; r3 = url:r2
-  0003:  LDC       r4, #2                      ; r4 = "dummy"
-  0004:  SCALL     __string_contains, p1, r3   ; p1 = scall __string_contains(p2..., r3...)
-  0005:  MOV       p0, p1                      ; p0 = p1
-  0006:  JIF       p0, @0010                   ; if p0==0 -> @0010
+  0002:  MOVR        r3, r2                              ; r3 = url:r2
+  0003:  LDC         r4, #2                              ; r4 = "dummy"
+  0004:  SCALL       __string_contains, p1, r3           ; p1 = scall __string_contains(p2..., r3...)
+  0005:  MOV         p0, p1                              ; p0 = p1
+  0006:  JIF         p0, @0010                           ; if p0==0 -> @0010
   ;
   ; line 9  throw "NetworkError";
-  0007:  LDC       r2, #4                      ; url:r2 = "NetworkError"
-  0008:  THROW     r2                          ; throw url:r2
-  0009:  JMP       @0010                       ; -> @0010
-  0010:  KILL_REF  r2                          ; url:r2 = null (GC)
-  0011:  KILL_REF  r3                          ; r3 = null (GC)
-  0012:  KILL_REF  r4                          ; r4 = null (GC)
-  0013:  JMP       @0015                       ; -> end
+  0007:  LDC         r2, #4                              ; url:r2 = "NetworkError"
+  0008:  THROW       r2                                  ; throw url:r2
+  0009:  JMP         @0010                               ; -> @0010
+  0010:  KILL_REF    r2                                  ; url:r2 = null (GC)
+  0011:  KILL_REF    r3                                  ; r3 = null (GC)
+  0012:  KILL_REF    r4                                  ; r4 = null (GC)
+  0013:  JMP         @0015                               ; -> end
   .catch_all:
-  0014:  JMP       @0015                       ; -> end
+  0014:  JMP         @0015                               ; -> end
   ;
   ; line 15  string[] parts = html.split("<body>");
   .end:
-  0015:  MOVR      r4, r1                      ; r4 = html:r1
-  0016:  LDC       r5, #5                      ; r5 = "<body>"
-  0017:  SCALL     __string_split, p1, r3      ; r3 = scall __string_split(p1..., r4...)
-  0018:  MOVR      r2, r3                      ; parts:r2 = r3
+  0015:  MOVR        r4, r1                              ; r4 = html:r1
+  0016:  LDC         r5, #5                              ; r5 = "<body>"
+  0017:  SCALL       __string_split, p1, r3              ; r3 = scall __string_split(p1..., r4...)
+  0018:  MOVR        r2, r3                              ; parts:r2 = r3
   ;
   ; line 16  if (parts.length() > 1) {
-  0019:  MOVR      r3, r2                      ; r3 = parts:r2
-  0020:  SCALL     __T[]_length!string, p2, r3 ; p2 = scall __T[]_length!string(p3..., r3...)
-  0021:  MOV       p1, p2                      ; p1 = p2
-  0022:  LDI       p2, 1                       ; p2 = 1
-  0023:  IGT       p0, p1, p2                  ; p0 = p1 > p2
-  0024:  JIF       p0, @0052                   ; if p0==0 -> @0052
+  0019:  MOVR        r3, r2                              ; r3 = parts:r2
+  0020:  SCALL       __T[]_length!string, p2, r3         ; p2 = scall __T[]_length!string(p3..., r3...)
+  0021:  MOV         p1, p2                              ; p1 = p2
+  0022:  LDI         p2, 1                               ; p2 = 1
+  0023:  IGT         p0, p1, p2                          ; p0 = p1 > p2
+  0024:  JIF         p0, @0052                           ; if p0==0 -> @0052
   ;
   ; line 17  string body = parts[1];
-  0025:  LDI       p0, 1                       ; p0 = 1
-  0026:  AGET_IDX  r1, r2, p0                  ; body:r1 = parts:r2[p0]
+  0025:  LDI         p0, 1                               ; p0 = 1
+  0026:  AGET_IDX    r1, r2, p0                          ; body:r1 = parts:r2[p0]
   ;
   ; line 18  if (body.contains("Some Data")) {
-  0027:  MOVR      r3, r1                      ; r3 = body:r1
-  0028:  LDC       r4, #8                      ; r4 = "Some Data"
-  0029:  SCALL     __string_contains, p3, r3   ; p3 = scall __string_contains(p4..., r3...)
-  0030:  MOV       p0, p3                      ; p0 = p3
-  0031:  JIF       p0, @0051                   ; if p0==0 -> @0051
+  0027:  MOVR        r3, r1                              ; r3 = body:r1
+  0028:  LDC         r4, #8                              ; r4 = "Some Data"
+  0029:  SCALL       __string_contains, p3, r3           ; p3 = scall __string_contains(p4..., r3...)
+  0030:  MOV         p0, p3                              ; p0 = p3
+  0031:  JIF         p0, @0051                           ; if p0==0 -> @0051
   ;
   ; line 19  string lower = body.lower();
-  0032:  MOVR      r4, r1                      ; r4 = body:r1
-  0033:  SCALL     __string_lower, p3, r3      ; r3 = scall __string_lower(p3..., r4...)
-  0034:  MOVR      r2, r3                      ; lower:r2 = r3
+  0032:  MOVR        r4, r1                              ; r4 = body:r1
+  0033:  SCALL       __string_lower, p3, r3              ; r3 = scall __string_lower(p3..., r4...)
+  0034:  MOVR        r2, r3                              ; lower:r2 = r3
   ;
   ; line 20  string upper = lower.upper();
-  0035:  MOVR      r4, r2                      ; r4 = lower:r2
-  0036:  SCALL     __string_upper, p3, r3      ; r3 = scall __string_upper(p3..., r4...)
-  0037:  MOVR      r1, r3                      ; upper:r1 = r3
+  0035:  MOVR        r4, r2                              ; r4 = lower:r2
+  0036:  SCALL       __string_upper, p3, r3              ; r3 = scall __string_upper(p3..., r4...)
+  0037:  MOVR        r1, r3                              ; upper:r1 = r3
   ;
   ; line 21  if (upper.contains("SOME DATA")) {
-  0038:  MOVR      r3, r1                      ; r3 = upper:r1
-  0039:  LDC       r4, #11                     ; r4 = "SOME DATA"
-  0040:  SCALL     __string_contains, p3, r3   ; p3 = scall __string_contains(p4..., r3...)
-  0041:  MOV       p0, p3                      ; p0 = p3
-  0042:  JIF       p0, @0050                   ; if p0==0 -> @0050
+  0038:  MOVR        r3, r1                              ; r3 = upper:r1
+  0039:  LDC         r4, #11                             ; r4 = "SOME DATA"
+  0040:  SCALL       __string_contains, p3, r3           ; p3 = scall __string_contains(p4..., r3...)
+  0041:  MOV         p0, p3                              ; p0 = p3
+  0042:  JIF         p0, @0050                           ; if p0==0 -> @0050
   ;
   ; line 22  return "ok";
-  0043:  LDC       r1, #12                     ; upper:r1 = "ok"
-  0044:  KILL_REF  r2                          ; lower:r2 = null (GC)
-  0045:  KILL_REF  r3                          ; r3 = null (GC)
-  0046:  KILL_REF  r4                          ; r4 = null (GC)
-  0047:  KILL_REF  r5                          ; r5 = null (GC)
-  0048:  RET       r1                          ; return upper:r1
-  0049:  JMP       @0050                       ; -> @0050
-  0050:  JMP       @0051                       ; -> @0051
-  0051:  JMP       @0052                       ; -> @0052
+  0043:  LDC         r1, #12                             ; upper:r1 = "ok"
+  0044:  KILL_REF    r2                                  ; lower:r2 = null (GC)
+  0045:  KILL_REF    r3                                  ; r3 = null (GC)
+  0046:  KILL_REF    r4                                  ; r4 = null (GC)
+  0047:  KILL_REF    r5                                  ; r5 = null (GC)
+  0048:  RET         r1                                  ; return upper:r1
+  0049:  JMP         @0050                               ; -> @0050
+  0050:  JMP         @0051                               ; -> @0051
+  0051:  JMP         @0052                               ; -> @0052
   ;
   ; line 27  return "error";
-  0052:  LDC       r1, #13                     ; upper:r1 = "error"
-  0053:  KILL_REF  r2                          ; lower:r2 = null (GC)
-  0054:  KILL_REF  r3                          ; r3 = null (GC)
-  0055:  KILL_REF  r4                          ; r4 = null (GC)
-  0056:  KILL_REF  r5                          ; r5 = null (GC)
-  0057:  RET       r1                          ; return upper:r1
+  0052:  LDC         r1, #13                             ; upper:r1 = "error"
+  0053:  KILL_REF    r2                                  ; lower:r2 = null (GC)
+  0054:  KILL_REF    r3                                  ; r3 = null (GC)
+  0055:  KILL_REF    r4                                  ; r4 = null (GC)
+  0056:  KILL_REF    r5                                  ; r5 = null (GC)
+  0057:  RET         r1                                  ; return upper:r1
 
 
 ; Exception Table

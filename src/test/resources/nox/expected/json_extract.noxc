@@ -24,31 +24,31 @@
 .func main
   ;
   ; line 3  json data = { value: 42, str: "hello", arr: [1,2,3] };
-  0000:  NEW_OBJ   r1                          ; data:r1 = {}
-  0001:  LDI       p0, 42                      ; p0 = 42
-  0002:  OBJ_SET   SET_INT, r1, "value", p0    ; data:r1.value = p0
-  0003:  LDC       r2, #1                      ; r2 = "hello"
-  0004:  OBJ_SET   SET_STR, r1, "str", r2      ; data:r1.str = r2
-  0005:  NEW_ARRAY r2                          ; r2 = []
-  0006:  LDI       p0, 1                       ; p0 = 1
-  0007:  ARR_PUSH  SET_INT, r2, p0             ; r2.push(p0)
-  0008:  LDI       p0, 2                       ; p0 = 2
-  0009:  ARR_PUSH  SET_INT, r2, p0             ; r2.push(p0)
-  0010:  LDI       p0, 3                       ; p0 = 3
-  0011:  ARR_PUSH  SET_INT, r2, p0             ; r2.push(p0)
-  0012:  OBJ_SET   SET_INT, r1, "arr", p2      ; data:r1.arr = p2
+  0000:  NEW_OBJ     r1                                  ; data:r1 = {}
+  0001:  LDI         p0, 42                              ; p0 = 42
+  0002:  OBJ_SET     SET_INT, r1, "value", p0            ; data:r1.value = p0
+  0003:  LDC         r2, #1                              ; r2 = "hello"
+  0004:  OBJ_SET     SET_STR, r1, "str", r2              ; data:r1.str = r2
+  0005:  NEW_ARRAY   r2                                  ; r2 = []
+  0006:  LDI         p0, 1                               ; p0 = 1
+  0007:  ARR_PUSH    SET_INT, r2, p0                     ; r2.push(p0)
+  0008:  LDI         p0, 2                               ; p0 = 2
+  0009:  ARR_PUSH    SET_INT, r2, p0                     ; r2.push(p0)
+  0010:  LDI         p0, 3                               ; p0 = 3
+  0011:  ARR_PUSH    SET_INT, r2, p0                     ; r2.push(p0)
+  0012:  OBJ_SET     SET_INT, r1, "arr", p2              ; data:r1.arr = p2
   ;
   ; line 4  return data.getInt("value", 0);
-  0013:  MOVR      r3, r1                      ; r3 = data:r1
-  0014:  LDC       r4, #0                      ; r4 = "value"
-  0015:  LDI       p2, 0                       ; p2 = 0
-  0016:  SCALL     __json_getInt, p1, r3       ; p1 = scall __json_getInt(p2..., r3...)
-  0017:  MOV       p0, p1                      ; p0 = p1
-  0018:  KILL_REF  r1                          ; data:r1 = null (GC)
-  0019:  KILL_REF  r2                          ; r2 = null (GC)
-  0020:  KILL_REF  r3                          ; r3 = null (GC)
-  0021:  KILL_REF  r4                          ; r4 = null (GC)
-  0022:  RET       p0                          ; return p0
+  0013:  MOVR        r3, r1                              ; r3 = data:r1
+  0014:  LDC         r4, #0                              ; r4 = "value"
+  0015:  LDI         p2, 0                               ; p2 = 0
+  0016:  SCALL       __json_getInt, p1, r3               ; p1 = scall __json_getInt(p2..., r3...)
+  0017:  MOV         p0, p1                              ; p0 = p1
+  0018:  KILL_REF    r1                                  ; data:r1 = null (GC)
+  0019:  KILL_REF    r2                                  ; r2 = null (GC)
+  0020:  KILL_REF    r3                                  ; r3 = null (GC)
+  0021:  KILL_REF    r4                                  ; r4 = null (GC)
+  0022:  RET         p0                                  ; return p0
 
 
 ; Exception Table

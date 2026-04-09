@@ -1,7 +1,5 @@
 package nox.compiler.ast.typed
 
-import nox.compiler.types.* 
-
 import nox.compiler.types.*
 
 /**
@@ -17,9 +15,7 @@ import nox.compiler.types.*
 sealed class TypedExpr(
     val loc: SourceLocation,
     val type: TypeRef,
-) {
-
-}
+)
 
 // Literals
 
@@ -96,8 +92,7 @@ class TypedArrayLiteralExpr(
     loc: SourceLocation,
     type: TypeRef,
     val elementType: TypeRef,
-) : TypedExpr(loc, type) {
-}
+) : TypedExpr(loc, type)
 
 /**
  * Struct literal: `{ x: 1, y: 2 }`
@@ -108,8 +103,7 @@ class TypedStructLiteralExpr(
     val fields: List<TypedFieldInit>,
     loc: SourceLocation,
     type: TypeRef,
-) : TypedExpr(loc, type) {
-}
+) : TypedExpr(loc, type)
 
 /**
  * A single field initializer within a struct literal.
@@ -168,8 +162,7 @@ class TypedIdentifierExpr(
     loc: SourceLocation,
     type: TypeRef,
     val resolvedSymbol: Symbol,
-) : TypedExpr(loc, type) {
-}
+) : TypedExpr(loc, type)
 
 /**
  * Function call: `func(args)`
@@ -182,8 +175,7 @@ class TypedFuncCallExpr(
     loc: SourceLocation,
     type: TypeRef,
     val resolvedFunction: FuncSymbol,
-) : TypedExpr(loc, type) {
-}
+) : TypedExpr(loc, type)
 
 /**
  * Method call: `target.method(args)`
@@ -206,7 +198,6 @@ class TypedMethodCallExpr(
         TYPE_BOUND,
         NAMESPACE,
     }
-
 }
 
 /** Field access: `target.field` */

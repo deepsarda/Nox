@@ -250,6 +250,44 @@ Linker throws:
 └────────────────────────────────────────────────────────────────┘
 ```
  
+## Tier 1 External Plugins & The Opaque Context Pointer
+
+For Tier 1 plugins (shared C libraries), the FFI bridge automatically injects an opaque context pointer as the **first parameter** to every C function. This allows C code to execute callbacks back into the JVM sandbox safely.
+
+### The `NoxContext` Struct
+
+When the JVM calls a Tier 1 C function, it allocates a scoped memory segment representing a `NoxContext` struct and passes it as `void*`. The C plugin can cast this pointer and use the provided function pointers.
+
+```c
+struct NoxContext {
+    int64_t internal_id;                                       // Identifier for the sandbox context
+    void (*yield_func)(int64_t internal_id, const char* data); // Upcall to JVM's yield
+};
+```
+
+### Performing an Upcall
+
+The C function can use the struct to communicate with the Host:
+
+```c
+const char* process_data(void* ctx_ptr, const char* input) {
+    struct NoxContext* ctx = (struct NoxContext*)ctx_ptr;
+    
+    // Check if the context and upcall function are available
+    if (ctx && ctx->yield_func) {
+        // Suspend C execution, jump into Kotlin, execute yield, then resume C
+        ctx->yield_func(ctx->internal_id, "Processing started...");
+    }
+
+    // ... handle input
+    return "done";
+}
+```
+
+### How the JVM Handles the Upcall
+
+The `ExternalPluginBridge` uses `Linker.nativeLinker().upcallStub()` to generate an executable C function pointer for `yield_func`. When the C code calls it, the JVM executes a static method (`yieldUpcall`), looks up the active `RuntimeContext` via the `internal_id`, and dispatches the call to the sandbox's listener.
+
 ## Next Steps
 
 - [**Plugin Development Guide**](plugin-guide.md)

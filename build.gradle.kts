@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.ksp)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.kover)
     antlr
@@ -57,8 +58,7 @@ dependencies {
     // Kotlin reflection: used by plugin system for annotation scanning and MethodHandle linking
     implementation(libs.kotlin.reflect)
 
-    // ClassGraph: fast classpath scanner for auto-discovering @NoxModule plugins
-    implementation(libs.classgraph)
+    ksp(project(":nox-ksp"))
 
     // Kotlin coroutines: used for lightweight Sandbox execution (each Sandbox is a coroutine)
     implementation(libs.coroutines.core)
@@ -144,7 +144,7 @@ tasks.test {
         showStandardStreams = false
     }
     // Enable virtual threads for coroutine tests (JVM 21+)
-    jvmArgs("-XX:+EnableDynamicAgentLoading")
+    jvmArgs("-XX:+EnableDynamicAgentLoading", "--enable-preview")
 }
 
 // ktlint, exclude ANTLR-generated Java (not our code)
@@ -183,6 +183,7 @@ tasks.register<JavaExec>("noxc") {
 
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("nox.compiler.NoxcApp")
+    jvmArgs("--enable-preview")
 
     // Pass the file argument from the command line property 'file'
     if (project.hasProperty("file")) {

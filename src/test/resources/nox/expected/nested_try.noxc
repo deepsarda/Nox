@@ -22,38 +22,38 @@
 .func main
   ;
   ; line 5  throw "boom";
-  0000:  LDC       r1, #0                      ; r1 = "boom"
-  0001:  THROW     r1                          ; throw r1
-  0002:  KILL_REF  r1                          ; r1 = null (GC)
-  0003:  JMP       @0012                       ; -> end
+  0000:  LDC         r1, #0                              ; r1 = "boom"
+  0001:  THROW       r1                                  ; throw r1
+  0002:  KILL_REF    r1                                  ; r1 = null (GC)
+  0003:  JMP         @0012                               ; -> end
   ;
   ; line 7  return "inner";
   .catch_InnerError:
-  0004:  LDC       r2, #1                      ; r2 = "inner"
-  0005:  KILL_REF  r1                          ; e:r1 = null (GC)
-  0006:  RET       r2                          ; return r2
-  0007:  JMP       @0012                       ; -> end
+  0004:  LDC         r2, #1                              ; r2 = "inner"
+  0005:  KILL_REF    r1                                  ; e:r1 = null (GC)
+  0006:  RET         r2                                  ; return r2
+  0007:  JMP         @0012                               ; -> end
   ;
   ; line 9  return "inner";
   .catch_all:
-  0008:  LDC       r2, #1                      ; r2 = "inner"
-  0009:  KILL_REF  r1                          ; err:r1 = null (GC)
-  0010:  RET       r2                          ; return r2
-  0011:  JMP       @0012                       ; -> end
+  0008:  LDC         r2, #1                              ; r2 = "inner"
+  0009:  KILL_REF    r1                                  ; err:r1 = null (GC)
+  0010:  RET         r2                                  ; return r2
+  0011:  JMP         @0012                               ; -> end
   .end:
-  0012:  KILL_REF  r1                          ; err:r1 = null (GC)
-  0013:  KILL_REF  r2                          ; r2 = null (GC)
-  0014:  JMP       @0019                       ; -> end
+  0012:  KILL_REF    r1                                  ; err:r1 = null (GC)
+  0013:  KILL_REF    r2                                  ; r2 = null (GC)
+  0014:  JMP         @0019                               ; -> end
   ;
   ; line 12  return "outer";
   .catch_all:
-  0015:  LDC       r2, #2                      ; r2 = "outer"
-  0016:  KILL_REF  r1                          ; err:r1 = null (GC)
-  0017:  RET       r2                          ; return r2
-  0018:  JMP       @0019                       ; -> end
+  0015:  LDC         r2, #2                              ; r2 = "outer"
+  0016:  KILL_REF    r1                                  ; err:r1 = null (GC)
+  0017:  RET         r2                                  ; return r2
+  0018:  JMP         @0019                               ; -> end
   .end:
-  0019:  KILL_REF  r1                          ; err:r1 = null (GC)
-  0020:  KILL_REF  r2                          ; r2 = null (GC)
+  0019:  KILL_REF    r1                                  ; err:r1 = null (GC)
+  0020:  KILL_REF    r2                                  ; r2 = null (GC)
 
 
 ; Exception Table

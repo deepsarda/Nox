@@ -37,129 +37,129 @@
 .func main
   ;
   ; line 4  string log = "ERROR 192.168.1.1 Failed\nINFO 10.0.0.1 Started";
-  0000:  LDC       r1, #0                      ; log:r1 = "ERROR 192.168.1.1 Failed\nINFO 10.0.0.1 Started"
+  0000:  LDC         r1, #0                              ; log:r1 = "ERROR 192.168.1.1 Failed\nINFO 10.0.0.1 Started"
   ;
   ; line 5  string[] lines = log.split("\n");
-  0001:  MOVR      r4, r1                      ; r4 = log:r1
-  0002:  LDC       r5, #1                      ; r5 = "\n"
-  0003:  SCALL     __string_split, p0, r3      ; r3 = scall __string_split(p0..., r4...)
-  0004:  MOVR      r2, r3                      ; lines:r2 = r3
+  0001:  MOVR        r4, r1                              ; r4 = log:r1
+  0002:  LDC         r5, #1                              ; r5 = "\n"
+  0003:  SCALL       __string_split, p0, r3              ; r3 = scall __string_split(p0..., r4...)
+  0004:  MOVR        r2, r3                              ; lines:r2 = r3
   ;
   ; line 7  int errCount = 0;
-  0005:  LDI       p0, 0                       ; errCount:p0 = 0
+  0005:  LDI         p0, 0                               ; errCount:p0 = 0
   ;
   ; line 8  int infoCount = 0;
-  0006:  LDI       p1, 0                       ; infoCount:p1 = 0
+  0006:  LDI         p1, 0                               ; infoCount:p1 = 0
   ;
   ; line 9  string lastIp = "";
-  0007:  LDC       r1, #3                      ; lastIp:r1 = ""
+  0007:  LDC         r1, #3                              ; lastIp:r1 = ""
   ;
   ; line 11  foreach (string line in lines) {
-  0008:  MOVR      r3, r2                      ; r3 = lines:r2
-  0009:  LDI       p2, 0                       ; p2 = 0
-  0010:  MOVR      r4, r3                      ; r4 = r3
-  0011:  SCALL     __T[]_length!string, p5, r4 ; p5 = scall __T[]_length!string(p6..., r4...)
-  0012:  MOV       p3, p5                      ; p3 = p5
+  0008:  MOVR        r3, r2                              ; r3 = lines:r2
+  0009:  LDI         p2, 0                               ; p2 = 0
+  0010:  MOVR        r4, r3                              ; r4 = r3
+  0011:  SCALL       __T[]_length!string, p5, r4         ; p5 = scall __T[]_length!string(p6..., r4...)
+  0012:  MOV         p3, p5                              ; p3 = p5
   .loop_start_1:
-  0013:  ILT       p4, p2, p3                  ; p4 = p2 < p3
-  0014:  JIF       p4, @0044                   ; if p4==0 -> loop_exit_1
-  0015:  AGET_IDX  r2, r3, p2                  ; line:r2 = r3[p2]
+  0013:  ILT         p4, p2, p3                          ; p4 = p2 < p3
+  0014:  JIF         p4, @0044                           ; if p4==0 -> loop_exit_1
+  0015:  AGET_IDX    r2, r3, p2                          ; line:r2 = r3[p2]
   ;
   ; line 12  if (line.contains("ERROR")) {
-  0016:  MOVR      r4, r2                      ; r4 = line:r2
-  0017:  LDC       r5, #5                      ; r5 = "ERROR"
-  0018:  SCALL     __string_contains, p6, r4   ; p6 = scall __string_contains(p7..., r4...)
-  0019:  MOV       p5, p6                      ; p5 = p6
-  0020:  JIF       p5, @0032                   ; if p5==0 -> @0032
+  0016:  MOVR        r4, r2                              ; r4 = line:r2
+  0017:  LDC         r5, #5                              ; r5 = "ERROR"
+  0018:  SCALL       __string_contains, p6, r4           ; p6 = scall __string_contains(p7..., r4...)
+  0019:  MOV         p5, p6                              ; p5 = p6
+  0020:  JIF         p5, @0032                           ; if p5==0 -> @0032
   ;
   ; line 13  errCount = errCount + 1;
-  0021:  LDI       p5, 1                       ; p5 = 1
-  0022:  IADD      p0, p0, p5                  ; errCount:p0 = errCount:p0 + p5
+  0021:  LDI         p5, 1                               ; p5 = 1
+  0022:  IADD        p0, p0, p5                          ; errCount:p0 = errCount:p0 + p5
   ;
   ; line 14  lastIp = line.split(" ")[1];
-  0023:  MOVR      r6, r2                      ; r6 = line:r2
-  0024:  LDC       r7, #7                      ; r7 = " "
-  0025:  SCALL     __string_split, p6, r5      ; r5 = scall __string_split(p6..., r6...)
-  0026:  MOVR      r4, r5                      ; r4 = r5
-  0027:  LDI       p5, 1                       ; p5 = 1
-  0028:  AGET_IDX  r1, r4, p5                  ; lastIp:r1 = r4[p5]
-  0029:  KILL_REF  r6                          ; r6 = null (GC)
-  0030:  KILL_REF  r7                          ; r7 = null (GC)
-  0031:  JMP       @0040                       ; -> @0040
+  0023:  MOVR        r6, r2                              ; r6 = line:r2
+  0024:  LDC         r7, #7                              ; r7 = " "
+  0025:  SCALL       __string_split, p6, r5              ; r5 = scall __string_split(p6..., r6...)
+  0026:  MOVR        r4, r5                              ; r4 = r5
+  0027:  LDI         p5, 1                               ; p5 = 1
+  0028:  AGET_IDX    r1, r4, p5                          ; lastIp:r1 = r4[p5]
+  0029:  KILL_REF    r6                                  ; r6 = null (GC)
+  0030:  KILL_REF    r7                                  ; r7 = null (GC)
+  0031:  JMP         @0040                               ; -> @0040
   ;
   ; line 15  } else if (line.contains("INFO")) {
-  0032:  MOVR      r5, r2                      ; r5 = line:r2
-  0033:  LDC       r6, #8                      ; r6 = "INFO"
-  0034:  SCALL     __string_contains, p6, r5   ; p6 = scall __string_contains(p7..., r5...)
-  0035:  MOV       p5, p6                      ; p5 = p6
-  0036:  JIF       p5, @0040                   ; if p5==0 -> @0040
+  0032:  MOVR        r5, r2                              ; r5 = line:r2
+  0033:  LDC         r6, #8                              ; r6 = "INFO"
+  0034:  SCALL       __string_contains, p6, r5           ; p6 = scall __string_contains(p7..., r5...)
+  0035:  MOV         p5, p6                              ; p5 = p6
+  0036:  JIF         p5, @0040                           ; if p5==0 -> @0040
   ;
   ; line 16  infoCount = infoCount + 1;
-  0037:  LDI       p5, 1                       ; p5 = 1
-  0038:  IADD      p1, p1, p5                  ; infoCount:p1 = infoCount:p1 + p5
-  0039:  JMP       @0040                       ; -> @0040
-  0040:  KILL_REF  r6                          ; r6 = null (GC)
-  0041:  KILL_REF  r7                          ; r7 = null (GC)
+  0037:  LDI         p5, 1                               ; p5 = 1
+  0038:  IADD        p1, p1, p5                          ; infoCount:p1 = infoCount:p1 + p5
+  0039:  JMP         @0040                               ; -> @0040
+  0040:  KILL_REF    r6                                  ; r6 = null (GC)
+  0041:  KILL_REF    r7                                  ; r7 = null (GC)
   ;
   ; line 11  foreach (string line in lines) {
   .loop_update_1:
-  0042:  IINC      p2                          ; p2 = p2 + 1
-  0043:  JMP       @0013                       ; -> loop_start_1
+  0042:  IINC        p2                                  ; p2 = p2 + 1
+  0043:  JMP         @0013                               ; -> loop_start_1
   ;
   ; line 20  json result = Json.parse("{}");
   .loop_exit_1:
-  0044:  LDC       r6, #9                      ; r6 = "{}"
-  0045:  SCALL     Json__parse, p6, r5         ; r5 = scall Json__parse(p6..., r6...)
-  0046:  MOVR      r3, r5                      ; result:r3 = r5
+  0044:  LDC         r6, #9                              ; r6 = "{}"
+  0045:  SCALL       Json__parse, p6, r5                 ; r5 = scall Json__parse(p6..., r6...)
+  0046:  MOVR        r3, r5                              ; result:r3 = r5
   ;
   ; line 21  result.setInt("errors", errCount);
-  0047:  MOVR      r5, r3                      ; r5 = result:r3
-  0048:  LDC       r6, #11                     ; r6 = "errors"
-  0049:  MOV       p6, p0                      ; p6 = errCount:p0
-  0050:  SCALL     __json_setInt, p6, r5       ; scall __json_setInt(p6..., r5...)
+  0047:  MOVR        r5, r3                              ; r5 = result:r3
+  0048:  LDC         r6, #11                             ; r6 = "errors"
+  0049:  MOV         p6, p0                              ; p6 = errCount:p0
+  0050:  SCALL       __json_setInt, p6, r5               ; scall __json_setInt(p6..., r5...)
   ;
   ; line 22  result.setInt("infos", infoCount);
-  0051:  MOVR      r5, r3                      ; r5 = result:r3
-  0052:  LDC       r6, #13                     ; r6 = "infos"
-  0053:  MOV       p6, p1                      ; p6 = infoCount:p1
-  0054:  SCALL     __json_setInt, p6, r5       ; scall __json_setInt(p6..., r5...)
+  0051:  MOVR        r5, r3                              ; r5 = result:r3
+  0052:  LDC         r6, #13                             ; r6 = "infos"
+  0053:  MOV         p6, p1                              ; p6 = infoCount:p1
+  0054:  SCALL       __json_setInt, p6, r5               ; scall __json_setInt(p6..., r5...)
   ;
   ; line 24  if (result.getInt("errors", 0) == 1) {
-  0055:  MOVR      r5, r3                      ; r5 = result:r3
-  0056:  LDC       r6, #11                     ; r6 = "errors"
-  0057:  LDI       p7, 0                       ; p7 = 0
-  0058:  SCALL     __json_getInt, p6, r5       ; p6 = scall __json_getInt(p7..., r5...)
-  0059:  MOV       p0, p6                      ; errCount:p0 = p6
-  0060:  LDI       p2, 1                       ; p2 = 1
-  0061:  IEQ       p1, p0, p2                  ; infoCount:p1 = errCount:p0 == p2
-  0062:  JIF       p1, @0076                   ; if infoCount:p1==0 -> @0076
+  0055:  MOVR        r5, r3                              ; r5 = result:r3
+  0056:  LDC         r6, #11                             ; r6 = "errors"
+  0057:  LDI         p7, 0                               ; p7 = 0
+  0058:  SCALL       __json_getInt, p6, r5               ; p6 = scall __json_getInt(p7..., r5...)
+  0059:  MOV         p0, p6                              ; errCount:p0 = p6
+  0060:  LDI         p2, 1                               ; p2 = 1
+  0061:  IEQ         p1, p0, p2                          ; infoCount:p1 = errCount:p0 == p2
+  0062:  JIF         p1, @0076                           ; if infoCount:p1==0 -> @0076
   ;
   ; line 25  if (lastIp == "192.168.1.1") {
-  0063:  LDC       r3, #15                     ; result:r3 = "192.168.1.1"
-  0064:  SEQ       p1, r1, r3                  ; infoCount:p1 = lastIp:r1 == result:r3
-  0065:  JIF       p1, @0075                   ; if infoCount:p1==0 -> @0075
+  0063:  LDC         r3, #15                             ; result:r3 = "192.168.1.1"
+  0064:  SEQ         p1, r1, r3                          ; infoCount:p1 = lastIp:r1 == result:r3
+  0065:  JIF         p1, @0075                           ; if infoCount:p1==0 -> @0075
   ;
   ; line 26  return "ok";
-  0066:  LDC       r1, #16                     ; lastIp:r1 = "ok"
-  0067:  KILL_REF  r2                          ; line:r2 = null (GC)
-  0068:  KILL_REF  r3                          ; result:r3 = null (GC)
-  0069:  KILL_REF  r4                          ; r4 = null (GC)
-  0070:  KILL_REF  r5                          ; r5 = null (GC)
-  0071:  KILL_REF  r6                          ; r6 = null (GC)
-  0072:  KILL_REF  r7                          ; r7 = null (GC)
-  0073:  RET       r1                          ; return lastIp:r1
-  0074:  JMP       @0075                       ; -> @0075
-  0075:  JMP       @0076                       ; -> @0076
+  0066:  LDC         r1, #16                             ; lastIp:r1 = "ok"
+  0067:  KILL_REF    r2                                  ; line:r2 = null (GC)
+  0068:  KILL_REF    r3                                  ; result:r3 = null (GC)
+  0069:  KILL_REF    r4                                  ; r4 = null (GC)
+  0070:  KILL_REF    r5                                  ; r5 = null (GC)
+  0071:  KILL_REF    r6                                  ; r6 = null (GC)
+  0072:  KILL_REF    r7                                  ; r7 = null (GC)
+  0073:  RET         r1                                  ; return lastIp:r1
+  0074:  JMP         @0075                               ; -> @0075
+  0075:  JMP         @0076                               ; -> @0076
   ;
   ; line 29  return "error";
-  0076:  LDC       r1, #17                     ; lastIp:r1 = "error"
-  0077:  KILL_REF  r2                          ; line:r2 = null (GC)
-  0078:  KILL_REF  r3                          ; result:r3 = null (GC)
-  0079:  KILL_REF  r4                          ; r4 = null (GC)
-  0080:  KILL_REF  r5                          ; r5 = null (GC)
-  0081:  KILL_REF  r6                          ; r6 = null (GC)
-  0082:  KILL_REF  r7                          ; r7 = null (GC)
-  0083:  RET       r1                          ; return lastIp:r1
+  0076:  LDC         r1, #17                             ; lastIp:r1 = "error"
+  0077:  KILL_REF    r2                                  ; line:r2 = null (GC)
+  0078:  KILL_REF    r3                                  ; result:r3 = null (GC)
+  0079:  KILL_REF    r4                                  ; r4 = null (GC)
+  0080:  KILL_REF    r5                                  ; r5 = null (GC)
+  0081:  KILL_REF    r6                                  ; r6 = null (GC)
+  0082:  KILL_REF    r7                                  ; r7 = null (GC)
+  0083:  RET         r1                                  ; return lastIp:r1
 
 
 ; Exception Table

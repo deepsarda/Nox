@@ -20,14 +20,14 @@
 .func main
   ;
   ; line 3  int max = 9223372036854775807;
-  0000:  LDC       p0, #0                      ; max:p0 = 9223372036854775807
+  0000:  LDC         p0, #0                              ; max:p0 = 9223372036854775807
   ;
   ; line 4  int overflow = max + 1;
-  0001:  LDI       p1, 1                       ; overflow:p1 = 1
-  0002:  IADD      p1, p0, p1                  ; overflow:p1 = max:p0 + overflow:p1
+  0001:  LDI         p1, 1                               ; overflow:p1 = 1
+  0002:  IADD        p1, p0, p1                          ; overflow:p1 = max:p0 + overflow:p1
   ;
   ; line 5  return overflow;
-  0003:  RET       p1                          ; return overflow:p1
+  0003:  RET         p1                                  ; return overflow:p1
 
 
 ; Exception Table

@@ -5,6 +5,7 @@ import nox.compiler.NoxCompiler
 import nox.plugin.LibraryRegistry
 import nox.vm.ExecutionConfig
 import nox.vm.NoxVM
+import nox.vm.NoxException
 import java.time.Duration
 
 /**
@@ -17,6 +18,7 @@ class NoxRuntime private constructor(
     private val registry: LibraryRegistry,
     private val permissionHandler: (suspend (PermissionRequest) -> PermissionResponse)?,
     private val resourceHandler: (suspend (ResourceRequest) -> ResourceResponse)?,
+    private val onYieldCallback: ((String) -> Unit)? = null,
 ) {
     fun execute(
         source: String,
@@ -25,7 +27,7 @@ class NoxRuntime private constructor(
         if (source.isBlank()) {
             return NoxResult.Error(NoxError.CompilationError, "Empty source", emptyList())
         }
-        val result = NoxCompiler.compile(source, fileName)
+        val result = NoxCompiler.compile(source, fileName, registry = registry)
         if (result.errors.hasErrors()) {
             return NoxResult.Error(NoxError.CompilationError, result.errors.formatAll(), emptyList())
         }
@@ -33,9 +35,14 @@ class NoxRuntime private constructor(
             result.compiledProgram
                 ?: return NoxResult.Error(NoxError.CompilationError, "No compiled output", emptyList())
 
+        val yields = mutableListOf<String>()
+
         val ctx =
             object : RuntimeContext {
-                override fun yield(data: String) { /* collected by VM */ }
+                override fun yield(data: String) {
+                    yields.add(data)
+                    onYieldCallback?.invoke(data)
+                }
 
                 override fun returnResult(data: String) { /* collected by VM */ }
 
@@ -49,7 +56,13 @@ class NoxRuntime private constructor(
             }
 
         val vm = NoxVM(compiled, ctx, registry, config)
-        return runBlocking { vm.execute() }
+        
+        return try {
+            val ret = runBlocking { vm.execute() }
+            NoxResult.Success(ret, yields)
+        } catch (e: NoxException) {
+            NoxResult.Error(e.type, e.message, yields)
+        }
     }
 
     class Builder {
@@ -57,12 +70,15 @@ class NoxRuntime private constructor(
         private var registry = LibraryRegistry.createDefault()
         private var permissionHandler: (suspend (PermissionRequest) -> PermissionResponse)? = null
         private var resourceHandler: (suspend (ResourceRequest) -> ResourceResponse)? = null
+        private var onYieldCallback: ((String) -> Unit)? = null
 
         fun maxInstructions(n: Long) = apply { config = config.copy(maxInstructions = n) }
 
         fun maxExecutionTime(d: Duration) = apply { config = config.copy(maxExecutionTime = d) }
 
         fun maxCallDepth(n: Int) = apply { config = config.copy(maxCallDepth = n) }
+
+        fun withRegistry(r: LibraryRegistry) = apply { registry = r }
 
         fun registerModule(instance: Any) = apply { registry.registerModule(instance) }
 
@@ -72,7 +88,9 @@ class NoxRuntime private constructor(
         fun setResourceHandler(handler: suspend (ResourceRequest) -> ResourceResponse) =
             apply { resourceHandler = handler }
 
-        fun build() = NoxRuntime(config, registry, permissionHandler, resourceHandler)
+        fun onYield(callback: (String) -> Unit) = apply { onYieldCallback = callback }
+
+        fun build() = NoxRuntime(config, registry, permissionHandler, resourceHandler, onYieldCallback)
     }
 
     companion object {

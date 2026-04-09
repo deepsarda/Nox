@@ -27,7 +27,15 @@ class TypeResolver(
             DeclarationCollector(moduleScope, errors).collect(module.program)
             val (typedModProgram, deps) = TypeResolver(moduleScope, errors, registry = registry).resolve(module.program)
             typedModules.addAll(deps)
-            typedModules.add(TypedModule(module.namespace, module.sourcePath, typedModProgram, module.globalBaseOffset, module.globalCount))
+            typedModules.add(
+                TypedModule(
+                    module.namespace,
+                    module.sourcePath,
+                    typedModProgram,
+                    module.globalBaseOffset,
+                    module.globalCount,
+                ),
+            )
         }
 
         val typedDecls = mutableListOf<TypedDecl>()
@@ -45,12 +53,13 @@ class TypeResolver(
 
         val typedImports = program.imports.map { resolveImportDecl(it) }
 
-        val typedProgram = TypedProgram(
-            fileName = program.fileName,
-            headers = program.headers.map { TypedHeader(it.key, it.value, it.loc) },
-            imports = typedImports,
-            declarations = typedDecls
-        )
+        val typedProgram =
+            TypedProgram(
+                fileName = program.fileName,
+                headers = program.headers.map { TypedHeader(it.key, it.value, it.loc) },
+                imports = typedImports,
+                declarations = typedDecls,
+            )
         typedProgram.typesByName.putAll(typedDecls.filterIsInstance<TypedTypeDef>().associateBy { it.name })
         typedProgram.functionsByName.putAll(typedDecls.filterIsInstance<TypedFuncDef>().associateBy { it.name })
         typedProgram.globals.addAll(typedDecls.filterIsInstance<TypedGlobalVarDecl>())
@@ -79,8 +88,10 @@ class TypeResolver(
                 val candidates = globalScope.allNamesInScope { it is TypeSymbol }
                 val suggestion =
                     DiagnosticHelpers.didYouMeanMsg(field.type.name, candidates)
-                        ?: ("Declare the type first with 'type ${field.type.name} { ... }' " +
-                            "or use a built-in type (int, double, boolean, string, json)")
+                        ?: (
+                            "Declare the type first with 'type ${field.type.name} { ... }' " +
+                                "or use a built-in type (int, double, boolean, string, json)"
+                        )
                 errors.report(
                     field.loc,
                     "Unknown type '${field.type}' for field '${field.name}' in struct '${typeDef.name}'",

@@ -21,25 +21,25 @@
   ; params: p1=n
   ;
   ; line 3  if (n <= 1) {
-  0000:  LDI       p3, 1                       ; p3 = 1
-  0001:  ILE       p2, p1, p3                  ; p2 = n:p1 <= p3
-  0002:  JIF       p2, @0005                   ; if p2==0 -> @0005
+  0000:  LDI         p3, 1                               ; p3 = 1
+  0001:  ILE         p2, p1, p3                          ; p2 = n:p1 <= p3
+  0002:  JIF         p2, @0005                           ; if p2==0 -> @0005
   ;
   ; line 4  return n;
-  0003:  RET       p1                          ; return n:p1
-  0004:  JMP       @0005                       ; -> @0005
+  0003:  RET         p1                                  ; return n:p1
+  0004:  JMP         @0005                               ; -> @0005
   ;
   ; line 6  return fib(n - 1) + fib(n - 2);
-  0005:  LDI       p5, 1                       ; p5 = 1
-  0006:  ISUB      p5, p1, p5                  ; p5 = n:p1 - p5
-  0007:  CALL      fib, p4, r0                 ; p4 = call fib(p5..., r0...)
-  0008:  MOV       p3, p4                      ; p3 = p4
-  0009:  LDI       p5, 2                       ; p5 = 2
-  0010:  ISUB      p5, p1, p5                  ; p5 = n:p1 - p5
-  0011:  CALL      fib, p4, r0                 ; p4 = call fib(p5..., r0...)
-  0012:  MOV       p2, p4                      ; p2 = p4
-  0013:  IADD      p2, p3, p2                  ; p2 = p3 + p2
-  0014:  RET       p2                          ; return p2
+  0005:  LDI         p5, 1                               ; p5 = 1
+  0006:  ISUB        p5, p1, p5                          ; p5 = n:p1 - p5
+  0007:  CALL        fib, p4, r0                         ; p4 = call fib(p5..., r0...)
+  0008:  MOV         p3, p4                              ; p3 = p4
+  0009:  LDI         p5, 2                               ; p5 = 2
+  0010:  ISUB        p5, p1, p5                          ; p5 = n:p1 - p5
+  0011:  CALL        fib, p4, r0                         ; p4 = call fib(p5..., r0...)
+  0012:  MOV         p2, p4                              ; p2 = p4
+  0013:  IADD        p2, p3, p2                          ; p2 = p3 + p2
+  0014:  RET         p2                                  ; return p2
 
 ;  Function: main
 ;    Entry PC:   15
@@ -49,10 +49,10 @@
 .func main
   ;
   ; line 10  return fib(10);
-  0015:  LDI       p2, 10                      ; p2 = 10
-  0016:  CALL      fib, p1, r1                 ; p1 = call fib(p2..., r1...)
-  0017:  MOV       p0, p1                      ; p0 = p1
-  0018:  RET       p0                          ; return p0
+  0015:  LDI         p2, 10                              ; p2 = 10
+  0016:  CALL        fib, p1, r1                         ; p1 = call fib(p2..., r1...)
+  0017:  MOV         p0, p1                              ; p0 = p1
+  0018:  RET         p0                                  ; return p0
 
 
 ; Exception Table

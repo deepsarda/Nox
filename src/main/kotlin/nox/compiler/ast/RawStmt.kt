@@ -25,9 +25,7 @@ class RawVarDeclStmt(
     val name: String,
     val initializer: RawExpr,
     loc: SourceLocation,
-) : RawStmt(loc) {
-
-}
+) : RawStmt(loc)
 
 // Assignment & Mutation
 
@@ -107,8 +105,7 @@ class RawForEachStmt(
     val iterable: RawExpr,
     val body: RawBlock,
     loc: SourceLocation,
-) : RawStmt(loc) {
-}
+) : RawStmt(loc)
 
 // Jumps
 
@@ -185,8 +182,7 @@ class RawExprStmt(
 class RawBlock(
     val statements: List<RawStmt>,
     loc: SourceLocation,
-) : RawStmt(loc) {
-}
+) : RawStmt(loc)
 
 /** Placeholder for invalid or un-parseable statements. */
 class RawErrorStmt(

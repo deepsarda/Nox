@@ -13,11 +13,18 @@ import nox.compiler.types.SourceLocation
  * drop nodes, duplicate nodes, or invent new structural nodes without retaining
  * correct source mappings.
  */
-class TreeValidator(private val errors: CompilerErrors) {
-
-    fun validate(raw: RawProgram, typed: TypedProgram) {
+class TreeValidator(
+    private val errors: CompilerErrors,
+) {
+    fun validate(
+        raw: RawProgram,
+        typed: TypedProgram,
+    ) {
         if (raw.declarations.size != typed.declarations.size) {
-            errors.report(SourceLocation("", 0, 0), "AST mismatch: RawProgram has ${raw.declarations.size} declarations, TypedProgram has ${typed.declarations.size}")
+            errors.report(
+                SourceLocation("", 0, 0),
+                "AST mismatch: RawProgram has ${raw.declarations.size} declarations, TypedProgram has ${typed.declarations.size}",
+            )
             return
         }
 
@@ -26,9 +33,15 @@ class TreeValidator(private val errors: CompilerErrors) {
         }
     }
 
-    private fun validateDecl(raw: RawDecl, typed: TypedDecl) {
+    private fun validateDecl(
+        raw: RawDecl,
+        typed: TypedDecl,
+    ) {
         if (raw.loc != typed.loc) {
-            errors.report(raw.loc, "AST SourceLocation mismatch for declaration: Raw is at ${raw.loc}, Typed is at ${typed.loc}")
+            errors.report(
+                raw.loc,
+                "AST SourceLocation mismatch for declaration: Raw is at ${raw.loc}, Typed is at ${typed.loc}",
+            )
         }
 
         when (raw) {
@@ -81,9 +94,15 @@ class TreeValidator(private val errors: CompilerErrors) {
         }
     }
 
-    private fun validateStmt(raw: RawStmt, typed: TypedStmt) {
+    private fun validateStmt(
+        raw: RawStmt,
+        typed: TypedStmt,
+    ) {
         if (raw.loc != typed.loc) {
-            errors.report(raw.loc, "AST SourceLocation mismatch for statement: Raw is at ${raw.loc}, Typed is at ${typed.loc}")
+            errors.report(
+                raw.loc,
+                "AST SourceLocation mismatch for statement: Raw is at ${raw.loc}, Typed is at ${typed.loc}",
+            )
         }
 
         when (raw) {
@@ -175,7 +194,11 @@ class TreeValidator(private val errors: CompilerErrors) {
                 validateStmt(raw.tryBlock, typed.tryBlock)
                 if (raw.catchClauses.size != typed.catchClauses.size) return reportMismatch(raw, typed)
                 for (i in raw.catchClauses.indices) {
-                    if (raw.catchClauses[i].variableName != typed.catchClauses[i].variableName) return reportMismatch(raw, typed)
+                    if (raw.catchClauses[i].variableName !=
+                        typed.catchClauses[i].variableName
+                    ) {
+                        return reportMismatch(raw, typed)
+                    }
                     validateStmt(raw.catchClauses[i].body, typed.catchClauses[i].body)
                 }
             }
@@ -185,9 +208,15 @@ class TreeValidator(private val errors: CompilerErrors) {
         }
     }
 
-    private fun validateExpr(raw: RawExpr, typed: TypedExpr) {
+    private fun validateExpr(
+        raw: RawExpr,
+        typed: TypedExpr,
+    ) {
         if (raw.loc != typed.loc) {
-            errors.report(raw.loc, "AST SourceLocation mismatch for expression: Raw is at ${raw.loc}, Typed is at ${typed.loc}")
+            errors.report(
+                raw.loc,
+                "AST SourceLocation mismatch for expression: Raw is at ${raw.loc}, Typed is at ${typed.loc}",
+            )
         }
 
         when (raw) {
@@ -196,7 +225,12 @@ class TreeValidator(private val errors: CompilerErrors) {
             is RawBoolLiteralExpr -> if (typed !is TypedBoolLiteralExpr) return reportMismatch(raw, typed)
             is RawStringLiteralExpr -> if (typed !is TypedStringLiteralExpr) return reportMismatch(raw, typed)
             is RawNullLiteralExpr -> if (typed !is TypedNullLiteralExpr) return reportMismatch(raw, typed)
-            is RawIdentifierExpr -> if (typed !is TypedIdentifierExpr || raw.name != typed.name) return reportMismatch(raw, typed)
+            is RawIdentifierExpr ->
+                if (typed !is TypedIdentifierExpr ||
+                    raw.name != typed.name
+                ) {
+                    return reportMismatch(raw, typed)
+                }
             is RawTemplateLiteralExpr -> {
                 if (typed !is TypedTemplateLiteralExpr) return reportMismatch(raw, typed)
                 if (raw.parts.size != typed.parts.size) return reportMismatch(raw, typed)
@@ -283,13 +317,20 @@ class TreeValidator(private val errors: CompilerErrors) {
         }
     }
 
-    private fun reportMismatch(raw: Any, typed: Any) {
-        val loc = when (raw) {
-            is RawDecl -> raw.loc
-            is RawStmt -> raw.loc
-            is RawExpr -> raw.loc
-            else -> SourceLocation("", 0, 0)
-        }
-        errors.report(loc, "AST mismatch: expected mapped node for ${raw::class.simpleName}, but found ${typed::class.simpleName}")
+    private fun reportMismatch(
+        raw: Any,
+        typed: Any,
+    ) {
+        val loc =
+            when (raw) {
+                is RawDecl -> raw.loc
+                is RawStmt -> raw.loc
+                is RawExpr -> raw.loc
+                else -> SourceLocation("", 0, 0)
+            }
+        errors.report(
+            loc,
+            "AST mismatch: expected mapped node for ${raw::class.simpleName}, but found ${typed::class.simpleName}",
+        )
     }
 }

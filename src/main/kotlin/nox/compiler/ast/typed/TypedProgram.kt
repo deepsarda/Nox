@@ -1,7 +1,5 @@
 package nox.compiler.ast.typed
 
-import nox.compiler.types.* 
-
 import nox.compiler.types.*
 
 /**
@@ -31,7 +29,6 @@ class TypedProgram(
 
     /** Function definitions indexed by name. Populated during AST construction. */
     val functionsByName: MutableMap<String, TypedFuncDef> = mutableMapOf()
-
 
     /** All global variable declarations, in order. */
     val globals: MutableList<TypedGlobalVarDecl> = mutableListOf()

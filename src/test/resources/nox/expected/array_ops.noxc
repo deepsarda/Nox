@@ -22,37 +22,37 @@
 .func main
   ;
   ; line 3  int[] arr = [1, 2, 3];
-  0000:  NEW_ARRAY r1                          ; arr:r1 = []
-  0001:  LDI       p0, 1                       ; p0 = 1
-  0002:  ARR_PUSH  SET_INT, r1, p0             ; arr:r1.push(p0)
-  0003:  LDI       p0, 2                       ; p0 = 2
-  0004:  ARR_PUSH  SET_INT, r1, p0             ; arr:r1.push(p0)
-  0005:  LDI       p0, 3                       ; p0 = 3
-  0006:  ARR_PUSH  SET_INT, r1, p0             ; arr:r1.push(p0)
+  0000:  NEW_ARRAY   r1                                  ; arr:r1 = []
+  0001:  LDI         p0, 1                               ; p0 = 1
+  0002:  ARR_PUSH    SET_INT, r1, p0                     ; arr:r1.push(p0)
+  0003:  LDI         p0, 2                               ; p0 = 2
+  0004:  ARR_PUSH    SET_INT, r1, p0                     ; arr:r1.push(p0)
+  0005:  LDI         p0, 3                               ; p0 = 3
+  0006:  ARR_PUSH    SET_INT, r1, p0                     ; arr:r1.push(p0)
   ;
   ; line 4  arr.push(4);
-  0007:  MOVR      r3, r1                      ; r3 = arr:r1
-  0008:  LDI       p1, 4                       ; p1 = 4
-  0009:  SCALL     __T[]_push!int, p1, r3      ; scall __T[]_push!int(p1..., r3...)
+  0007:  MOVR        r3, r1                              ; r3 = arr:r1
+  0008:  LDI         p1, 4                               ; p1 = 4
+  0009:  SCALL       __T[]_push!int, p1, r3              ; scall __T[]_push!int(p1..., r3...)
   ;
   ; line 5  arr.pop();
-  0010:  MOVR      r3, r1                      ; r3 = arr:r1
-  0011:  SCALL     __T[]_pop!int, p1, r3       ; p1 = scall __T[]_pop!int(p2..., r3...)
-  0012:  MOV       p0, p1                      ; p0 = p1
+  0010:  MOVR        r3, r1                              ; r3 = arr:r1
+  0011:  SCALL       __T[]_pop!int, p1, r3               ; p1 = scall __T[]_pop!int(p2..., r3...)
+  0012:  MOV         p0, p1                              ; p0 = p1
   ;
   ; line 6  arr.pop();
-  0013:  MOVR      r3, r1                      ; r3 = arr:r1
-  0014:  SCALL     __T[]_pop!int, p1, r3       ; p1 = scall __T[]_pop!int(p2..., r3...)
-  0015:  MOV       p0, p1                      ; p0 = p1
+  0013:  MOVR        r3, r1                              ; r3 = arr:r1
+  0014:  SCALL       __T[]_pop!int, p1, r3               ; p1 = scall __T[]_pop!int(p2..., r3...)
+  0015:  MOV         p0, p1                              ; p0 = p1
   ;
   ; line 7  return arr.length();
-  0016:  MOVR      r3, r1                      ; r3 = arr:r1
-  0017:  SCALL     __T[]_length!int, p1, r3    ; p1 = scall __T[]_length!int(p2..., r3...)
-  0018:  MOV       p0, p1                      ; p0 = p1
-  0019:  KILL_REF  r1                          ; arr:r1 = null (GC)
-  0020:  KILL_REF  r2                          ; r2 = null (GC)
-  0021:  KILL_REF  r3                          ; r3 = null (GC)
-  0022:  RET       p0                          ; return p0
+  0016:  MOVR        r3, r1                              ; r3 = arr:r1
+  0017:  SCALL       __T[]_length!int, p1, r3            ; p1 = scall __T[]_length!int(p2..., r3...)
+  0018:  MOV         p0, p1                              ; p0 = p1
+  0019:  KILL_REF    r1                                  ; arr:r1 = null (GC)
+  0020:  KILL_REF    r2                                  ; r2 = null (GC)
+  0021:  KILL_REF    r3                                  ; r3 = null (GC)
+  0022:  RET         p0                                  ; return p0
 
 
 ; Exception Table

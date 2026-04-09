@@ -57,6 +57,7 @@ object NoxCompiler {
         source: String,
         fileName: String,
         basePath: Path = Path.of(fileName).toAbsolutePath(),
+        registry: LibraryRegistry = LibraryRegistry.createDefault(),
         fileReader: (Path) -> String = { it.toFile().readText() },
     ): CompilationResult {
         val errors = CompilerErrors()
@@ -69,9 +70,6 @@ object NoxCompiler {
 
         // Phase 1: Parse
         val program = NoxParsing.parse(source, fileName, errors)
-
-        // Auto-discover and register all @NoxModule plugins on the classpath
-        val registry = LibraryRegistry.createDefault()
 
         // Phase 2: Import Resolution
         val importResolver =

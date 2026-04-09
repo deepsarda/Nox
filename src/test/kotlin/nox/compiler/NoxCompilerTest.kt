@@ -79,7 +79,8 @@ class NoxCompilerTest :
                 )
             result.errors.hasErrors() shouldBe false
             val varDecl =
-                result.typedProgram!!.main!!
+                result.typedProgram!!
+                    .main!!
                     .body.statements[0] as TypedVarDeclStmt
             varDecl.initializer.type shouldBe TypeRef.INT
         }

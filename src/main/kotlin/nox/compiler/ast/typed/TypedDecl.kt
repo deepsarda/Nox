@@ -1,8 +1,8 @@
 package nox.compiler.ast.typed
 
-import nox.compiler.types.* 
-
-import nox.compiler.types.*
+import nox.compiler.types.SourceLocation
+import nox.compiler.types.Symbol
+import nox.compiler.types.TypeRef
 
 /*
  *  Declaration AST Nodes
@@ -57,9 +57,7 @@ class TypedFuncDef(
     loc: SourceLocation,
     var maxPrimitiveRegisters: Int = 0,
     var maxReferenceRegisters: Int = 0,
-) : TypedDecl(loc) {
-
-}
+) : TypedDecl(loc)
 
 /**
  * The `main` entry point:
@@ -76,9 +74,7 @@ class TypedMainDef(
     loc: SourceLocation,
     var maxPrimitiveRegisters: Int = 0,
     var maxReferenceRegisters: Int = 0,
-) : TypedDecl(loc) {
-
-}
+) : TypedDecl(loc)
 
 /**
  * Global variable declaration: `int counter = 0;`
@@ -92,8 +88,7 @@ class TypedGlobalVarDecl(
     val initializer: TypedExpr?,
     loc: SourceLocation,
     var globalSlot: Int = -1,
-) : TypedDecl(loc) {
-}
+) : TypedDecl(loc)
 
 /**
  * Import declaration: `import "path.nox" as namespace;`
@@ -105,8 +100,7 @@ class TypedImportDecl(
     val namespace: String,
     loc: SourceLocation,
     val resolvedPath: String,
-) : TypedDecl(loc) {
-}
+) : TypedDecl(loc)
 
 /**
  * A function parameter.
@@ -124,8 +118,7 @@ data class TypedParam(
     val isVarargs: Boolean,
     val loc: SourceLocation,
     val resolvedSymbol: Symbol,
-) {
-}
+)
 
 /** Placeholder for invalid or un-parseable declarations. */
 class TypedErrorDecl(

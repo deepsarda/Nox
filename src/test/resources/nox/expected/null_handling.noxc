@@ -20,14 +20,14 @@
 .func main
   ;
   ; line 3  string s = null;
-  0000:  KILL_REF  r1                          ; s:r1 = null (GC)
+  0000:  KILL_REF    r1                                  ; s:r1 = null (GC)
   ;
   ; line 4  return s == null;
-  0001:  KILL_REF  r2                          ; r2 = null (GC)
-  0002:  SEQ       p0, r1, r2                  ; p0 = s:r1 == r2
-  0003:  KILL_REF  r1                          ; s:r1 = null (GC)
-  0004:  KILL_REF  r2                          ; r2 = null (GC)
-  0005:  RET       p0                          ; return p0
+  0001:  KILL_REF    r2                                  ; r2 = null (GC)
+  0002:  SEQ         p0, r1, r2                          ; p0 = s:r1 == r2
+  0003:  KILL_REF    r1                                  ; s:r1 = null (GC)
+  0004:  KILL_REF    r2                                  ; r2 = null (GC)
+  0005:  RET         p0                                  ; return p0
 
 
 ; Exception Table

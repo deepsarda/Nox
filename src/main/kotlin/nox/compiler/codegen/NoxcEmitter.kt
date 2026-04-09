@@ -288,7 +288,7 @@ class NoxcEmitter {
         val mnemonic = Opcode.name(opcode)
         val (operands, comment) = formatInstruction(opcode, subOp, a, b, c, pool, labels, primNames, refNames)
 
-        sb.appendLine("  %04d:  %-10s%-28s; %s".format(pc, mnemonic, operands, comment))
+        sb.appendLine("  %04d:  %-12s%-36s; %s".format(pc, mnemonic, operands, comment))
     }
 
     private fun formatInstruction(

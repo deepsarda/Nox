@@ -361,7 +361,8 @@ NoxPluginManifest* nox_plugin_init();
 ```c
 #include "nox_plugin.h"
 
-static double hypot_impl(double a, double b) {
+// Note: By default, the first value passed to any C function is the opaque `void* noxruntime` context pointer.
+static double hypot_impl(void* noxruntime, double a, double b) {
     return sqrt(a * a + b * b);
 }
 

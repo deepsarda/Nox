@@ -52,7 +52,9 @@ class TypeResolverTest :
             if (!errors.hasErrors()) {
                 println("Expected error containing '$msg' but got NO errors for source:\n$source")
             } else if (errors.all().none { it.message.lowercase().contains(lowerMsg) }) {
-                println("Expected error containing '$msg' but none of the actual errors matched. Actual errors for source:\n$source")
+                println(
+                    "Expected error containing '$msg' but none of the actual errors matched. Actual errors for source:\n$source",
+                )
                 errors.all().forEach { println("  - ${it.message}") }
             }
             errors.hasErrors() shouldBe true

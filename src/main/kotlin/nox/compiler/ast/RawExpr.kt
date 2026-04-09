@@ -14,9 +14,7 @@ import nox.compiler.types.*
  */
 sealed class RawExpr(
     val loc: SourceLocation,
-) {
-
-}
+)
 
 // Literals
 
@@ -85,8 +83,7 @@ sealed interface RawTemplatePart {
 class RawArrayLiteralExpr(
     val elements: List<RawExpr>,
     loc: SourceLocation,
-) : RawExpr(loc) {
-}
+) : RawExpr(loc)
 
 /**
  * Struct literal: `{ x: 1, y: 2 }`
@@ -96,8 +93,7 @@ class RawArrayLiteralExpr(
 class RawStructLiteralExpr(
     val fields: List<RawFieldInit>,
     loc: SourceLocation,
-) : RawExpr(loc) {
-}
+) : RawExpr(loc)
 
 /**
  * A single field initializer within a struct literal.
@@ -150,8 +146,7 @@ class RawCastExpr(
 class RawIdentifierExpr(
     val name: String,
     loc: SourceLocation,
-) : RawExpr(loc) {
-}
+) : RawExpr(loc)
 
 /**
  * Function call: `func(args)`
@@ -162,8 +157,7 @@ class RawFuncCallExpr(
     val name: String,
     val args: List<RawExpr>,
     loc: SourceLocation,
-) : RawExpr(loc) {
-}
+) : RawExpr(loc)
 
 /**
  * Method call: `target.method(args)`
@@ -183,7 +177,6 @@ class RawMethodCallExpr(
         TYPE_BOUND,
         NAMESPACE,
     }
-
 }
 
 /** Field access: `target.field` */

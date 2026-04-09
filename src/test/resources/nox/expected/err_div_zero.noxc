@@ -20,10 +20,10 @@
 .func main
   ;
   ; line 3  return 1 / 0;
-  0000:  LDI       p1, 1                       ; p1 = 1
-  0001:  LDI       p0, 0                       ; p0 = 0
-  0002:  IDIV      p0, p1, p0                  ; p0 = p1 / p0
-  0003:  RET       p0                          ; return p0
+  0000:  LDI         p1, 1                               ; p1 = 1
+  0001:  LDI         p0, 0                               ; p0 = 0
+  0002:  IDIV        p0, p1, p0                          ; p0 = p1 / p0
+  0003:  RET         p0                                  ; return p0
 
 
 ; Exception Table

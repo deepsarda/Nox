@@ -619,7 +619,14 @@ class ExpressionEmitter(
         val retType = expr.type
         val isVoid = retType == TypeRef.VOID
         val isPrim = retType.isPrimitive()
-        val subOp = if (isVoid) 2 else if (isPrim) 1 else 0
+        val subOp =
+            if (isVoid) {
+                2
+            } else if (isPrim) {
+                1
+            } else {
+                0
+            }
 
         val pOffset = if (subOp == 1) 1 else 0
         val rOffset = if (subOp == 0) 1 else 0

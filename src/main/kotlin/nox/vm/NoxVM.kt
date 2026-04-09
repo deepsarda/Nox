@@ -54,7 +54,6 @@ class NoxVM(
 
     // Output
 
-    private val yields = mutableListOf<String>()
     private var returnValue: String? = null
 
     // SCALL cache
@@ -160,14 +159,16 @@ class NoxVM(
         } else {
             val obj = readR(reg)
             if (obj != null && obj !is String) {
-                nox.runtime.json.NoxJsonWriter(prettyPrint = false).write(obj)
+                nox.runtime.json
+                    .NoxJsonWriter(prettyPrint = false)
+                    .write(obj)
             } else {
                 obj?.toString() ?: "null"
             }
         }
 
     // Entry point
-    suspend fun execute(): NoxResult {
+    suspend fun execute(): String? {
         val vmThread = Thread.currentThread()
         val watchdog = createWatchdogThread(vmThread)
         watchdog.start()
@@ -181,7 +182,7 @@ class NoxVM(
                     running = true
                 }
             }
-            return try {
+            try {
                 // Run main
                 if (program.mainFuncIndex == -1) {
                     throw NoxException(NoxError.CompilationError, "No main() function found", 0)
@@ -189,12 +190,11 @@ class NoxVM(
 
                 enterFunction(program.mainFuncIndex, 0, 0)
                 loop()
-                NoxResult.Success(returnValue, yields)
+                return returnValue
             } catch (e: NoxException) {
                 // TODO: Move this behind flag
                 dumpMemory(e)
-
-                NoxResult.Error(e.type, e.message, yields)
+                throw e
             }
         } finally {
             watchdog.interrupt()
@@ -914,14 +914,12 @@ class NoxVM(
                     }
                     list[index] = readValueBySubOp(subOp, c)
                 }
-
                 // Yield
 
                 Opcode.YIELD -> {
                     val a = Instruction.opA(inst)
                     val typeTag = Instruction.opB(inst)
                     val value = valueToString(typeTag, a)
-                    yields.add(value)
                     context.yield(value)
                 }
 

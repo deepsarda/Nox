@@ -32,67 +32,67 @@
 .func main
   ;
   ; line 10  string raw = "{\"user\": \"bob\", \"action\": 1}";
-  0000:  LDC       r1, #0                      ; raw:r1 = "{\"user\": \"bob\", \"action\": 1}"
+  0000:  LDC         r1, #0                              ; raw:r1 = "{\"user\": \"bob\", \"action\": 1}"
   ;
   ; line 11  json payload = Json.parse(raw);
-  0001:  MOVR      r4, r1                      ; r4 = raw:r1
-  0002:  SCALL     Json__parse, p0, r3         ; r3 = scall Json__parse(p0..., r4...)
-  0003:  MOVR      r2, r3                      ; payload:r2 = r3
+  0001:  MOVR        r4, r1                              ; r4 = raw:r1
+  0002:  SCALL       Json__parse, p0, r3                 ; r3 = scall Json__parse(p0..., r4...)
+  0003:  MOVR        r2, r3                              ; payload:r2 = r3
   ;
   ; line 13  Request req = payload as Request;
-  0004:  CAST_STRUCTr1, r2, #2                  ; req:r1 = payload:r2 as Request
+  0004:  CAST_STRUCT r1, r2, #2                          ; req:r1 = payload:r2 as Request
   ;
   ; line 14  int ts = 123;
-  0005:  LDI       p0, 123                     ; ts:p0 = 123
+  0005:  LDI         p0, 123                             ; ts:p0 = 123
   ;
   ; line 16  if (req.action > 0) {
-  0006:  HACC      GET_INT, r2, r1, "action"   ; payload:r2 = req:r1.action
-  0007:  LDI       p3, 0                       ; p3 = 0
-  0008:  IGT       p1, p2, p3                  ; p1 = p2 > p3
-  0009:  JIF       p1, @0033                   ; if p1==0 -> @0033
+  0006:  HACC        GET_INT, r2, r1, "action"           ; payload:r2 = req:r1.action
+  0007:  LDI         p3, 0                               ; p3 = 0
+  0008:  IGT         p1, p2, p3                          ; p1 = p2 > p3
+  0009:  JIF         p1, @0033                           ; if p1==0 -> @0033
   ;
   ; line 17  json resp = Json.parse("{}");
-  0010:  LDC       r4, #4                      ; r4 = "{}"
-  0011:  SCALL     Json__parse, p4, r3         ; r3 = scall Json__parse(p4..., r4...)
-  0012:  MOVR      r1, r3                      ; resp:r1 = r3
+  0010:  LDC         r4, #4                              ; r4 = "{}"
+  0011:  SCALL       Json__parse, p4, r3                 ; r3 = scall Json__parse(p4..., r4...)
+  0012:  MOVR        r1, r3                              ; resp:r1 = r3
   ;
   ; line 18  resp.setString("status", "accepted");
-  0013:  MOVR      r3, r1                      ; r3 = resp:r1
-  0014:  LDC       r4, #5                      ; r4 = "status"
-  0015:  LDC       r5, #6                      ; r5 = "accepted"
-  0016:  SCALL     __json_setString, p4, r3    ; scall __json_setString(p4..., r3...)
+  0013:  MOVR        r3, r1                              ; r3 = resp:r1
+  0014:  LDC         r4, #5                              ; r4 = "status"
+  0015:  LDC         r5, #6                              ; r5 = "accepted"
+  0016:  SCALL       __json_setString, p4, r3            ; scall __json_setString(p4..., r3...)
   ;
   ; line 19  resp.setInt("timestamp", ts);
-  0017:  MOVR      r3, r1                      ; r3 = resp:r1
-  0018:  LDC       r4, #8                      ; r4 = "timestamp"
-  0019:  MOV       p4, p0                      ; p4 = ts:p0
-  0020:  SCALL     __json_setInt, p4, r3       ; scall __json_setInt(p4..., r3...)
+  0017:  MOVR        r3, r1                              ; r3 = resp:r1
+  0018:  LDC         r4, #8                              ; r4 = "timestamp"
+  0019:  MOV         p4, p0                              ; p4 = ts:p0
+  0020:  SCALL       __json_setInt, p4, r3               ; scall __json_setInt(p4..., r3...)
   ;
   ; line 21  string out = Json.stringify(resp, false);
-  0021:  MOVR      r4, r1                      ; r4 = resp:r1
-  0022:  LDI       p4, 0                       ; p4 = 0
-  0023:  SCALL     Json__stringify, p4, r3     ; r3 = scall Json__stringify(p4..., r4...)
-  0024:  MOVR      r2, r3                      ; out:r2 = r3
+  0021:  MOVR        r4, r1                              ; r4 = resp:r1
+  0022:  LDI         p4, 0                               ; p4 = 0
+  0023:  SCALL       Json__stringify, p4, r3             ; r3 = scall Json__stringify(p4..., r4...)
+  0024:  MOVR        r2, r3                              ; out:r2 = r3
   ;
   ; line 22  yield out;
-  0025:  YIELD     r2                          ; yield out:r2
+  0025:  YIELD       r2                                  ; yield out:r2
   ;
   ; line 23  return "ok";
-  0026:  LDC       r2, #11                     ; out:r2 = "ok"
-  0027:  KILL_REF  r1                          ; resp:r1 = null (GC)
-  0028:  KILL_REF  r3                          ; r3 = null (GC)
-  0029:  KILL_REF  r4                          ; r4 = null (GC)
-  0030:  KILL_REF  r5                          ; r5 = null (GC)
-  0031:  RET       r2                          ; return out:r2
-  0032:  JMP       @0033                       ; -> @0033
+  0026:  LDC         r2, #11                             ; out:r2 = "ok"
+  0027:  KILL_REF    r1                                  ; resp:r1 = null (GC)
+  0028:  KILL_REF    r3                                  ; r3 = null (GC)
+  0029:  KILL_REF    r4                                  ; r4 = null (GC)
+  0030:  KILL_REF    r5                                  ; r5 = null (GC)
+  0031:  RET         r2                                  ; return out:r2
+  0032:  JMP         @0033                               ; -> @0033
   ;
   ; line 25  return "error";
-  0033:  LDC       r2, #12                     ; out:r2 = "error"
-  0034:  KILL_REF  r1                          ; resp:r1 = null (GC)
-  0035:  KILL_REF  r3                          ; r3 = null (GC)
-  0036:  KILL_REF  r4                          ; r4 = null (GC)
-  0037:  KILL_REF  r5                          ; r5 = null (GC)
-  0038:  RET       r2                          ; return out:r2
+  0033:  LDC         r2, #12                             ; out:r2 = "error"
+  0034:  KILL_REF    r1                                  ; resp:r1 = null (GC)
+  0035:  KILL_REF    r3                                  ; r3 = null (GC)
+  0036:  KILL_REF    r4                                  ; r4 = null (GC)
+  0037:  KILL_REF    r5                                  ; r5 = null (GC)
+  0038:  RET         r2                                  ; return out:r2
 
 
 ; Exception Table

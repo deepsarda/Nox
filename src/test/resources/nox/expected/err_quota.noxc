@@ -21,9 +21,9 @@
   ;
   ; line 3  while (true) {}
   .loop_start_1:
-  0000:  LDI       p0, 1                       ; p0 = 1
-  0001:  JIF       p0, @0003                   ; if p0==0 -> loop_exit_1
-  0002:  JMP       @0000                       ; -> loop_start_1
+  0000:  LDI         p0, 1                               ; p0 = 1
+  0001:  JIF         p0, @0003                           ; if p0==0 -> loop_exit_1
+  0002:  JMP         @0000                               ; -> loop_start_1
 
 
 ; Exception Table

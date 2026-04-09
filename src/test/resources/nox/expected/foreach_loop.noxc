@@ -20,45 +20,45 @@
 .func main
   ;
   ; line 3  int[] arr = [1, 2, 3];
-  0000:  NEW_ARRAY r1                          ; arr:r1 = []
-  0001:  LDI       p0, 1                       ; p0 = 1
-  0002:  ARR_PUSH  SET_INT, r1, p0             ; arr:r1.push(p0)
-  0003:  LDI       p0, 2                       ; p0 = 2
-  0004:  ARR_PUSH  SET_INT, r1, p0             ; arr:r1.push(p0)
-  0005:  LDI       p0, 3                       ; p0 = 3
-  0006:  ARR_PUSH  SET_INT, r1, p0             ; arr:r1.push(p0)
+  0000:  NEW_ARRAY   r1                                  ; arr:r1 = []
+  0001:  LDI         p0, 1                               ; p0 = 1
+  0002:  ARR_PUSH    SET_INT, r1, p0                     ; arr:r1.push(p0)
+  0003:  LDI         p0, 2                               ; p0 = 2
+  0004:  ARR_PUSH    SET_INT, r1, p0                     ; arr:r1.push(p0)
+  0005:  LDI         p0, 3                               ; p0 = 3
+  0006:  ARR_PUSH    SET_INT, r1, p0                     ; arr:r1.push(p0)
   ;
   ; line 4  int sum = 0;
-  0007:  LDI       p0, 0                       ; sum:p0 = 0
+  0007:  LDI         p0, 0                               ; sum:p0 = 0
   ;
   ; line 5  foreach (int x in arr) {
-  0008:  MOVR      r2, r1                      ; r2 = arr:r1
-  0009:  LDI       p1, 0                       ; p1 = 0
-  0010:  MOVR      r3, r2                      ; r3 = r2
-  0011:  SCALL     __T[]_length!int, p5, r3    ; p5 = scall __T[]_length!int(p6..., r3...)
-  0012:  MOV       p2, p5                      ; p2 = p5
+  0008:  MOVR        r2, r1                              ; r2 = arr:r1
+  0009:  LDI         p1, 0                               ; p1 = 0
+  0010:  MOVR        r3, r2                              ; r3 = r2
+  0011:  SCALL       __T[]_length!int, p5, r3            ; p5 = scall __T[]_length!int(p6..., r3...)
+  0012:  MOV         p2, p5                              ; p2 = p5
   .loop_start_1:
-  0013:  ILT       p3, p1, p2                  ; p3 = p1 < p2
-  0014:  JIF       p3, @0020                   ; if p3==0 -> loop_exit_1
-  0015:  AGET_IDX  r4, r2, p1                  ; r4 = r2[p1]
+  0013:  ILT         p3, p1, p2                          ; p3 = p1 < p2
+  0014:  JIF         p3, @0020                           ; if p3==0 -> loop_exit_1
+  0015:  AGET_IDX    r4, r2, p1                          ; r4 = r2[p1]
   ;
   ; line 6  yield x;
-  0016:  YIELD     p4                          ; yield x:p4
+  0016:  YIELD       p4                                  ; yield x:p4
   ;
   ; line 7  sum = sum + x;
-  0017:  IADD      p0, p0, p4                  ; sum:p0 = sum:p0 + x:p4
+  0017:  IADD        p0, p0, p4                          ; sum:p0 = sum:p0 + x:p4
   ;
   ; line 5  foreach (int x in arr) {
   .loop_update_1:
-  0018:  IINC      p1                          ; p1 = p1 + 1
-  0019:  JMP       @0013                       ; -> loop_start_1
+  0018:  IINC        p1                                  ; p1 = p1 + 1
+  0019:  JMP         @0013                               ; -> loop_start_1
   ;
   ; line 9  return sum;
   .loop_exit_1:
-  0020:  KILL_REF  r1                          ; arr:r1 = null (GC)
-  0021:  KILL_REF  r2                          ; r2 = null (GC)
-  0022:  KILL_REF  r3                          ; r3 = null (GC)
-  0023:  RET       p0                          ; return sum:p0
+  0020:  KILL_REF    r1                                  ; arr:r1 = null (GC)
+  0021:  KILL_REF    r2                                  ; r2 = null (GC)
+  0022:  KILL_REF    r3                                  ; r3 = null (GC)
+  0023:  RET         p0                                  ; return sum:p0
 
 
 ; Exception Table

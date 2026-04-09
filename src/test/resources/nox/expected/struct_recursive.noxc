@@ -25,27 +25,27 @@
 .func main
   ;
   ; line 8  Node leaf = { value: "leaf", left: null, right: null };
-  0000:  NEW_OBJ   r1                          ; leaf:r1 = {}
-  0001:  LDC       r2, #0                      ; r2 = "leaf"
-  0002:  OBJ_SET   SET_STR, r1, "value", r2    ; leaf:r1.value = r2
-  0003:  KILL_REF  r2                          ; r2 = null (GC)
-  0004:  OBJ_SET   SET_OBJ, r1, "left", r2     ; leaf:r1.left = r2
-  0005:  KILL_REF  r2                          ; r2 = null (GC)
-  0006:  OBJ_SET   SET_OBJ, r1, "right", r2    ; leaf:r1.right = r2
+  0000:  NEW_OBJ     r1                                  ; leaf:r1 = {}
+  0001:  LDC         r2, #0                              ; r2 = "leaf"
+  0002:  OBJ_SET     SET_STR, r1, "value", r2            ; leaf:r1.value = r2
+  0003:  KILL_REF    r2                                  ; r2 = null (GC)
+  0004:  OBJ_SET     SET_OBJ, r1, "left", r2             ; leaf:r1.left = r2
+  0005:  KILL_REF    r2                                  ; r2 = null (GC)
+  0006:  OBJ_SET     SET_OBJ, r1, "right", r2            ; leaf:r1.right = r2
   ;
   ; line 9  Node root = { value: "root", left: leaf, right: null };
-  0007:  NEW_OBJ   r2                          ; root:r2 = {}
-  0008:  LDC       r3, #4                      ; r3 = "root"
-  0009:  OBJ_SET   SET_STR, r2, "value", r3    ; root:r2.value = r3
-  0010:  OBJ_SET   SET_OBJ, r2, "left", r1     ; root:r2.left = leaf:r1
-  0011:  KILL_REF  r1                          ; leaf:r1 = null (GC)
-  0012:  OBJ_SET   SET_OBJ, r2, "right", r1    ; root:r2.right = leaf:r1
+  0007:  NEW_OBJ     r2                                  ; root:r2 = {}
+  0008:  LDC         r3, #4                              ; r3 = "root"
+  0009:  OBJ_SET     SET_STR, r2, "value", r3            ; root:r2.value = r3
+  0010:  OBJ_SET     SET_OBJ, r2, "left", r1             ; root:r2.left = leaf:r1
+  0011:  KILL_REF    r1                                  ; leaf:r1 = null (GC)
+  0012:  OBJ_SET     SET_OBJ, r2, "right", r1            ; root:r2.right = leaf:r1
   ;
   ; line 10  return root.left.value;
-  0013:  AGET_PATH r1, r2, "left.value"        ; leaf:r1 = root:r2.left.value
-  0014:  KILL_REF  r2                          ; root:r2 = null (GC)
-  0015:  KILL_REF  r3                          ; r3 = null (GC)
-  0016:  RET       r1                          ; return leaf:r1
+  0013:  AGET_PATH   r1, r2, "left.value"                ; leaf:r1 = root:r2.left.value
+  0014:  KILL_REF    r2                                  ; root:r2 = null (GC)
+  0015:  KILL_REF    r3                                  ; r3 = null (GC)
+  0016:  RET         r1                                  ; return leaf:r1
 
 
 ; Exception Table

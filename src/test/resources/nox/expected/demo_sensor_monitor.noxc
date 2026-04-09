@@ -27,60 +27,60 @@
 .func main
   ;
   ; line 10  int i = 0;
-  0000:  LDI       p0, 0                       ; i:p0 = 0
+  0000:  LDI         p0, 0                               ; i:p0 = 0
   ;
   ; line 11  while (i < 3) {
   .loop_start_1:
-  0001:  LDI       p2, 3                       ; p2 = 3
-  0002:  ILT       p1, p0, p2                  ; p1 = i:p0 < p2
-  0003:  JIF       p1, @0030                   ; if p1==0 -> loop_exit_1
+  0001:  LDI         p2, 3                               ; p2 = 3
+  0002:  ILT         p1, p0, p2                          ; p1 = i:p0 < p2
+  0003:  JIF         p1, @0030                           ; if p1==0 -> loop_exit_1
   ;
   ; line 12  json raw = Json.parse("{\"temp\": 45.5, \"battery\": 10}");
-  0004:  LDC       r3, #0                      ; r3 = "{\"temp\": 45.5, \"battery\": 10}"
-  0005:  SCALL     Json__parse, p3, r2         ; r2 = scall Json__parse(p3..., r3...)
-  0006:  MOVR      r1, r2                      ; raw:r1 = r2
+  0004:  LDC         r3, #0                              ; r3 = "{\"temp\": 45.5, \"battery\": 10}"
+  0005:  SCALL       Json__parse, p3, r2                 ; r2 = scall Json__parse(p3..., r3...)
+  0006:  MOVR        r1, r2                              ; raw:r1 = r2
   ;
   ; line 13  Sensor s = raw as Sensor;
-  0007:  CAST_STRUCTr2, r1, #2                  ; s:r2 = raw:r1 as Sensor
+  0007:  CAST_STRUCT r2, r1, #2                          ; s:r2 = raw:r1 as Sensor
   ;
   ; line 15  if (s.temp > 40.0) {
-  0008:  HACC      GET_DBL, r2, r2, "temp"     ; s:r2 = s:r2.temp
-  0009:  LDC       p3, #4                      ; p3 = 40.0
-  0010:  DGT       p1, p2, p3                  ; p1 = p2 > p3
-  0011:  JIF       p1, @0024                   ; if p1==0 -> @0024
+  0008:  HACC        GET_DBL, r2, r2, "temp"             ; s:r2 = s:r2.temp
+  0009:  LDC         p3, #4                              ; p3 = 40.0
+  0010:  DGT         p1, p2, p3                          ; p1 = p2 > p3
+  0011:  JIF         p1, @0024                           ; if p1==0 -> @0024
   ;
   ; line 16  if (s.battery < 20) {
-  0012:  HACC      GET_INT, r3, r2, "battery"  ; r3 = s:r2.battery
-  0013:  LDI       p2, 20                      ; p2 = 20
-  0014:  ILT       p1, p3, p2                  ; p1 = p3 < p2
-  0015:  JIF       p1, @0023                   ; if p1==0 -> @0023
+  0012:  HACC        GET_INT, r3, r2, "battery"          ; r3 = s:r2.battery
+  0013:  LDI         p2, 20                              ; p2 = 20
+  0014:  ILT         p1, p3, p2                          ; p1 = p3 < p2
+  0015:  JIF         p1, @0023                           ; if p1==0 -> @0023
   ;
   ; line 17  if (i == 1) {
-  0016:  LDI       p2, 1                       ; p2 = 1
-  0017:  IEQ       p1, p0, p2                  ; p1 = i:p0 == p2
-  0018:  JIF       p1, @0022                   ; if p1==0 -> @0022
+  0016:  LDI         p2, 1                               ; p2 = 1
+  0017:  IEQ         p1, p0, p2                          ; p1 = i:p0 == p2
+  0018:  JIF         p1, @0022                           ; if p1==0 -> @0022
   ;
   ; line 18  yield "alert";
-  0019:  LDC       r2, #6                      ; s:r2 = "alert"
-  0020:  YIELD     r2                          ; yield s:r2
-  0021:  JMP       @0022                       ; -> @0022
-  0022:  JMP       @0023                       ; -> @0023
-  0023:  JMP       @0024                       ; -> @0024
+  0019:  LDC         r2, #6                              ; s:r2 = "alert"
+  0020:  YIELD       r2                                  ; yield s:r2
+  0021:  JMP         @0022                               ; -> @0022
+  0022:  JMP         @0023                               ; -> @0023
+  0023:  JMP         @0024                               ; -> @0024
   ;
   ; line 22  i = i + 1;
-  0024:  LDI       p1, 1                       ; p1 = 1
-  0025:  IADD      p0, p0, p1                  ; i:p0 = i:p0 + p1
-  0026:  KILL_REF  r1                          ; raw:r1 = null (GC)
-  0027:  KILL_REF  r2                          ; s:r2 = null (GC)
-  0028:  KILL_REF  r3                          ; r3 = null (GC)
-  0029:  JMP       @0001                       ; -> loop_start_1
+  0024:  LDI         p1, 1                               ; p1 = 1
+  0025:  IADD        p0, p0, p1                          ; i:p0 = i:p0 + p1
+  0026:  KILL_REF    r1                                  ; raw:r1 = null (GC)
+  0027:  KILL_REF    r2                                  ; s:r2 = null (GC)
+  0028:  KILL_REF    r3                                  ; r3 = null (GC)
+  0029:  JMP         @0001                               ; -> loop_start_1
   ;
   ; line 25  return "ok";
   .loop_exit_1:
-  0030:  LDC       r2, #7                      ; s:r2 = "ok"
-  0031:  KILL_REF  r1                          ; raw:r1 = null (GC)
-  0032:  KILL_REF  r3                          ; r3 = null (GC)
-  0033:  RET       r2                          ; return s:r2
+  0030:  LDC         r2, #7                              ; s:r2 = "ok"
+  0031:  KILL_REF    r1                                  ; raw:r1 = null (GC)
+  0032:  KILL_REF    r3                                  ; r3 = null (GC)
+  0033:  RET         r2                                  ; return s:r2
 
 
 ; Exception Table

@@ -33,101 +33,101 @@
 .func main
   ;
   ; line 4  string template = "Hello {{name}}, welcome to {{place}}!";
-  0000:  LDC       r1, #0                      ; template:r1 = "Hello {{name}}, welcome to {{place}}!"
+  0000:  LDC         r1, #0                              ; template:r1 = "Hello {{name}}, welcome to {{place}}!"
   ;
   ; line 5  json data = Json.parse("{\"name\": \"Alice\", \"place\": \"Wonderland\"}");
-  0001:  LDC       r4, #1                      ; r4 = "{\"name\": \"Alice\", \"place\": \"Wonderland\"}"
-  0002:  SCALL     Json__parse, p0, r3         ; r3 = scall Json__parse(p0..., r4...)
-  0003:  MOVR      r2, r3                      ; data:r2 = r3
+  0001:  LDC         r4, #1                              ; r4 = "{\"name\": \"Alice\", \"place\": \"Wonderland\"}"
+  0002:  SCALL       Json__parse, p0, r3                 ; r3 = scall Json__parse(p0..., r4...)
+  0003:  MOVR        r2, r3                              ; data:r2 = r3
   ;
   ; line 7  if (template.contains("{{name}}")) {
-  0004:  MOVR      r3, r1                      ; r3 = template:r1
-  0005:  LDC       r4, #3                      ; r4 = "{{name}}"
-  0006:  SCALL     __string_contains, p1, r3   ; p1 = scall __string_contains(p2..., r3...)
-  0007:  MOV       p0, p1                      ; p0 = p1
-  0008:  JIF       p0, @0030                   ; if p0==0 -> @0030
+  0004:  MOVR        r3, r1                              ; r3 = template:r1
+  0005:  LDC         r4, #3                              ; r4 = "{{name}}"
+  0006:  SCALL       __string_contains, p1, r3           ; p1 = scall __string_contains(p2..., r3...)
+  0007:  MOV         p0, p1                              ; p0 = p1
+  0008:  JIF         p0, @0030                           ; if p0==0 -> @0030
   ;
   ; line 8  string[] p1 = template.split("{{name}}");
-  0009:  MOVR      r5, r1                      ; r5 = template:r1
-  0010:  LDC       r6, #3                      ; r6 = "{{name}}"
-  0011:  SCALL     __string_split, p1, r4      ; r4 = scall __string_split(p1..., r5...)
-  0012:  MOVR      r3, r4                      ; p1:r3 = r4
+  0009:  MOVR        r5, r1                              ; r5 = template:r1
+  0010:  LDC         r6, #3                              ; r6 = "{{name}}"
+  0011:  SCALL       __string_split, p1, r4              ; r4 = scall __string_split(p1..., r5...)
+  0012:  MOVR        r3, r4                              ; p1:r3 = r4
   ;
   ; line 9  template = p1[0] + data.getString("name", "") + p1[1];
-  0013:  LDI       p0, 0                       ; p0 = 0
-  0014:  AGET_IDX  r5, r3, p0                  ; r5 = p1:r3[p0]
-  0015:  MOVR      r7, r2                      ; r7 = data:r2
-  0016:  LDC       r8, #6                      ; r8 = "name"
-  0017:  LDC       r9, #7                      ; r9 = ""
-  0018:  SCALL     __json_getString, p1, r6    ; r6 = scall __json_getString(p1..., r7...)
-  0019:  MOVR      r4, r6                      ; r4 = r6
-  0020:  SCONCAT   r4, r5, r4                  ; r4 = r5 + r4
-  0021:  LDI       p0, 1                       ; p0 = 1
-  0022:  AGET_IDX  r1, r3, p0                  ; template:r1 = p1:r3[p0]
-  0023:  SCONCAT   r1, r4, r1                  ; template:r1 = r4 + template:r1
-  0024:  KILL_REF  r5                          ; r5 = null (GC)
-  0025:  KILL_REF  r6                          ; r6 = null (GC)
-  0026:  KILL_REF  r7                          ; r7 = null (GC)
-  0027:  KILL_REF  r8                          ; r8 = null (GC)
-  0028:  KILL_REF  r9                          ; r9 = null (GC)
-  0029:  JMP       @0030                       ; -> @0030
+  0013:  LDI         p0, 0                               ; p0 = 0
+  0014:  AGET_IDX    r5, r3, p0                          ; r5 = p1:r3[p0]
+  0015:  MOVR        r7, r2                              ; r7 = data:r2
+  0016:  LDC         r8, #6                              ; r8 = "name"
+  0017:  LDC         r9, #7                              ; r9 = ""
+  0018:  SCALL       __json_getString, p1, r6            ; r6 = scall __json_getString(p1..., r7...)
+  0019:  MOVR        r4, r6                              ; r4 = r6
+  0020:  SCONCAT     r4, r5, r4                          ; r4 = r5 + r4
+  0021:  LDI         p0, 1                               ; p0 = 1
+  0022:  AGET_IDX    r1, r3, p0                          ; template:r1 = p1:r3[p0]
+  0023:  SCONCAT     r1, r4, r1                          ; template:r1 = r4 + template:r1
+  0024:  KILL_REF    r5                                  ; r5 = null (GC)
+  0025:  KILL_REF    r6                                  ; r6 = null (GC)
+  0026:  KILL_REF    r7                                  ; r7 = null (GC)
+  0027:  KILL_REF    r8                                  ; r8 = null (GC)
+  0028:  KILL_REF    r9                                  ; r9 = null (GC)
+  0029:  JMP         @0030                               ; -> @0030
   ;
   ; line 12  if (template.contains("{{place}}")) {
-  0030:  MOVR      r6, r1                      ; r6 = template:r1
-  0031:  LDC       r7, #9                      ; r7 = "{{place}}"
-  0032:  SCALL     __string_contains, p1, r6   ; p1 = scall __string_contains(p2..., r6...)
-  0033:  MOV       p0, p1                      ; p0 = p1
-  0034:  JIF       p0, @0051                   ; if p0==0 -> @0051
+  0030:  MOVR        r6, r1                              ; r6 = template:r1
+  0031:  LDC         r7, #9                              ; r7 = "{{place}}"
+  0032:  SCALL       __string_contains, p1, r6           ; p1 = scall __string_contains(p2..., r6...)
+  0033:  MOV         p0, p1                              ; p0 = p1
+  0034:  JIF         p0, @0051                           ; if p0==0 -> @0051
   ;
   ; line 13  string[] p2 = template.split("{{place}}");
-  0035:  MOVR      r7, r1                      ; r7 = template:r1
-  0036:  LDC       r8, #9                      ; r8 = "{{place}}"
-  0037:  SCALL     __string_split, p1, r6      ; r6 = scall __string_split(p1..., r7...)
-  0038:  MOVR      r4, r6                      ; p2:r4 = r6
+  0035:  MOVR        r7, r1                              ; r7 = template:r1
+  0036:  LDC         r8, #9                              ; r8 = "{{place}}"
+  0037:  SCALL       __string_split, p1, r6              ; r6 = scall __string_split(p1..., r7...)
+  0038:  MOVR        r4, r6                              ; p2:r4 = r6
   ;
   ; line 14  template = p2[0] + data.getString("place", "") + p2[1];
-  0039:  LDI       p0, 0                       ; p0 = 0
-  0040:  AGET_IDX  r5, r4, p0                  ; r5 = p2:r4[p0]
-  0041:  MOVR      r7, r2                      ; r7 = data:r2
-  0042:  LDC       r8, #10                     ; r8 = "place"
-  0043:  LDC       r9, #7                      ; r9 = ""
-  0044:  SCALL     __json_getString, p1, r6    ; r6 = scall __json_getString(p1..., r7...)
-  0045:  MOVR      r3, r6                      ; p1:r3 = r6
-  0046:  SCONCAT   r3, r5, r3                  ; p1:r3 = r5 + p1:r3
-  0047:  LDI       p0, 1                       ; p0 = 1
-  0048:  AGET_IDX  r1, r4, p0                  ; template:r1 = p2:r4[p0]
-  0049:  SCONCAT   r1, r3, r1                  ; template:r1 = p1:r3 + template:r1
-  0050:  JMP       @0051                       ; -> @0051
+  0039:  LDI         p0, 0                               ; p0 = 0
+  0040:  AGET_IDX    r5, r4, p0                          ; r5 = p2:r4[p0]
+  0041:  MOVR        r7, r2                              ; r7 = data:r2
+  0042:  LDC         r8, #10                             ; r8 = "place"
+  0043:  LDC         r9, #7                              ; r9 = ""
+  0044:  SCALL       __json_getString, p1, r6            ; r6 = scall __json_getString(p1..., r7...)
+  0045:  MOVR        r3, r6                              ; p1:r3 = r6
+  0046:  SCONCAT     r3, r5, r3                          ; p1:r3 = r5 + p1:r3
+  0047:  LDI         p0, 1                               ; p0 = 1
+  0048:  AGET_IDX    r1, r4, p0                          ; template:r1 = p2:r4[p0]
+  0049:  SCONCAT     r1, r3, r1                          ; template:r1 = p1:r3 + template:r1
+  0050:  JMP         @0051                               ; -> @0051
   ;
   ; line 17  if (template == "Hello Alice, welcome to Wonderland!") {
-  0051:  LDC       r3, #11                     ; p1:r3 = "Hello Alice, welcome to Wonderland!"
-  0052:  SEQ       p0, r1, r3                  ; p0 = template:r1 == p1:r3
-  0053:  JIF       p0, @0065                   ; if p0==0 -> @0065
+  0051:  LDC         r3, #11                             ; p1:r3 = "Hello Alice, welcome to Wonderland!"
+  0052:  SEQ         p0, r1, r3                          ; p0 = template:r1 == p1:r3
+  0053:  JIF         p0, @0065                           ; if p0==0 -> @0065
   ;
   ; line 18  return "ok";
-  0054:  LDC       r1, #12                     ; template:r1 = "ok"
-  0055:  KILL_REF  r2                          ; data:r2 = null (GC)
-  0056:  KILL_REF  r3                          ; p1:r3 = null (GC)
-  0057:  KILL_REF  r4                          ; p2:r4 = null (GC)
-  0058:  KILL_REF  r5                          ; r5 = null (GC)
-  0059:  KILL_REF  r6                          ; r6 = null (GC)
-  0060:  KILL_REF  r7                          ; r7 = null (GC)
-  0061:  KILL_REF  r8                          ; r8 = null (GC)
-  0062:  KILL_REF  r9                          ; r9 = null (GC)
-  0063:  RET       r1                          ; return template:r1
-  0064:  JMP       @0065                       ; -> @0065
+  0054:  LDC         r1, #12                             ; template:r1 = "ok"
+  0055:  KILL_REF    r2                                  ; data:r2 = null (GC)
+  0056:  KILL_REF    r3                                  ; p1:r3 = null (GC)
+  0057:  KILL_REF    r4                                  ; p2:r4 = null (GC)
+  0058:  KILL_REF    r5                                  ; r5 = null (GC)
+  0059:  KILL_REF    r6                                  ; r6 = null (GC)
+  0060:  KILL_REF    r7                                  ; r7 = null (GC)
+  0061:  KILL_REF    r8                                  ; r8 = null (GC)
+  0062:  KILL_REF    r9                                  ; r9 = null (GC)
+  0063:  RET         r1                                  ; return template:r1
+  0064:  JMP         @0065                               ; -> @0065
   ;
   ; line 20  return "error";
-  0065:  LDC       r1, #13                     ; template:r1 = "error"
-  0066:  KILL_REF  r2                          ; data:r2 = null (GC)
-  0067:  KILL_REF  r3                          ; p1:r3 = null (GC)
-  0068:  KILL_REF  r4                          ; p2:r4 = null (GC)
-  0069:  KILL_REF  r5                          ; r5 = null (GC)
-  0070:  KILL_REF  r6                          ; r6 = null (GC)
-  0071:  KILL_REF  r7                          ; r7 = null (GC)
-  0072:  KILL_REF  r8                          ; r8 = null (GC)
-  0073:  KILL_REF  r9                          ; r9 = null (GC)
-  0074:  RET       r1                          ; return template:r1
+  0065:  LDC         r1, #13                             ; template:r1 = "error"
+  0066:  KILL_REF    r2                                  ; data:r2 = null (GC)
+  0067:  KILL_REF    r3                                  ; p1:r3 = null (GC)
+  0068:  KILL_REF    r4                                  ; p2:r4 = null (GC)
+  0069:  KILL_REF    r5                                  ; r5 = null (GC)
+  0070:  KILL_REF    r6                                  ; r6 = null (GC)
+  0071:  KILL_REF    r7                                  ; r7 = null (GC)
+  0072:  KILL_REF    r8                                  ; r8 = null (GC)
+  0073:  KILL_REF    r9                                  ; r9 = null (GC)
+  0074:  RET         r1                                  ; return template:r1
 
 
 ; Exception Table

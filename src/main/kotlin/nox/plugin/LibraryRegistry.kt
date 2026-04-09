@@ -226,7 +226,7 @@ class LibraryRegistry {
      * Register a Tier 1 (external C ABI) plugin manifest.
      *
      * Registers compile-time signatures only. The actual native function
-     * pointers are managed by the native bridge (not yet implemented).
+     * pointers are managed by the native bridge.
      */
     fun registerExternalPlugin(manifest: NoxPluginManifest) {
         _externalPluginNamespaces.add(manifest.namespace)
@@ -237,8 +237,17 @@ class LibraryRegistry {
                 func.paramTypes.mapIndexed { i, tag ->
                     NoxParam("arg$i", typeTagToTypeRef(tag))
                 }
-            funcMap[func.name] = CallTarget(func.name, params, typeTagToTypeRef(func.returnType))
+            funcMap[func.name] =
+                CallTarget("${manifest.namespace}__${func.name}", params, typeTagToTypeRef(func.returnType))
         }
+    }
+
+    /** Register a runtime adapter directly (used by ExternalPluginBridge) */
+    fun registerNativeFunc(
+        scallName: String,
+        func: NoxNativeFunc,
+    ) {
+        nativeFuncs[scallName] = func
     }
 
     /**
@@ -437,29 +446,29 @@ class LibraryRegistry {
         fun createDefault(vararg scanPackages: String = arrayOf("nox.plugin.stdlib")): LibraryRegistry {
             val registry = LibraryRegistry()
 
-            io.github.classgraph
-                .ClassGraph()
-                .acceptPackages(*scanPackages)
-                .enableAnnotationInfo()
-                // Allow working on graalvm
-                .enableClassInfo()
-                .ignoreClassVisibility()
-                .scan()
-                .use { scanResult ->
-                    val annotationName = NoxModule::class.java.name
-                    for (classInfo in scanResult.getClassesWithAnnotation(annotationName)) {
-                        val clazz = classInfo.loadClass()
-                        val instance =
-                            try {
-                                // Kotlin object: access INSTANCE field
-                                clazz.getField("INSTANCE").get(null)
-                            } catch (_: NoSuchFieldException) {
-                                // Regular class: no-arg constructor
-                                clazz.getDeclaredConstructor().newInstance()
-                            }
-                        registry.registerModule(instance)
-                    }
+            // Invoke KSP generated registry to add all @NoxModule classes
+            val possibleNames =
+                listOf(
+                    "nox.plugin.GeneratedRegistry",
+                    "nox.plugin.GeneratedRegistryTest",
+                )
+            var loadedAny = false
+            for (name in possibleNames) {
+                try {
+                    val generatedRegistryClass = Class.forName(name)
+                    val instance = generatedRegistryClass.getDeclaredConstructor().newInstance() as PluginRegistryProvider
+                    instance.registerAll(registry)
+                    loadedAny = true
+                } catch (e: ClassNotFoundException) {
+                    // Ignore, might not be present (e.g. Test registry in prod)
+                } catch (e: Exception) {
+                    throw RuntimeException("Failed to initialize LibraryRegistry via $name", e)
                 }
+            }
+            if (!loadedAny) {
+                // If it fails, fallback or rethrow, but KSP should always generate it
+                System.err.println("Warning: No KSP GeneratedRegistry found.")
+            }
 
             return registry
         }

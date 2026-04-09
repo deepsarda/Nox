@@ -38,7 +38,9 @@ class ExpressionResolverIsolatedTest :
 
                 resolver.resolveExpr(scope, RawNullLiteralExpr(loc), TypeRef.STRING).type shouldBe TypeRef.STRING
                 resolver.resolveExpr(scope, RawNullLiteralExpr(loc), TypeRef.JSON).type shouldBe TypeRef.JSON
-                resolver.resolveExpr(scope, RawNullLiteralExpr(loc), TypeRef.INT).type shouldBe TypeRef.NULL // Non-nullable fallback
+                resolver
+                    .resolveExpr(scope, RawNullLiteralExpr(loc), TypeRef.INT)
+                    .type shouldBe TypeRef.NULL // Non-nullable fallback
             }
 
             test("resolves template literals") {

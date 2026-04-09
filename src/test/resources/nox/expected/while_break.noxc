@@ -20,27 +20,27 @@
 .func main
   ;
   ; line 3  int i = 0;
-  0000:  LDI       p0, 0                       ; i:p0 = 0
+  0000:  LDI         p0, 0                               ; i:p0 = 0
   ;
   ; line 4  while (true) {
   .loop_start_1:
-  0001:  LDI       p1, 1                       ; p1 = 1
-  0002:  JIF       p1, @0010                   ; if p1==0 -> loop_exit_1
+  0001:  LDI         p1, 1                               ; p1 = 1
+  0002:  JIF         p1, @0010                           ; if p1==0 -> loop_exit_1
   ;
   ; line 5  i++;
-  0003:  IINC      p0                          ; i:p0 = i:p0 + 1
+  0003:  IINC        p0                                  ; i:p0 = i:p0 + 1
   ;
   ; line 6  if (i == 10) {
-  0004:  LDI       p2, 10                      ; p2 = 10
-  0005:  IEQ       p1, p0, p2                  ; p1 = i:p0 == p2
-  0006:  JIF       p1, @0009                   ; if p1==0 -> @0009
-  0007:  JMP       @0010                       ; -> loop_exit_1
-  0008:  JMP       @0009                       ; -> @0009
-  0009:  JMP       @0001                       ; -> loop_start_1
+  0004:  LDI         p2, 10                              ; p2 = 10
+  0005:  IEQ         p1, p0, p2                          ; p1 = i:p0 == p2
+  0006:  JIF         p1, @0009                           ; if p1==0 -> @0009
+  0007:  JMP         @0010                               ; -> loop_exit_1
+  0008:  JMP         @0009                               ; -> @0009
+  0009:  JMP         @0001                               ; -> loop_start_1
   ;
   ; line 10  return i;
   .loop_exit_1:
-  0010:  RET       p0                          ; return i:p0
+  0010:  RET         p0                                  ; return i:p0
 
 
 ; Exception Table

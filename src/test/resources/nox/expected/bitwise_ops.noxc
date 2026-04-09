@@ -20,42 +20,42 @@
 .func main
   ;
   ; line 3  int a = 15;
-  0000:  LDI       p0, 15                      ; a:p0 = 15
+  0000:  LDI         p0, 15                              ; a:p0 = 15
   ;
   ; line 4  int b = 240;
-  0001:  LDI       p1, 240                     ; b:p1 = 240
+  0001:  LDI         p1, 240                             ; b:p1 = 240
   ;
   ; line 5  int c = a | b;
-  0002:  BOR       p2, p0, p1                  ; c:p2 = a:p0 | b:p1
+  0002:  BOR         p2, p0, p1                          ; c:p2 = a:p0 | b:p1
   ;
   ; line 6  int d = c & 255;
-  0003:  LDI       p3, 255                     ; d:p3 = 255
-  0004:  BAND      p3, p2, p3                  ; d:p3 = c:p2 & d:p3
+  0003:  LDI         p3, 255                             ; d:p3 = 255
+  0004:  BAND        p3, p2, p3                          ; d:p3 = c:p2 & d:p3
   ;
   ; line 7  int e = a ^ b;
-  0005:  BXOR      p3, p0, p1                  ; e:p3 = a:p0 ^ b:p1
+  0005:  BXOR        p3, p0, p1                          ; e:p3 = a:p0 ^ b:p1
   ;
   ; line 8  int f = ~0;
-  0006:  LDI       p1, 0                       ; b:p1 = 0
-  0007:  BNOT      p3, p1                      ; f:p3 = -b:p1
+  0006:  LDI         p1, 0                               ; b:p1 = 0
+  0007:  BNOT        p3, p1                              ; f:p3 = -b:p1
   ;
   ; line 9  int g = 1 << 8;
-  0008:  LDI       p1, 1                       ; b:p1 = 1
-  0009:  LDI       p3, 8                       ; g:p3 = 8
-  0010:  SHL       p3, p1, p3                  ; g:p3 = b:p1 << g:p3
+  0008:  LDI         p1, 1                               ; b:p1 = 1
+  0009:  LDI         p3, 8                               ; g:p3 = 8
+  0010:  SHL         p3, p1, p3                          ; g:p3 = b:p1 << g:p3
   ;
   ; line 10  int h = 510 >> 1;
-  0011:  LDI       p1, 510                     ; b:p1 = 510
-  0012:  LDI       p3, 1                       ; h:p3 = 1
-  0013:  SHR       p3, p1, p3                  ; h:p3 = b:p1 >> h:p3
+  0011:  LDI         p1, 510                             ; b:p1 = 510
+  0012:  LDI         p3, 1                               ; h:p3 = 1
+  0013:  SHR         p3, p1, p3                          ; h:p3 = b:p1 >> h:p3
   ;
   ; line 11  int i = 510 >>> 1;
-  0014:  LDI       p1, 510                     ; b:p1 = 510
-  0015:  LDI       p3, 1                       ; i:p3 = 1
-  0016:  USHR      p3, p1, p3                  ; i:p3 = b:p1 >>> i:p3
+  0014:  LDI         p1, 510                             ; b:p1 = 510
+  0015:  LDI         p3, 1                               ; i:p3 = 1
+  0016:  USHR        p3, p1, p3                          ; i:p3 = b:p1 >>> i:p3
   ;
   ; line 12  return c;
-  0017:  RET       p2                          ; return c:p2
+  0017:  RET         p2                                  ; return c:p2
 
 
 ; Exception Table

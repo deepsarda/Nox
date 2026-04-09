@@ -1,7 +1,6 @@
 package nox.compiler.ast
 
 import nox.compiler.types.SourceLocation
-import nox.compiler.types.Symbol
 import nox.compiler.types.TypeRef
 
 /*
@@ -55,9 +54,7 @@ class RawFuncDef(
     val params: List<RawParam>,
     val body: RawBlock,
     loc: SourceLocation,
-) : RawDecl(loc) {
-
-}
+) : RawDecl(loc)
 
 /**
  * The `main` entry point:
@@ -71,9 +68,7 @@ class RawMainDef(
     val params: List<RawParam>,
     val body: RawBlock,
     loc: SourceLocation,
-) : RawDecl(loc) {
-
-}
+) : RawDecl(loc)
 
 /**
  * Global variable declaration: `int counter = 0;`
@@ -86,8 +81,7 @@ class RawGlobalVarDecl(
     val name: String,
     val initializer: RawExpr?,
     loc: SourceLocation,
-) : RawDecl(loc) {
-}
+) : RawDecl(loc)
 
 /**
  * Import declaration: `import "path.nox" as namespace;`
@@ -98,8 +92,7 @@ class RawImportDecl(
     val path: String,
     val namespace: String,
     loc: SourceLocation,
-) : RawDecl(loc) {
-}
+) : RawDecl(loc)
 
 /**
  * A function parameter.
@@ -116,8 +109,7 @@ data class RawParam(
     val defaultValue: RawExpr?,
     val isVarargs: Boolean,
     val loc: SourceLocation,
-) {
-}
+)
 
 /** Placeholder for invalid or un-parseable declarations. */
 class RawErrorDecl(

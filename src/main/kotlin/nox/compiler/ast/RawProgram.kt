@@ -30,7 +30,6 @@ class RawProgram(
     /** Function definitions indexed by name. Populated during AST construction. */
     val functionsByName: MutableMap<String, RawFuncDef> = mutableMapOf()
 
-
     /** All global variable declarations, in order. */
     val globals: MutableList<RawGlobalVarDecl> = mutableListOf()
 

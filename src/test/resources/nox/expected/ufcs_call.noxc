@@ -21,8 +21,8 @@
   ; params: p1=a  p2=b
   ;
   ; line 3  return a + b;
-  0000:  IADD      p3, p1, p2                  ; p3 = a:p1 + b:p2
-  0001:  RET       p3                          ; return p3
+  0000:  IADD        p3, p1, p2                          ; p3 = a:p1 + b:p2
+  0001:  RET         p3                                  ; return p3
 
 ;  Function: main
 ;    Entry PC:   2
@@ -32,14 +32,14 @@
 .func main
   ;
   ; line 7  int a = 40;
-  0002:  LDI       p0, 40                      ; a:p0 = 40
+  0002:  LDI         p0, 40                              ; a:p0 = 40
   ;
   ; line 8  return a.add(2);
-  0003:  MOV       p3, p0                      ; p3 = a:p0
-  0004:  LDI       p4, 2                       ; p4 = 2
-  0005:  CALL      add, p2, r1                 ; p2 = call add(p3..., r1...)
-  0006:  MOV       p1, p2                      ; p1 = p2
-  0007:  RET       p1                          ; return p1
+  0003:  MOV         p3, p0                              ; p3 = a:p0
+  0004:  LDI         p4, 2                               ; p4 = 2
+  0005:  CALL        add, p2, r1                         ; p2 = call add(p3..., r1...)
+  0006:  MOV         p1, p2                              ; p1 = p2
+  0007:  RET         p1                                  ; return p1
 
 
 ; Exception Table

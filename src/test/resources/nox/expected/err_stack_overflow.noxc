@@ -20,9 +20,9 @@
 .func recurse
   ;
   ; line 3  return recurse();
-  0000:  CALL      recurse, p2, r0             ; p2 = call recurse(p3..., r0...)
-  0001:  MOV       p1, p2                      ; p1 = p2
-  0002:  RET       p1                          ; return p1
+  0000:  CALL        recurse, p2, r0                     ; p2 = call recurse(p3..., r0...)
+  0001:  MOV         p1, p2                              ; p1 = p2
+  0002:  RET         p1                                  ; return p1
 
 ;  Function: main
 ;    Entry PC:   3
@@ -32,9 +32,9 @@
 .func main
   ;
   ; line 6  return recurse();
-  0003:  CALL      recurse, p1, r1             ; p1 = call recurse(p2..., r1...)
-  0004:  MOV       p0, p1                      ; p0 = p1
-  0005:  RET       p0                          ; return p0
+  0003:  CALL        recurse, p1, r1                     ; p1 = call recurse(p2..., r1...)
+  0004:  MOV         p0, p1                              ; p0 = p1
+  0005:  RET         p0                                  ; return p0
 
 
 ; Exception Table

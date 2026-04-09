@@ -21,20 +21,20 @@
 .func main
   ;
   ; line 3  int i = 42;
-  0000:  LDI       p0, 42                      ; i:p0 = 42
+  0000:  LDI         p0, 42                              ; i:p0 = 42
   ;
   ; line 4  double d = 3.14;
-  0001:  LDC       p1, #0                      ; d:p1 = 3.14
+  0001:  LDC         p1, #0                              ; d:p1 = 3.14
   ;
   ; line 5  return `${i} ${d}`;
-  0002:  I2S       r2, p0                      ; r2 = toString(i:p0)
-  0003:  MOVR      r1, r2                      ; r1 = r2
-  0004:  LDC       r2, #1                      ; r2 = " "
-  0005:  SCONCAT   r1, r1, r2                  ; r1 = r1 + r2
-  0006:  D2S       r2, p1                      ; r2 = toString(d:p1)
-  0007:  SCONCAT   r1, r1, r2                  ; r1 = r1 + r2
-  0008:  KILL_REF  r2                          ; r2 = null (GC)
-  0009:  RET       r1                          ; return r1
+  0002:  I2S         r2, p0                              ; r2 = toString(i:p0)
+  0003:  MOVR        r1, r2                              ; r1 = r2
+  0004:  LDC         r2, #1                              ; r2 = " "
+  0005:  SCONCAT     r1, r1, r2                          ; r1 = r1 + r2
+  0006:  D2S         r2, p1                              ; r2 = toString(d:p1)
+  0007:  SCONCAT     r1, r1, r2                          ; r1 = r1 + r2
+  0008:  KILL_REF    r2                                  ; r2 = null (GC)
+  0009:  RET         r1                                  ; return r1
 
 
 ; Exception Table

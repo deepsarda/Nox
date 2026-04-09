@@ -22,20 +22,20 @@
 .func main
   ;
   ; line 7  json j = {x: 1, y: 2};
-  0000:  NEW_OBJ   r1                          ; j:r1 = {}
-  0001:  LDI       p0, 1                       ; p0 = 1
-  0002:  OBJ_SET   SET_INT, r1, "x", p0        ; j:r1.x = p0
-  0003:  LDI       p0, 2                       ; p0 = 2
-  0004:  OBJ_SET   SET_INT, r1, "y", p0        ; j:r1.y = p0
+  0000:  NEW_OBJ     r1                                  ; j:r1 = {}
+  0001:  LDI         p0, 1                               ; p0 = 1
+  0002:  OBJ_SET     SET_INT, r1, "x", p0                ; j:r1.x = p0
+  0003:  LDI         p0, 2                               ; p0 = 2
+  0004:  OBJ_SET     SET_INT, r1, "y", p0                ; j:r1.y = p0
   ;
   ; line 8  Point p = j as Point;
-  0005:  CAST_STRUCTr2, r1, #2                  ; p:r2 = j:r1 as Point
+  0005:  CAST_STRUCT r2, r1, #2                          ; p:r2 = j:r1 as Point
   ;
   ; line 9  return p.x;
-  0006:  HACC      GET_INT, r0, r2, "x"        ; r0 = p:r2.x
-  0007:  KILL_REF  r1                          ; j:r1 = null (GC)
-  0008:  KILL_REF  r2                          ; p:r2 = null (GC)
-  0009:  RET       p0                          ; return p0
+  0006:  HACC        GET_INT, r0, r2, "x"                ; r0 = p:r2.x
+  0007:  KILL_REF    r1                                  ; j:r1 = null (GC)
+  0008:  KILL_REF    r2                                  ; p:r2 = null (GC)
+  0009:  RET         p0                                  ; return p0
 
 
 ; Exception Table

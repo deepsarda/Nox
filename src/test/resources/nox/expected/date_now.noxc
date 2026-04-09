@@ -20,11 +20,11 @@
 .func main
   ;
   ; line 3  return Date.now() > 0;
-  0000:  SCALL     Date__now, p2, r1           ; p2 = scall Date__now(p3..., r1...)
-  0001:  MOV       p1, p2                      ; p1 = p2
-  0002:  LDI       p2, 0                       ; p2 = 0
-  0003:  IGT       p0, p1, p2                  ; p0 = p1 > p2
-  0004:  RET       p0                          ; return p0
+  0000:  SCALL       Date__now, p2, r1                   ; p2 = scall Date__now(p3..., r1...)
+  0001:  MOV         p1, p2                              ; p1 = p2
+  0002:  LDI         p2, 0                               ; p2 = 0
+  0003:  IGT         p0, p1, p2                          ; p0 = p1 > p2
+  0004:  RET         p0                                  ; return p0
 
 
 ; Exception Table

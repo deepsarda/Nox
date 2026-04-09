@@ -20,23 +20,23 @@
 .func main
   ;
   ; line 6  Box[] boxes = [{ value: 5 }, { value: 10 }];
-  0000:  NEW_ARRAY r1                          ; boxes:r1 = []
-  0001:  NEW_OBJ   r2                          ; r2 = {}
-  0002:  LDI       p0, 5                       ; p0 = 5
-  0003:  OBJ_SET   SET_INT, r2, "value", p0    ; r2.value = p0
-  0004:  ARR_PUSH  SET_OBJ, r1, r2             ; boxes:r1.push(r2)
-  0005:  NEW_OBJ   r2                          ; r2 = {}
-  0006:  LDI       p0, 10                      ; p0 = 10
-  0007:  OBJ_SET   SET_INT, r2, "value", p0    ; r2.value = p0
-  0008:  ARR_PUSH  SET_OBJ, r1, r2             ; boxes:r1.push(r2)
+  0000:  NEW_ARRAY   r1                                  ; boxes:r1 = []
+  0001:  NEW_OBJ     r2                                  ; r2 = {}
+  0002:  LDI         p0, 5                               ; p0 = 5
+  0003:  OBJ_SET     SET_INT, r2, "value", p0            ; r2.value = p0
+  0004:  ARR_PUSH    SET_OBJ, r1, r2                     ; boxes:r1.push(r2)
+  0005:  NEW_OBJ     r2                                  ; r2 = {}
+  0006:  LDI         p0, 10                              ; p0 = 10
+  0007:  OBJ_SET     SET_INT, r2, "value", p0            ; r2.value = p0
+  0008:  ARR_PUSH    SET_OBJ, r1, r2                     ; boxes:r1.push(r2)
   ;
   ; line 7  return boxes[1].value;
-  0009:  LDI       p1, 1                       ; p1 = 1
-  0010:  AGET_IDX  r2, r1, p1                  ; r2 = boxes:r1[p1]
-  0011:  HACC      GET_INT, r0, r2, "value"    ; r0 = r2.value
-  0012:  KILL_REF  r1                          ; boxes:r1 = null (GC)
-  0013:  KILL_REF  r2                          ; r2 = null (GC)
-  0014:  RET       p0                          ; return p0
+  0009:  LDI         p1, 1                               ; p1 = 1
+  0010:  AGET_IDX    r2, r1, p1                          ; r2 = boxes:r1[p1]
+  0011:  HACC        GET_INT, r0, r2, "value"            ; r0 = r2.value
+  0012:  KILL_REF    r1                                  ; boxes:r1 = null (GC)
+  0013:  KILL_REF    r2                                  ; r2 = null (GC)
+  0014:  RET         p0                                  ; return p0
 
 
 ; Exception Table

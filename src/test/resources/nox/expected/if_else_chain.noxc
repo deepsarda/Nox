@@ -22,32 +22,32 @@
 .func main
   ;
   ; line 3  int x = 2;
-  0000:  LDI       p0, 2                       ; x:p0 = 2
+  0000:  LDI         p0, 2                               ; x:p0 = 2
   ;
   ; line 4  if (x == 1) {
-  0001:  LDI       p2, 1                       ; p2 = 1
-  0002:  IEQ       p1, p0, p2                  ; p1 = x:p0 == p2
-  0003:  JIF       p1, @0007                   ; if p1==0 -> @0007
+  0001:  LDI         p2, 1                               ; p2 = 1
+  0002:  IEQ         p1, p0, p2                          ; p1 = x:p0 == p2
+  0003:  JIF         p1, @0007                           ; if p1==0 -> @0007
   ;
   ; line 5  return "not matched";
-  0004:  LDC       r1, #0                      ; r1 = "not matched"
-  0005:  RET       r1                          ; return r1
-  0006:  JMP       @0015                       ; -> @0015
+  0004:  LDC         r1, #0                              ; r1 = "not matched"
+  0005:  RET         r1                                  ; return r1
+  0006:  JMP         @0015                               ; -> @0015
   ;
   ; line 6  } else if (x == 2) {
-  0007:  LDI       p2, 2                       ; p2 = 2
-  0008:  IEQ       p1, p0, p2                  ; p1 = x:p0 == p2
-  0009:  JIF       p1, @0013                   ; if p1==0 -> @0013
+  0007:  LDI         p2, 2                               ; p2 = 2
+  0008:  IEQ         p1, p0, p2                          ; p1 = x:p0 == p2
+  0009:  JIF         p1, @0013                           ; if p1==0 -> @0013
   ;
   ; line 7  return "matched";
-  0010:  LDC       r1, #1                      ; r1 = "matched"
-  0011:  RET       r1                          ; return r1
-  0012:  JMP       @0015                       ; -> @0015
+  0010:  LDC         r1, #1                              ; r1 = "matched"
+  0011:  RET         r1                                  ; return r1
+  0012:  JMP         @0015                               ; -> @0015
   ;
   ; line 9  return "else";
-  0013:  LDC       r1, #2                      ; r1 = "else"
-  0014:  RET       r1                          ; return r1
-  0015:  KILL_REF  r1                          ; r1 = null (GC)
+  0013:  LDC         r1, #2                              ; r1 = "else"
+  0014:  RET         r1                                  ; return r1
+  0015:  KILL_REF    r1                                  ; r1 = null (GC)
 
 
 ; Exception Table
