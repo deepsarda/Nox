@@ -44,21 +44,21 @@ class ExternalPluginBridgeTest :
                         return `${'$'}{sum_i},${'$'}{sum_d},${'$'}{inv},${'$'}{msg}`;
                     }
                     """.trimIndent()
-val runtime =
-    NoxRuntime
-        .builder()
-        .withRegistry(registry)
-        .build()
+                val runtime =
+                    NoxRuntime
+                        .builder()
+                        .withRegistry(registry)
+                        .build()
 
-val result = runtime.execute(source)
-if (result is NoxResult.Error) {
-    println("Execution failed: ${result.message}")
-}
+                val result = runtime.execute(source)
+                if (result is NoxResult.Error) {
+                    println("Execution failed: ${result.message}")
+                }
 
-result.shouldBeInstanceOf<NoxResult.Success>()
-result.returnValue shouldBe "30,10,false,Hello from C, Nox"
+                result.shouldBeInstanceOf<NoxResult.Success>()
+                result.returnValue shouldBe "30,10,false,Hello from C, Nox"
 
-result.yields.contains("yielding from C!") shouldBe true
+                result.yields.contains("yielding from C!") shouldBe true
             }
         }
     })

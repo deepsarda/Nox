@@ -534,12 +534,15 @@ class ExpressionResolver(
                     when {
                         left.type == TypeRef.INT && right.type == TypeRef.INT -> TypeRef.INT
                         left.type.isNumeric() && right.type.isNumeric() -> TypeRef.DOUBLE
-                        expr.op == BinaryOp.ADD && left.type == TypeRef.STRING && right.type == TypeRef.STRING -> TypeRef.STRING
+                        expr.op == BinaryOp.ADD &&
+                            left.type == TypeRef.STRING &&
+                            right.type == TypeRef.STRING -> TypeRef.STRING
                         else -> {
                             val suggestion =
                                 when {
                                     expr.op == BinaryOp.ADD &&
-                                        (left.type == TypeRef.STRING || right.type == TypeRef.STRING) -> "Use template literals for string concatenation: `\${value1}\${value2}`"
+                                        (left.type == TypeRef.STRING || right.type == TypeRef.STRING) ->
+                                        "Use template literals for string concatenation: `\${value1}\${value2}`"
                                     !left.type.isNumeric() ->
                                         DiagnosticHelpers.conversionHint(left.type, TypeRef.INT)
                                             ?: DiagnosticHelpers.conversionHint(left.type, TypeRef.DOUBLE)
@@ -580,17 +583,21 @@ class ExpressionResolver(
                 }
                 BinaryOp.AND, BinaryOp.OR -> {
                     if (left.type != TypeRef.BOOLEAN) {
+                        val suggestion =
+                            if (left.type.isNumeric()) "Did you mean a comparison? e.g. '${expr.left} != 0'" else null
                         errors.report(
                             expr.left.loc,
                             "Logical '${expr.op.symbol}' expected 'boolean', got '${left.type}'",
-                            suggestion = if (left.type.isNumeric()) "Did you mean a comparison? e.g. '${expr.left} != 0'" else null,
+                            suggestion = suggestion,
                         )
                     }
                     if (right.type != TypeRef.BOOLEAN) {
+                        val suggestion =
+                            if (right.type.isNumeric()) "Did you mean a comparison? e.g. '${expr.right} != 0'" else null
                         errors.report(
                             expr.right.loc,
                             "Logical '${expr.op.symbol}' expected 'boolean', got '${right.type}'",
-                            suggestion = if (right.type.isNumeric()) "Did you mean a comparison? e.g. '${expr.right} != 0'" else null,
+                            suggestion = suggestion,
                         )
                     }
                     TypeRef.BOOLEAN
@@ -683,10 +690,12 @@ class ExpressionResolver(
                 }
                 UnaryOp.NOT -> {
                     if (operandType != TypeRef.BOOLEAN) {
+                        val suggestion =
+                            if (operandType.isNumeric()) "Did you mean a comparison? e.g. '!(x != 0)'" else null
                         errors.report(
                             expr.loc,
                             "Logical '!' requires 'boolean', got '$operandType'",
-                            suggestion = if (operandType.isNumeric()) "Did you mean a comparison? e.g. '!(x != 0)'" else null,
+                            suggestion = suggestion,
                         )
                         TypeRef.JSON
                     } else {
@@ -739,7 +748,12 @@ class ExpressionResolver(
         val operand = resolveExpr(scope, expr.operand)
         val sourceType = operand.type
         if (sourceType != TypeRef.JSON) {
-            val suggestion = if (sourceType.isStructType()) "Convert via json first: 'json j = value; ${expr.targetType} result = j as ${expr.targetType};'" else "Only 'json' values can be cast to struct types. Use type conversion methods instead (e.g. '.toInt()', '.toString()')"
+            val suggestion =
+                if (sourceType.isStructType()) {
+                    "Convert via json first: 'json j = value; ${expr.targetType} result = j as ${expr.targetType};'"
+                } else {
+                    "Only 'json' values can be cast to struct types. Use type conversion methods instead (e.g. '.toInt()', '.toString()')"
+                }
             errors.report(
                 expr.loc,
                 "Cannot cast from '$sourceType', only 'json' can be cast to a struct type",

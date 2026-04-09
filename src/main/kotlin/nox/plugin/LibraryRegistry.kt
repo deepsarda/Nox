@@ -456,7 +456,8 @@ class LibraryRegistry {
             for (name in possibleNames) {
                 try {
                     val generatedRegistryClass = Class.forName(name)
-                    val instance = generatedRegistryClass.getDeclaredConstructor().newInstance() as PluginRegistryProvider
+                    val instance =
+                        generatedRegistryClass.getDeclaredConstructor().newInstance() as PluginRegistryProvider
                     instance.registerAll(registry)
                     loadedAny = true
                 } catch (e: ClassNotFoundException) {

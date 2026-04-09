@@ -306,7 +306,7 @@ object ExternalPluginBridge {
                         NoxTypeTag.INT_ARRAY, NoxTypeTag.DOUBLE_ARRAY, NoxTypeTag.STRING_ARRAY -> {
                             throw UnsupportedOperationException(
                                 "Returning arrays from C is not safely supported without a length protocol.",
-                            ) //TODO: Implement a safe protocol for returning arrays (e.g. caller allocates and passes pointer+length, or return struct with pointer+length)
+                            ) // TODO: Implement a safe protocol for returning arrays (e.g. return struct)
                         }
                         NoxTypeTag.VOID -> {}
                         else -> throw UnsupportedOperationException("Type $returnType not supported as return")

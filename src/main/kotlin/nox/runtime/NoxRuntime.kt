@@ -4,8 +4,8 @@ import kotlinx.coroutines.runBlocking
 import nox.compiler.NoxCompiler
 import nox.plugin.LibraryRegistry
 import nox.vm.ExecutionConfig
-import nox.vm.NoxVM
 import nox.vm.NoxException
+import nox.vm.NoxVM
 import java.time.Duration
 
 /**
@@ -56,7 +56,7 @@ class NoxRuntime private constructor(
             }
 
         val vm = NoxVM(compiled, ctx, registry, config)
-        
+
         return try {
             val ret = runBlocking { vm.execute() }
             NoxResult.Success(ret, yields)
