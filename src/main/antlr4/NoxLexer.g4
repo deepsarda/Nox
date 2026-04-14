@@ -156,10 +156,11 @@ BACKTICK        : '`' -> pushMode(TEMPLATE);
 // Identifiers
 Identifier      : [a-zA-Z_] [a-zA-Z0-9_]*;
  
-// Whitespace & Comments (skipped)
-WS              : [ \t\r\n]+ -> skip;
-LINE_COMMENT    : '//' ~[\r\n]* -> skip;
-BLOCK_COMMENT   : '/*' .*? '*/' -> skip;
+// Whitespace & Comments (routed to HIDDEN channel so the parser ignores them
+// but formatter/tooling can still read them via CommonTokenStream hidden tokens).
+WS              : [ \t\r\n]+ -> channel(HIDDEN);
+LINE_COMMENT    : '//' ~[\r\n]* -> channel(HIDDEN);
+BLOCK_COMMENT   : '/*' .*? '*/' -> channel(HIDDEN);
 
 
 // TEMPLATE mode inside backtick-delimited template literals
