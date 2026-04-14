@@ -27,13 +27,12 @@ Raw AST (from ASTBuilder)
     │  Pass 3: Control Flow Validation
     │  • All non-void paths return a value
     │  • break/continue only inside loops
-    │  • yield only inside main
     │  • Dead code detection
     ▼
 Annotated AST (ready for code generation)
 ```
 
-**Error strategy:** Errors are **collected, not thrown**. Each pass runs to completion, reporting as many errors as possible. If Pass 2 has errors, Pass 3 still runs (where feasible) to catch additional issues. Codegen only runs if zero errors were found.
+**Error strategy:** Errors are **collected, not thrown**. Each pass runs to completion, reporting as many errors as possible.
  
 ## Phase 0: Import Resolution
 
