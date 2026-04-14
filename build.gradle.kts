@@ -18,6 +18,7 @@ graalvmNative {
             imageName.set("nox")
             mainClass.set("nox.cli.NoxCliKt")
             buildArgs.add("-O3")
+            buildArgs.add("--report-unsupported-elements-at-runtime")
             sharedLibrary.set(false)
             javaLauncher.set(
                 javaToolchains.launcherFor {
@@ -31,6 +32,7 @@ graalvmNative {
             imageName.set("noxc")
             mainClass.set("nox.cli.NoxcCliKt")
             buildArgs.add("-O3")
+            buildArgs.add("--report-unsupported-elements-at-runtime")
             sharedLibrary.set(false)
             javaLauncher.set(
                 javaToolchains.launcherFor {
@@ -44,7 +46,7 @@ graalvmNative {
 
 // JVM target
 kotlin {
-    jvmToolchain(25)
+    jvmToolchain(21)
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
     }
@@ -66,6 +68,8 @@ dependencies {
 
     // ANTLR4: runtime (shipped in the final JAR, needed by generated lexer/parser)
     implementation(libs.antlr4.runtime)
+
+    implementation("net.java.dev.jna:jna:5.14.0")
 
     // Kotlin reflection: used by plugin system for annotation scanning and MethodHandle linking
     implementation(libs.kotlin.reflect)
@@ -184,6 +188,7 @@ kover {
 }
 
 tasks.withType<Test> {
+    jvmArgs("-agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image/nox-agent", "--enable-native-access=ALL-UNNAMED")
     this.testLogging {
         this.showStandardStreams = true
     }

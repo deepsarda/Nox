@@ -1,0 +1,1103 @@
+[
+{
+  "name":"[Ljava.lang.Object;"
+},
+{
+  "name":"android.os.Build"
+},
+{
+  "name":"apple.security.AppleProvider",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.intellij.rt.coverage.instrumentation.Instrumentator",
+  "methods":[{"name":"premain","parameterTypes":["java.lang.String","java.lang.instrument.Instrumentation"] }]
+},
+{
+  "name":"com.sun.crypto.provider.AESCipher$General",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.sun.crypto.provider.ARCFOURCipher",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.sun.crypto.provider.ChaCha20Cipher$ChaCha20Poly1305",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.sun.crypto.provider.DESCipher",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.sun.crypto.provider.DESedeCipher",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.sun.crypto.provider.DHParameters",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.sun.crypto.provider.GaloisCounterMode$AESGCM",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.sun.crypto.provider.TlsMasterSecretGenerator",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.sun.jna.CallbackProxy",
+  "methods":[{"name":"callback","parameterTypes":["java.lang.Object[]"] }]
+},
+{
+  "name":"io.kotest.core.TestConfiguration"
+},
+{
+  "name":"io.kotest.core.spec.DslDrivenSpec"
+},
+{
+  "name":"io.kotest.core.spec.Extendable"
+},
+{
+  "name":"io.kotest.core.spec.Spec"
+},
+{
+  "name":"io.kotest.core.spec.style.FunSpec"
+},
+{
+  "name":"io.kotest.core.spec.style.scopes.FunSpecRootScope"
+},
+{
+  "name":"io.kotest.core.spec.style.scopes.RootScope"
+},
+{
+  "name":"io.kotest.provided.ProjectConfig"
+},
+{
+  "name":"java.io.File"
+},
+{
+  "name":"java.io.IOException",
+  "allDeclaredFields":true
+},
+{
+  "name":"java.io.Serializable"
+},
+{
+  "name":"java.lang.Boolean"
+},
+{
+  "name":"java.lang.Class",
+  "methods":[{"name":"getModule","parameterTypes":[] }, {"name":"getPermittedSubclasses","parameterTypes":[] }, {"name":"getRecordComponents","parameterTypes":[] }, {"name":"isRecord","parameterTypes":[] }, {"name":"isSealed","parameterTypes":[] }]
+},
+{
+  "name":"java.lang.ClassValue"
+},
+{
+  "name":"java.lang.Double"
+},
+{
+  "name":"java.lang.Enum"
+},
+{
+  "name":"java.lang.Exception",
+  "allDeclaredFields":true
+},
+{
+  "name":"java.lang.Long"
+},
+{
+  "name":"java.lang.Module",
+  "methods":[{"name":"getDescriptor","parameterTypes":[] }]
+},
+{
+  "name":"java.lang.Object",
+  "allDeclaredFields":true
+},
+{
+  "name":"java.lang.SecurityManager"
+},
+{
+  "name":"java.lang.String"
+},
+{
+  "name":"java.lang.Thread",
+  "fields":[{"name":"threadLocalRandomProbe"}]
+},
+{
+  "name":"java.lang.Throwable",
+  "allDeclaredFields":true,
+  "methods":[{"name":"addSuppressed","parameterTypes":["java.lang.Throwable"] }]
+},
+{
+  "name":"java.lang.instrument.Instrumentation",
+  "methods":[{"name":"addTransformer","parameterTypes":["java.lang.instrument.ClassFileTransformer","boolean"] }]
+},
+{
+  "name":"java.lang.invoke.MethodHandle"
+},
+{
+  "name":"java.lang.module.ModuleDescriptor",
+  "methods":[{"name":"name","parameterTypes":[] }]
+},
+{
+  "name":"java.lang.reflect.Method",
+  "methods":[{"name":"isVarArgs","parameterTypes":[] }]
+},
+{
+  "name":"java.net.ConnectException",
+  "allDeclaredFields":true,
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"java.net.SocketException",
+  "allDeclaredFields":true
+},
+{
+  "name":"java.net.http.HttpClient"
+},
+{
+  "name":"java.net.http.HttpRequest",
+  "allDeclaredClasses":true
+},
+{
+  "name":"java.net.http.HttpRequest$Builder"
+},
+{
+  "name":"java.nio.Buffer"
+},
+{
+  "name":"java.nio.file.Path"
+},
+{
+  "name":"java.security.AlgorithmParametersSpi"
+},
+{
+  "name":"java.security.KeyStoreSpi"
+},
+{
+  "name":"java.security.SecureRandomParameters"
+},
+{
+  "name":"java.util.HashSet"
+},
+{
+  "name":"java.util.LinkedHashSet"
+},
+{
+  "name":"java.util.List"
+},
+{
+  "name":"java.util.Map"
+},
+{
+  "name":"java.util.concurrent.ArrayBlockingQueue"
+},
+{
+  "name":"java.util.concurrent.ForkJoinTask",
+  "fields":[{"name":"aux"}, {"name":"status"}]
+},
+{
+  "name":"java.util.concurrent.ScheduledThreadPoolExecutor",
+  "methods":[{"name":"setRemoveOnCancelPolicy","parameterTypes":["boolean"] }]
+},
+{
+  "name":"java.util.concurrent.atomic.AtomicBoolean",
+  "fields":[{"name":"value"}]
+},
+{
+  "name":"java.util.concurrent.atomic.AtomicReference",
+  "fields":[{"name":"value"}]
+},
+{
+  "name":"java.util.concurrent.atomic.Striped64",
+  "fields":[{"name":"base"}, {"name":"cellsBusy"}]
+},
+{
+  "name":"java.util.concurrent.locks.AbstractOwnableSynchronizer"
+},
+{
+  "name":"java.util.concurrent.locks.AbstractQueuedSynchronizer"
+},
+{
+  "name":"java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject"
+},
+{
+  "name":"java.util.concurrent.locks.ReentrantLock"
+},
+{
+  "name":"java.util.concurrent.locks.ReentrantLock$NonfairSync"
+},
+{
+  "name":"java.util.concurrent.locks.ReentrantLock$Sync"
+},
+{
+  "name":"javax.security.auth.x500.X500Principal",
+  "fields":[{"name":"thisX500Name"}],
+  "methods":[{"name":"<init>","parameterTypes":["sun.security.x509.X500Name"] }]
+},
+{
+  "name":"jdk.internal.misc.Unsafe"
+},
+{
+  "name":"kotlin.Any"
+},
+{
+  "name":"kotlin.Array"
+},
+{
+  "name":"kotlin.Boolean"
+},
+{
+  "name":"kotlin.Cloneable"
+},
+{
+  "name":"kotlin.Double"
+},
+{
+  "name":"kotlin.Function"
+},
+{
+  "name":"kotlin.Function1"
+},
+{
+  "name":"kotlin.Function2"
+},
+{
+  "name":"kotlin.Int"
+},
+{
+  "name":"kotlin.Long"
+},
+{
+  "name":"kotlin.Metadata",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"bv","parameterTypes":[] }, {"name":"d1","parameterTypes":[] }, {"name":"d2","parameterTypes":[] }, {"name":"k","parameterTypes":[] }, {"name":"mv","parameterTypes":[] }, {"name":"pn","parameterTypes":[] }, {"name":"xi","parameterTypes":[] }, {"name":"xs","parameterTypes":[] }]
+},
+{
+  "name":"kotlin.SafePublicationLazyImpl",
+  "fields":[{"name":"_value"}]
+},
+{
+  "name":"kotlin.String"
+},
+{
+  "name":"kotlin.Unit"
+},
+{
+  "name":"kotlin.collections.List"
+},
+{
+  "name":"kotlin.collections.Map"
+},
+{
+  "name":"kotlin.coroutines.Continuation"
+},
+{
+  "name":"kotlin.coroutines.jvm.internal.BaseContinuationImpl"
+},
+{
+  "name":"kotlin.coroutines.jvm.internal.ContinuationImpl"
+},
+{
+  "name":"kotlin.coroutines.jvm.internal.CoroutineStackFrame"
+},
+{
+  "name":"kotlin.coroutines.jvm.internal.SuspendFunction"
+},
+{
+  "name":"kotlin.coroutines.jvm.internal.SuspendLambda"
+},
+{
+  "name":"kotlin.jvm.JvmStatic",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"kotlin.jvm.internal.DefaultConstructorMarker"
+},
+{
+  "name":"kotlin.jvm.internal.FunctionBase"
+},
+{
+  "name":"kotlin.reflect.jvm.internal.KClassImpl"
+},
+{
+  "name":"kotlin.reflect.jvm.internal.ReflectionFactoryImpl",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"kotlin.reflect.jvm.internal.impl.resolve.scopes.DescriptorKindFilter",
+  "allPublicFields":true
+},
+{
+  "name":"kotlinx.coroutines.CancellableContinuationImpl",
+  "fields":[{"name":"_decisionAndIndex$volatile"}, {"name":"_parentHandle$volatile"}, {"name":"_state$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.CompletedExceptionally",
+  "fields":[{"name":"_handled$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.DispatchedCoroutine",
+  "fields":[{"name":"_decision$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.EventLoopImplBase",
+  "fields":[{"name":"_delayed$volatile"}, {"name":"_isCompleted$volatile"}, {"name":"_queue$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.JobSupport",
+  "fields":[{"name":"_parentHandle$volatile"}, {"name":"_state$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.JobSupport$Finishing",
+  "fields":[{"name":"_exceptionsHolder$volatile"}, {"name":"_isCompleting$volatile"}, {"name":"_rootCause$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.internal.ConcurrentLinkedListNode",
+  "fields":[{"name":"_next$volatile"}, {"name":"_prev$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.internal.DispatchedContinuation",
+  "fields":[{"name":"_reusableCancellableContinuation$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.internal.LimitedDispatcher",
+  "fields":[{"name":"runningWorkers$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.internal.LockFreeLinkedListNode",
+  "fields":[{"name":"_next$volatile"}, {"name":"_prev$volatile"}, {"name":"_removedRef$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.internal.LockFreeTaskQueue",
+  "fields":[{"name":"_cur$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.internal.LockFreeTaskQueueCore",
+  "fields":[{"name":"_next$volatile"}, {"name":"_state$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.internal.Segment",
+  "fields":[{"name":"cleanedAndPointers$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.internal.StackTraceRecoveryKt"
+},
+{
+  "name":"kotlinx.coroutines.internal.ThreadSafeHeap",
+  "fields":[{"name":"_size$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.scheduling.CoroutineScheduler",
+  "fields":[{"name":"_isTerminated$volatile"}, {"name":"controlState$volatile"}, {"name":"parkedWorkersStack$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.scheduling.CoroutineScheduler$Worker",
+  "fields":[{"name":"workerCtl$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.scheduling.WorkQueue",
+  "fields":[{"name":"blockingTasksInBuffer$volatile"}, {"name":"consumerIndex$volatile"}, {"name":"lastScheduledTask$volatile"}, {"name":"producerIndex$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.sync.MutexImpl",
+  "fields":[{"name":"owner$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.sync.SemaphoreAndMutexImpl",
+  "fields":[{"name":"_availablePermits$volatile"}, {"name":"deqIdx$volatile"}, {"name":"enqIdx$volatile"}, {"name":"head$volatile"}, {"name":"tail$volatile"}]
+},
+{
+  "name":"kotlinx.coroutines.test.TestCoroutineScheduler",
+  "fields":[{"name":"count$volatile"}]
+},
+{
+  "name":"kotlinx.kover.jvmagent.KoverJvmAgentPremain",
+  "methods":[{"name":"premain","parameterTypes":["java.lang.String","java.lang.instrument.Instrumentation"] }]
+},
+{
+  "name":"nox.PackageConfig"
+},
+{
+  "name":"nox.compiler.CompilerError",
+  "fields":[{"name":"loc"}, {"name":"message"}, {"name":"suggestion"}],
+  "methods":[{"name":"getLoc","parameterTypes":[] }, {"name":"getMessage","parameterTypes":[] }, {"name":"getSuggestion","parameterTypes":[] }]
+},
+{
+  "name":"nox.compiler.CompilerErrorsTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.compiler.LexerSmokeTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.compiler.NoxCompilerTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.compiler.NoxCompilerTestKt"
+},
+{
+  "name":"nox.compiler.NoxcEmitterTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.compiler.PackageConfig"
+},
+{
+  "name":"nox.compiler.ast.typed.TypedMethodCallExpr"
+},
+{
+  "name":"nox.compiler.ast.typed.TypedMethodCallExpr$Resolution"
+},
+{
+  "name":"nox.compiler.codegen.CodeGeneratorTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.compiler.codegen.PackageConfig"
+},
+{
+  "name":"nox.compiler.parsing.ASTBuilderTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.compiler.parsing.PackageConfig"
+},
+{
+  "name":"nox.compiler.semantic.ControlFlowValidatorTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.compiler.semantic.ControlFlowValidatorTest$1$ValidationResult"
+},
+{
+  "name":"nox.compiler.semantic.DeclarationCollectorTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.compiler.semantic.ExpressionResolverIsolatedTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.compiler.semantic.ExpressionResolverIsolatedTest$1$1"
+},
+{
+  "name":"nox.compiler.semantic.ExpressionResolverIsolatedTest$1$2"
+},
+{
+  "name":"nox.compiler.semantic.ExpressionResolverIsolatedTest$1$3"
+},
+{
+  "name":"nox.compiler.semantic.ExpressionResolverIsolatedTest$1$4"
+},
+{
+  "name":"nox.compiler.semantic.ExpressionResolverIsolatedTest$1$5"
+},
+{
+  "name":"nox.compiler.semantic.ExpressionResolverIsolatedTest$1$6"
+},
+{
+  "name":"nox.compiler.semantic.ExpressionResolverIsolatedTest$1$7"
+},
+{
+  "name":"nox.compiler.semantic.ImportResolverTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.compiler.semantic.ImportResolverTestKt"
+},
+{
+  "name":"nox.compiler.semantic.PackageConfig"
+},
+{
+  "name":"nox.compiler.semantic.StatementResolverIsolatedTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.compiler.semantic.StatementResolverIsolatedTest$1$1"
+},
+{
+  "name":"nox.compiler.semantic.StatementResolverIsolatedTest$1$2"
+},
+{
+  "name":"nox.compiler.semantic.StatementResolverIsolatedTest$1$3"
+},
+{
+  "name":"nox.compiler.semantic.StatementResolverIsolatedTest$1$4"
+},
+{
+  "name":"nox.compiler.semantic.StatementResolverIsolatedTest$1$5"
+},
+{
+  "name":"nox.compiler.semantic.StatementResolverIsolatedTest$1$6"
+},
+{
+  "name":"nox.compiler.semantic.StatementResolverIsolatedTest$1$7"
+},
+{
+  "name":"nox.compiler.semantic.SymbolTableTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.compiler.semantic.TreeValidatorTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.compiler.semantic.TypeResolverTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.compiler.semantic.TypeResolverTest$1$186"
+},
+{
+  "name":"nox.compiler.types.AssignOp"
+},
+{
+  "name":"nox.compiler.types.BinaryOp"
+},
+{
+  "name":"nox.compiler.types.FieldSpec"
+},
+{
+  "name":"nox.compiler.types.FieldSpec$INT"
+},
+{
+  "name":"nox.compiler.types.FieldSpec$STRING"
+},
+{
+  "name":"nox.compiler.types.PackageConfig"
+},
+{
+  "name":"nox.compiler.types.PostfixOp"
+},
+{
+  "name":"nox.compiler.types.SourceLocation",
+  "fields":[{"name":"column"}, {"name":"file"}, {"name":"line"}],
+  "methods":[{"name":"getColumn","parameterTypes":[] }, {"name":"getFile","parameterTypes":[] }, {"name":"getLine","parameterTypes":[] }]
+},
+{
+  "name":"nox.compiler.types.TypeDescriptor"
+},
+{
+  "name":"nox.compiler.types.TypeRef"
+},
+{
+  "name":"nox.compiler.types.TypeRefTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.compiler.types.UnaryOp"
+},
+{
+  "name":"nox.compiler.types.VarSymbol"
+},
+{
+  "name":"nox.e2e.GoldenTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.e2e.PackageConfig"
+},
+{
+  "name":"nox.parser.NoxLexer"
+},
+{
+  "name":"nox.parser.NoxParser"
+},
+{
+  "name":"nox.parser.NoxParserBaseVisitor"
+},
+{
+  "name":"nox.parser.NoxParserVisitor"
+},
+{
+  "name":"nox.plugin.GeneratedRegistry",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"nox.plugin.GeneratedRegistryTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"nox.plugin.LibraryRegistryTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.plugin.Linker",
+  "methods":[{"name":"buildAdapter","parameterTypes":["java.lang.invoke.MethodHandle","java.lang.Object","boolean","boolean","java.util.List","nox.plugin.Linker$ReturnDescriptor"] }]
+},
+{
+  "name":"nox.plugin.Linker$buildAdapter$1"
+},
+{
+  "name":"nox.plugin.Linker$buildAdapter$1$invoke$1",
+  "fields":[{"name":"label"}]
+},
+{
+  "name":"nox.plugin.PackageConfig"
+},
+{
+  "name":"nox.plugin.TestNamespaceModule",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"add","parameterTypes":["long","long"] }, {"name":"greet","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"nox.plugin.TestNamespaceModule2",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"add","parameterTypes":["long","long"] }]
+},
+{
+  "name":"nox.plugin.TestTypeMethods",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"reverse","parameterTypes":["java.lang.String"] }, {"name":"toUpperCase","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"nox.plugin.annotations.NoxDefault",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"value","parameterTypes":[] }]
+},
+{
+  "name":"nox.plugin.annotations.NoxFunction",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"name","parameterTypes":[] }]
+},
+{
+  "name":"nox.plugin.annotations.NoxGeneric",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"params","parameterTypes":[] }]
+},
+{
+  "name":"nox.plugin.annotations.NoxType",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"value","parameterTypes":[] }]
+},
+{
+  "name":"nox.plugin.annotations.NoxTypeMethod",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"name","parameterTypes":[] }, {"name":"targetType","parameterTypes":[] }]
+},
+{
+  "name":"nox.plugin.external.ExternalPluginBridge$YieldCallbackImpl",
+  "fields":[{"name":"OPTIONS"}, {"name":"STRING_ENCODING"}, {"name":"STRUCTURE_ALIGNMENT"}, {"name":"TYPE_MAPPER"}]
+},
+{
+  "name":"nox.plugin.external.ExternalPluginBridgeTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.plugin.external.PackageConfig"
+},
+{
+  "name":"nox.plugin.external.YieldCallback",
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicMethods":true,
+  "methods":[{"name":"callback","parameterTypes":["long","com.sun.jna.Pointer"] }]
+},
+{
+  "name":"nox.plugin.stdlib.ArrayMethods",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"length","parameterTypes":["java.lang.Object"] }, {"name":"pop","parameterTypes":["java.lang.Object"] }, {"name":"push","parameterTypes":["java.lang.Object","java.lang.Object"] }]
+},
+{
+  "name":"nox.plugin.stdlib.DateModule",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"now","parameterTypes":[] }]
+},
+{
+  "name":"nox.plugin.stdlib.EnvModule",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"get","parameterTypes":["nox.runtime.RuntimeContext","java.lang.String","kotlin.coroutines.Continuation"] }, {"name":"system","parameterTypes":["nox.runtime.RuntimeContext","java.lang.String","kotlin.coroutines.Continuation"] }]
+},
+{
+  "name":"nox.plugin.stdlib.FileModule",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"append","parameterTypes":["nox.runtime.RuntimeContext","java.lang.String","java.lang.String","kotlin.coroutines.Continuation"] }, {"name":"createDir","parameterTypes":["nox.runtime.RuntimeContext","java.lang.String","kotlin.coroutines.Continuation"] }, {"name":"delete","parameterTypes":["nox.runtime.RuntimeContext","java.lang.String","kotlin.coroutines.Continuation"] }, {"name":"exists","parameterTypes":["nox.runtime.RuntimeContext","java.lang.String","kotlin.coroutines.Continuation"] }, {"name":"list","parameterTypes":["nox.runtime.RuntimeContext","java.lang.String","kotlin.coroutines.Continuation"] }, {"name":"metadata","parameterTypes":["nox.runtime.RuntimeContext","java.lang.String","kotlin.coroutines.Continuation"] }, {"name":"read","parameterTypes":["nox.runtime.RuntimeContext","java.lang.String","kotlin.coroutines.Continuation"] }, {"name":"write","parameterTypes":["nox.runtime.RuntimeContext","java.lang.String","java.lang.String","kotlin.coroutines.Continuation"] }]
+},
+{
+  "name":"nox.plugin.stdlib.HttpModule",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"delete","parameterTypes":["nox.runtime.RuntimeContext","java.lang.String","kotlin.coroutines.Continuation"] }, {"name":"get","parameterTypes":["nox.runtime.RuntimeContext","java.lang.String","kotlin.coroutines.Continuation"] }, {"name":"getJson","parameterTypes":["nox.runtime.RuntimeContext","java.lang.String","kotlin.coroutines.Continuation"] }, {"name":"post","parameterTypes":["nox.runtime.RuntimeContext","java.lang.String","java.lang.String","kotlin.coroutines.Continuation"] }, {"name":"put","parameterTypes":["nox.runtime.RuntimeContext","java.lang.String","java.lang.String","kotlin.coroutines.Continuation"] }]
+},
+{
+  "name":"nox.plugin.stdlib.HttpModule$get$1",
+  "fields":[{"name":"label"}]
+},
+{
+  "name":"nox.plugin.stdlib.HttpModule$getJson$1",
+  "fields":[{"name":"label"}]
+},
+{
+  "name":"nox.plugin.stdlib.JsonMethods",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"getBool","parameterTypes":["java.lang.Object","java.lang.String","boolean"] }, {"name":"getDouble","parameterTypes":["java.lang.Object","java.lang.String","double"] }, {"name":"getDoubleArray","parameterTypes":["java.lang.Object","java.lang.String","java.lang.Object"] }, {"name":"getInt","parameterTypes":["java.lang.Object","java.lang.String","long"] }, {"name":"getIntArray","parameterTypes":["java.lang.Object","java.lang.String","java.lang.Object"] }, {"name":"getJSON","parameterTypes":["java.lang.Object","java.lang.String","java.lang.Object"] }, {"name":"getString","parameterTypes":["java.lang.Object","java.lang.String","java.lang.String"] }, {"name":"getStringArray","parameterTypes":["java.lang.Object","java.lang.String","java.lang.Object"] }, {"name":"has","parameterTypes":["java.lang.Object","java.lang.String"] }, {"name":"keys","parameterTypes":["java.lang.Object"] }, {"name":"remove","parameterTypes":["java.lang.Object","java.lang.String"] }, {"name":"setBool","parameterTypes":["java.lang.Object","java.lang.String","boolean"] }, {"name":"setDouble","parameterTypes":["java.lang.Object","java.lang.String","double"] }, {"name":"setInt","parameterTypes":["java.lang.Object","java.lang.String","long"] }, {"name":"setJson","parameterTypes":["java.lang.Object","java.lang.String","java.lang.Object"] }, {"name":"setString","parameterTypes":["java.lang.Object","java.lang.String","java.lang.String"] }, {"name":"size","parameterTypes":["java.lang.Object"] }]
+},
+{
+  "name":"nox.plugin.stdlib.JsonModule",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"parse","parameterTypes":["java.lang.String"] }, {"name":"stringify","parameterTypes":["java.lang.Object","boolean"] }]
+},
+{
+  "name":"nox.plugin.stdlib.MathModule",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"abs","parameterTypes":["double"] }, {"name":"ceil","parameterTypes":["double"] }, {"name":"floor","parameterTypes":["double"] }, {"name":"max","parameterTypes":["double","double"] }, {"name":"min","parameterTypes":["double","double"] }, {"name":"pow","parameterTypes":["double","double"] }, {"name":"random","parameterTypes":[] }, {"name":"round","parameterTypes":["double"] }, {"name":"sqrt","parameterTypes":["double"] }]
+},
+{
+  "name":"nox.plugin.stdlib.PackageConfig"
+},
+{
+  "name":"nox.plugin.stdlib.PermissionGatedModuleTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.plugin.stdlib.PermissionGatedModuleTest$1$23$1",
+  "fields":[{"name":"label"}]
+},
+{
+  "name":"nox.plugin.stdlib.PermissionGatedModuleTest$1$TrackingContext"
+},
+{
+  "name":"nox.plugin.stdlib.StdlibModuleTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.plugin.stdlib.StringMethods",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"contains","parameterTypes":["java.lang.String","java.lang.String"] }, {"name":"length","parameterTypes":["java.lang.String"] }, {"name":"lower","parameterTypes":["java.lang.String"] }, {"name":"split","parameterTypes":["java.lang.String","java.lang.String"] }, {"name":"upper","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"nox.plugin.stdlib.TypeConversionMethods",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"boolToString","parameterTypes":["boolean"] }, {"name":"doubleToInt","parameterTypes":["double"] }, {"name":"doubleToString","parameterTypes":["double"] }, {"name":"intToDouble","parameterTypes":["long"] }, {"name":"intToString","parameterTypes":["long"] }, {"name":"stringToDouble","parameterTypes":["java.lang.String","double"] }, {"name":"stringToInt","parameterTypes":["java.lang.String","long"] }]
+},
+{
+  "name":"nox.runtime.NoxError"
+},
+{
+  "name":"nox.runtime.NoxRuntime$execute$ret$1",
+  "fields":[{"name":"label"}]
+},
+{
+  "name":"nox.runtime.PackageConfig"
+},
+{
+  "name":"nox.runtime.PermissionRequest"
+},
+{
+  "name":"nox.runtime.PermissionResponse"
+},
+{
+  "name":"nox.runtime.PermissionResponse$Granted"
+},
+{
+  "name":"nox.runtime.PermissionResponse$Granted$EnvGrant"
+},
+{
+  "name":"nox.runtime.PermissionResponse$Granted$FileGrant"
+},
+{
+  "name":"nox.runtime.PermissionResponse$Granted$HttpGrant"
+},
+{
+  "name":"nox.runtime.RuntimeContext"
+},
+{
+  "name":"nox.runtime.RuntimeTypeValidatorTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.runtime.json.NoxJsonParserTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.runtime.json.NoxJsonWriterTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.runtime.json.PackageConfig"
+},
+{
+  "name":"nox.vm.NoxRuntimeTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.vm.NoxVM$execute$1",
+  "fields":[{"name":"label"}]
+},
+{
+  "name":"nox.vm.NoxVM$executeSystemCall$1",
+  "fields":[{"name":"label"}]
+},
+{
+  "name":"nox.vm.NoxVM$loop$1",
+  "fields":[{"name":"label"}]
+},
+{
+  "name":"nox.vm.NoxVMTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"nox.vm.PackageConfig"
+},
+{
+  "name":"nox.vm.ResourceGuardTest",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"org.gradle.api.internal.file.temp.GradleUserHomeTemporaryFileProvider",
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"org.gradle.api.internal.tasks.testing.TestDefinition"
+},
+{
+  "name":"org.gradle.api.internal.tasks.testing.TestDefinitionProcessor",
+  "methods":[{"name":"processTestDefinition","parameterTypes":["org.gradle.api.internal.tasks.testing.TestDefinition"] }, {"name":"startProcessing","parameterTypes":["org.gradle.api.internal.tasks.testing.TestResultProcessor"] }, {"name":"stop","parameterTypes":[] }]
+},
+{
+  "name":"org.gradle.api.internal.tasks.testing.TestResultProcessor",
+  "methods":[{"name":"completed","parameterTypes":["java.lang.Object","org.gradle.api.internal.tasks.testing.TestCompleteEvent"] }, {"name":"started","parameterTypes":["org.gradle.api.internal.tasks.testing.TestDescriptorInternal","org.gradle.api.internal.tasks.testing.TestStartEvent"] }]
+},
+{
+  "name":"org.gradle.api.internal.tasks.testing.filter.TestFilterSpec"
+},
+{
+  "name":"org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformSpec"
+},
+{
+  "name":"org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestDefinitionProcessorFactory"
+},
+{
+  "name":"org.gradle.api.internal.tasks.testing.worker.RemoteTestDefinitionProcessor",
+  "methods":[{"name":"processTestDefinition","parameterTypes":["org.gradle.api.internal.tasks.testing.TestDefinition"] }, {"name":"startProcessing","parameterTypes":[] }, {"name":"stop","parameterTypes":[] }]
+},
+{
+  "name":"org.gradle.api.internal.tasks.testing.worker.TestWorker"
+},
+{
+  "name":"org.gradle.api.internal.tasks.testing.worker.TestWorker$State"
+},
+{
+  "name":"org.gradle.api.internal.tasks.testing.worker.TestWorker$TestFrameworkServiceRegistry",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"createActorFactory","parameterTypes":["org.gradle.internal.concurrent.ExecutorFactory"] }, {"name":"createClock","parameterTypes":[] }, {"name":"createExecutorFactory","parameterTypes":[] }, {"name":"createIdGenerator","parameterTypes":[] }]
+},
+{
+  "name":"org.gradle.internal.file.StatStatistics$Collector",
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"org.gradle.internal.logging.services.LoggingServiceRegistry",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"createLoggingManagerFactory","parameterTypes":["org.gradle.internal.time.Clock"] }, {"name":"createTimeProvider","parameterTypes":[] }]
+},
+{
+  "name":"org.gradle.internal.logging.services.LoggingServiceRegistry$CommandLineLogging",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"org.gradle.internal.nativeintegration.filesystem.services.FileSystemServices",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"configure","parameterTypes":["org.gradle.internal.service.ServiceRegistration"] }]
+},
+{
+  "name":"org.gradle.internal.nativeintegration.filesystem.services.GenericFileSystem$Factory",
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"org.gradle.internal.nativeintegration.services.NativeServices",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"createNativeCapabilities","parameterTypes":[] }, {"name":"createSystemInfo","parameterTypes":["org.gradle.internal.os.OperatingSystem"] }]
+},
+{
+  "name":"org.gradle.internal.nativeintegration.services.NativeServices$1",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"configure","parameterTypes":["org.gradle.internal.service.ServiceRegistration"] }]
+},
+{
+  "name":"org.gradle.internal.nativeintegration.services.NativeServices$NativeFeatures$1$2",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"org.gradle.internal.remote.services.MessagingServices",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"createMessagingClient","parameterTypes":["org.gradle.internal.remote.internal.OutgoingConnector","org.gradle.internal.concurrent.ExecutorFactory"] }, {"name":"createOutgoingConnector","parameterTypes":[] }]
+},
+{
+  "name":"org.gradle.internal.service.MethodHandleBasedServiceMethodFactory",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker",
+  "methods":[{"name":"<init>","parameterTypes":["java.io.DataInputStream"] }]
+},
+{
+  "name":"org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker$2",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"configure","parameterTypes":["org.gradle.internal.service.ServiceRegistration"] }]
+},
+{
+  "name":"org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker$WorkerServices",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"createGradleUserHomeDirProvider","parameterTypes":[] }, {"name":"createWorkerDirectoryProvider","parameterTypes":["org.gradle.initialization.GradleUserHomeDirProvider"] }, {"name":"createWorkerLogEventListener","parameterTypes":[] }]
+},
+{
+  "name":"org.junit.platform.launcher.TestIdentifier",
+  "queryAllPublicMethods":true
+},
+{
+  "name":"org.junit.platform.launcher.core.LauncherFactory"
+},
+{
+  "name":"org.junit.vintage.engine.VintageTestEngine"
+},
+{
+  "name":"sun.security.pkcs12.PKCS12KeyStore",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.pkcs12.PKCS12KeyStore$DualFormatPKCS12",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.provider.DSA$SHA224withDSA",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.provider.DSA$SHA256withDSA",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.provider.NativePRNG",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["java.security.SecureRandomParameters"] }]
+},
+{
+  "name":"sun.security.provider.SHA",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.provider.SHA2$SHA224",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.provider.SHA2$SHA256",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.provider.SHA5$SHA384",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.provider.SHA5$SHA512",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.provider.X509Factory",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.rsa.PSSParameters",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.rsa.RSAKeyFactory$Legacy",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.rsa.RSAPSSSignature",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.rsa.RSASignature$SHA224withRSA",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.ssl.KeyManagerFactoryImpl$SunX509",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.ssl.SSLContextImpl$DefaultSSLContext",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.ssl.TrustManagerFactoryImpl$PKIXFactory",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.x509.AuthorityInfoAccessExtension",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Object"] }]
+},
+{
+  "name":"sun.security.x509.AuthorityKeyIdentifierExtension",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Object"] }]
+},
+{
+  "name":"sun.security.x509.BasicConstraintsExtension",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Object"] }]
+},
+{
+  "name":"sun.security.x509.CRLDistributionPointsExtension",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Object"] }]
+},
+{
+  "name":"sun.security.x509.CertificatePoliciesExtension",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Object"] }]
+},
+{
+  "name":"sun.security.x509.ExtendedKeyUsageExtension",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Object"] }]
+},
+{
+  "name":"sun.security.x509.IssuerAlternativeNameExtension",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Object"] }]
+},
+{
+  "name":"sun.security.x509.KeyUsageExtension",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Object"] }]
+},
+{
+  "name":"sun.security.x509.NetscapeCertTypeExtension",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Object"] }]
+},
+{
+  "name":"sun.security.x509.PrivateKeyUsageExtension",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Object"] }]
+},
+{
+  "name":"sun.security.x509.SubjectAlternativeNameExtension",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Object"] }]
+},
+{
+  "name":"sun.security.x509.SubjectKeyIdentifierExtension",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.Object"] }]
+}
+]
