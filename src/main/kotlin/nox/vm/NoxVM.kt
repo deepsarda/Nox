@@ -281,6 +281,46 @@ class NoxVM(
         }
     }
 
+    private suspend fun executeSystemCall(inst: Long) {
+        val subOp = Instruction.subOp(inst)
+        val funcPoolIdx = Instruction.opA(inst)
+        val primArgStart = Instruction.opB(inst)
+        val refArgStart = Instruction.opC(inst)
+
+        val nativeFunc =
+            scallCache[funcPoolIdx]
+                ?: throw NoxException(
+                    NoxError.Error,
+                    "Unknown system function: ${pool[funcPoolIdx]}",
+                    pc - 1,
+                )
+
+        val pOffset = if (subOp == 1) 1 else 0
+        val rOffset = if (subOp == 0) 1 else 0
+
+        val localDest = if (subOp == 1) primArgStart else refArgStart
+
+        try {
+            nativeFunc.invoke(
+                context,
+                pMem,
+                rMem,
+                bp,
+                bpRef,
+                primArgStart + pOffset,
+                refArgStart + rOffset,
+                localDest,
+            )
+        } catch (e: NoxException) {
+            handleException(e)
+        } catch (_: InterruptedException) {
+            Thread.interrupted()
+            throw NoxException(NoxError.TimeoutError, timeoutReason, pc - 1)
+        } catch (t: Throwable) {
+            handleException(NoxException(classifyException(t), t.message, pc - 1))
+        }
+    }
+
     // Function entry
     private fun enterFunction(
         funcIndex: Int,
@@ -764,43 +804,7 @@ class NoxVM(
                 // System Calls
 
                 Opcode.SCALL -> {
-                    val subOp = Instruction.subOp(inst)
-                    val funcPoolIdx = Instruction.opA(inst)
-                    val primArgStart = Instruction.opB(inst)
-                    val refArgStart = Instruction.opC(inst)
-
-                    val nativeFunc =
-                        scallCache[funcPoolIdx]
-                            ?: throw NoxException(
-                                NoxError.Error,
-                                "Unknown system function: ${pool[funcPoolIdx]}",
-                                pc - 1,
-                            )
-
-                    val pOffset = if (subOp == 1) 1 else 0
-                    val rOffset = if (subOp == 0) 1 else 0
-
-                    val localDest = if (subOp == 1) primArgStart else refArgStart
-
-                    try {
-                        nativeFunc.invoke(
-                            context,
-                            pMem,
-                            rMem,
-                            bp,
-                            bpRef,
-                            primArgStart + pOffset,
-                            refArgStart + rOffset,
-                            localDest,
-                        )
-                    } catch (e: NoxException) {
-                        handleException(e)
-                    } catch (_: InterruptedException) {
-                        Thread.interrupted()
-                        throw NoxException(NoxError.TimeoutError, timeoutReason, pc - 1)
-                    } catch (t: Throwable) {
-                        handleException(NoxException(classifyException(t), t.message, pc - 1))
-                    }
+                    executeSystemCall(inst)
                 }
 
                 // String Concatenation

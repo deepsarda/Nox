@@ -153,4 +153,47 @@ class NoxRuntimeTest :
             result.shouldBeInstanceOf<NoxResult.Error>()
             streamed shouldContainExactly listOf("before")
         }
+
+        test("executeWithProvidedArgsMapsToVM") {
+            val runtime = NoxRuntime.builder().build()
+            val result = runtime.execute(
+                """
+                main(int count, string name) {
+                    return `Hello ${'$'}{name} ${'$'}{count} times`;
+                }
+                """.trimIndent(),
+                args = mapOf("count" to 5, "name" to "Alice")
+            )
+            result.shouldBeInstanceOf<NoxResult.Success>()
+            result.returnValue shouldBe "Hello Alice 5 times"
+        }
+
+        test("executeWithMissingRequiredArgReturnsError") {
+            val runtime = NoxRuntime.builder().build()
+            val result = runtime.execute(
+                """
+                main(int count) {
+                    return count.toString();
+                }
+                """.trimIndent(),
+                args = emptyMap()
+            )
+            result.shouldBeInstanceOf<NoxResult.Error>()
+            result.type shouldBe NoxError.Error
+            result.message shouldBe "Missing required argument: 'count'"
+        }
+
+        test("executeUsesDefaultValueWhenArgIsMissing") {
+            val runtime = NoxRuntime.builder().build()
+            val result = runtime.execute(
+                """
+                main(int count = 10) {
+                    return count.toString();
+                }
+                """.trimIndent(),
+                args = emptyMap()
+            )
+            result.shouldBeInstanceOf<NoxResult.Success>()
+            result.returnValue shouldBe "10"
+        }
     })
