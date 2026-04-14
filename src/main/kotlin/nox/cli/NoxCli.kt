@@ -3,13 +3,11 @@ package nox.cli
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.arguments.argument
-import com.github.ajalt.clikt.parameters.options.default
-import com.github.ajalt.clikt.parameters.options.flag
-import com.github.ajalt.clikt.parameters.options.multiple
-import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.long
 import com.github.ajalt.clikt.parameters.types.path
+import com.github.ajalt.mordant.rendering.TextColors
 import com.github.ajalt.mordant.terminal.Terminal
 import kotlinx.coroutines.runBlocking
 import nox.cli.policy.PermissionPolicy
@@ -27,6 +25,8 @@ import kotlin.system.exitProcess
  */
 class NoxCli : CliktCommand(name = "nox") {
     private val file by argument(help = "Nox source file to run").path(mustExist = true, canBeDir = false)
+
+    private val args by option("-a", "--arg", help = "Pass an argument to main() (format: name=value)").associate()
 
     private val disassemble by option("-d", "--disassemble", help = "Show disassembly instead of executing").flag()
 
@@ -147,16 +147,59 @@ class NoxCli : CliktCommand(name = "nox") {
             exitProcess(1)
         }
 
+        val argProvider: suspend (String, nox.compiler.types.TypeRef) -> Any? = { name, type ->
+            if (noPrompt || allowAll) {
+                null
+            } else {
+                promptRecursively(terminal, name, type, compiled.typedProgram)
+            }
+        }
+
+        val (primArgs, refArgs) = try {
+            runBlocking {
+                nox.runtime.NoxRuntime.prepareArgs(compiled.typedProgram?.main, args, compiled.typedProgram, argProvider)
+            }
+        } catch (e: nox.vm.NoxException) {
+            terminal.println(com.github.ajalt.mordant.rendering.TextColors.red("Error preparing arguments: ${e.message}"))
+            exitProcess(1)
+        }
+
         val vm = NoxVM(program, ctx, registry, config)
         val result =
             try {
-                val ret = runBlocking { vm.execute() }
+                val ret = runBlocking { vm.execute(primArgs, refArgs) }
                 NoxResult.Success(ret, yields)
             } catch (e: nox.vm.NoxException) {
                 NoxResult.Error(e.type, e.message, yields)
             }
 
         OutputFormatter.printResult(terminal, result)
+    }
+
+    private fun promptRecursively(
+        terminal: Terminal,
+        name: String,
+        type: nox.compiler.types.TypeRef,
+        program: nox.compiler.ast.typed.TypedProgram?
+    ): Any? {
+        if (type.isStructType() && program != null) {
+            terminal.println(TextColors.blue("Provide fields for '$name' (${type.name}):"))
+            val map = mutableMapOf<String, Any?>()
+            val structDef = program.typesByName[type.name]
+            if (structDef != null) {
+                for (field in structDef.fields) {
+                    val value = promptRecursively(terminal, "$name.${field.name}", field.type, program)
+                    if (value == null) return null // Cancelled
+                    map[field.name] = value
+                }
+                return map
+            }
+        }
+        val promptStr = "$name ($type): "
+        terminal.print(promptStr)
+        val input = readlnOrNull()?.trim()
+        if (input.isNullOrBlank()) return null
+        return input
     }
 
     private fun buildPolicy(): PermissionPolicy {

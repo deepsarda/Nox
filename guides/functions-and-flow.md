@@ -62,6 +62,15 @@ Every script **must** have a `main` function. This is where execution starts.
 
 The arguments to `main` define your script's input schema. If your script is run via an API, those arguments represent the required JSON payload.
 
+```c
+type Config { int retries; string url; }
+main(Config config, boolean verbose = false) { ... }
+```
+
+**Running via CLI:**
+- You can pass these arguments via the `-a` or `--arg` flag: `nox run script.nox -a config='{"retries": 3, "url": "..."}'`
+- If you don't provide a required argument, the CLI will interactively ask you for it! For structs, it recursively asks field-by-field.
+
 ## Control Flow
 
 ### `if / else`

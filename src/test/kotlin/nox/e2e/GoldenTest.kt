@@ -39,6 +39,7 @@ class GoldenTest :
                 var expectedErrorContains: String? = null
                 var expectedYields: String? =
                     null // For simplicity, we can treat yields as a string representation of the list
+                val args = mutableMapOf<String, Any?>()
 
                 source.lines().forEach { line ->
                     val trimmed = line.trim()
@@ -51,6 +52,19 @@ class GoldenTest :
                         expectedError = trimmed.substringAfter("// @test:error").trim().removeSurrounding("\"")
                     } else if (trimmed.startsWith("// @test:yields")) {
                         expectedYields = trimmed.substringAfter("// @test:yields").trim()
+                    } else if (trimmed.startsWith("// @test:arg")) {
+                        val parts = trimmed.substringAfter("// @test:arg").trim().split(" ", limit = 2)
+                        if (parts.size == 2) {
+                            val name = parts[0].trim()
+                            val valueStr = parts[1].trim()
+                            // Try to parse as JSON if it looks like it, else keep as string
+                            val value = try {
+                                nox.runtime.json.NoxJsonParser(valueStr).parse()
+                            } catch (e: Exception) {
+                                valueStr.removeSurrounding("\"")
+                            }
+                            args[name] = value
+                        }
                     }
                 }
 
@@ -86,7 +100,7 @@ class GoldenTest :
                         .builder()
                         .setPermissionHandler { nox.runtime.PermissionResponse.Granted.Unconstrained }
                         .build()
-                val result = runtime.execute(source, noxFile.fileName.toString())
+                val result = runtime.execute(source, noxFile.fileName.toString(), args)
 
                 when (result) {
                     is NoxResult.Success -> {

@@ -212,7 +212,7 @@ class NoxVM(
         }
 
     // Entry point
-    suspend fun execute(): String? {
+    suspend fun execute(primArgs: LongArray = LongArray(0), refArgs: Array<Any?> = emptyArray()): String? {
         val vmThread = Thread.currentThread()
         val watchdog = createWatchdogThread(vmThread)
         watchdog.start()
@@ -231,6 +231,9 @@ class NoxVM(
                 if (program.mainFuncIndex == -1) {
                     throw NoxException(NoxError.CompilationError, "No main() function found", 0)
                 }
+
+                primArgs.copyInto(pMem, 0)
+                refArgs.copyInto(rMem, 0)
 
                 enterFunction(program.mainFuncIndex, 0, 0)
                 loop()

@@ -95,6 +95,18 @@ The `main` function's signature directly maps to the program's input schema:
 | `string url` | Required string argument |
 | `double minThreshold = 10.5` | Optional double, defaults to 10.5 |
 | `int[] ids` | Required array of integers |
+| `User user` | Required struct mapping (JSON object) |
+
+### CLI and Host Execution
+
+When running via the `nox` CLI, required parameters must be provided. Optional parameters that are omitted will use their default values.
+
+- **Flags (`-a`, `--arg`)**: Pass arguments using `name=value` format. For structs or arrays, provide valid JSON strings:
+  ```bash
+  nox run script.nox -a url="https://api.example.com" -a minThreshold=5.0
+  nox run auth.nox -a user='{"name": "Alice", "age": 30}'
+  ```
+- **Interactive Prompts**: If a required argument is omitted, the CLI will interactively prompt for it. For `struct` types, the CLI recursively prompts for each field individually, making complex input ergonomic.
  
 ## Unified Function Call Syntax (UFCS)
 

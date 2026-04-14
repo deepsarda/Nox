@@ -23,6 +23,8 @@ class NoxRuntime private constructor(
     fun execute(
         source: String,
         fileName: String = "script.nox",
+        args: Map<String, Any?> = emptyMap(),
+        argProvider: (suspend (String, nox.compiler.types.TypeRef) -> Any?)? = null,
     ): NoxResult {
         if (source.isBlank()) {
             return NoxResult.Error(NoxError.CompilationError, "Empty source", emptyList())
@@ -34,6 +36,13 @@ class NoxRuntime private constructor(
         val compiled =
             result.compiledProgram
                 ?: return NoxResult.Error(NoxError.CompilationError, "No compiled output", emptyList())
+
+        val typedMain = result.typedProgram?.main
+        val (primArgs, refArgs) = try {
+            runBlocking { prepareArgs(typedMain, args, result.typedProgram, argProvider) }
+        } catch (e: NoxException) {
+            return NoxResult.Error(e.type, e.message, emptyList())
+        }
 
         val yields = mutableListOf<String>()
 
@@ -56,9 +65,8 @@ class NoxRuntime private constructor(
             }
 
         val vm = NoxVM(compiled, ctx, registry, config)
-
         return try {
-            val ret = runBlocking { vm.execute() }
+            val ret = runBlocking { vm.execute(primArgs, refArgs) }
             NoxResult.Success(ret, yields)
         } catch (e: NoxException) {
             NoxResult.Error(e.type, e.message, yields)
@@ -95,5 +103,65 @@ class NoxRuntime private constructor(
 
     companion object {
         fun builder() = Builder()
+
+        /** Helper to map host arguments to VM registers using the program's main signature. */
+        suspend fun prepareArgs(
+            typedMain: nox.compiler.ast.typed.TypedMainDef?,
+            args: Map<String, Any?>,
+            program: nox.compiler.ast.typed.TypedProgram?,
+            argProvider: (suspend (String, nox.compiler.types.TypeRef) -> Any?)? = null,
+        ): Pair<LongArray, Array<Any?>> {
+            if (typedMain == null || typedMain.params.isEmpty()) {
+                return Pair(LongArray(0), emptyArray())
+            }
+
+            val primCount = typedMain.params.count { it.type.isPrimitive() }
+            val refCount = typedMain.params.count { !it.type.isPrimitive() }
+
+            val pOffset = if (typedMain.returnType.isPrimitive()) 1 else 0
+            val rOffset = if (!typedMain.returnType.isPrimitive() && typedMain.returnType != nox.compiler.types.TypeRef.VOID) 1 else 0
+            
+            val primArgs = LongArray(pOffset + primCount)
+            val refArgs = arrayOfNulls<Any?>(rOffset + refCount)
+
+            var pIdx = pOffset
+            var rIdx = rOffset
+
+            for (param in typedMain.params) {
+                var rawValue = args[param.name] ?: argProvider?.invoke(param.name, param.type)
+                
+                if (rawValue == null && param.defaultValue != null) {
+                    rawValue = extractLiteralValue(param.defaultValue)
+                        ?: throw NoxException(NoxError.Error, "Default value for '${param.name}' is not a supported literal", 0)
+                }
+                
+                if (rawValue != null) {
+                    val coerced = RuntimeTypeValidator.validateAndCoerce(rawValue, param.type, program)
+                    
+                    if (param.type.isPrimitive()) {
+                        primArgs[pIdx++] = when (param.type) {
+                            nox.compiler.types.TypeRef.DOUBLE -> java.lang.Double.doubleToRawLongBits(coerced as Double)
+                            nox.compiler.types.TypeRef.BOOLEAN -> if (coerced as Boolean) 1L else 0L
+                            else -> coerced as Long
+                        }
+                    } else {
+                        refArgs[rIdx++] = coerced
+                    }
+                } else {
+                    throw NoxException(NoxError.Error, "Missing required argument: '${param.name}'", 0)
+                }
+            }
+            return Pair(primArgs, refArgs)
+        }
+
+        private fun extractLiteralValue(expr: nox.compiler.ast.typed.TypedExpr): Any? =
+            when (expr) {
+                is nox.compiler.ast.typed.TypedIntLiteralExpr -> expr.value
+                is nox.compiler.ast.typed.TypedDoubleLiteralExpr -> expr.value
+                is nox.compiler.ast.typed.TypedBoolLiteralExpr -> expr.value
+                is nox.compiler.ast.typed.TypedStringLiteralExpr -> expr.value
+                is nox.compiler.ast.typed.TypedNullLiteralExpr -> null
+                else -> null
+            }
     }
 }

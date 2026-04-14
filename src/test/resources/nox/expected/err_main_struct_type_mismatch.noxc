@@ -1,0 +1,49 @@
+;  Nox Bytecode Disassembly
+;  Source:   err_main_struct_type_mismatch.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "x"
+  #1   str   "__int_toString"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     1
+;    Frame:      pMem=1  rMem=4
+
+.func main
+  ; params: r1=point
+  ;
+  ; line 7  return point.x.toString();
+  0000:  HACC        IMM, r0, r1, "x"                    ; r0 = point:r1.x
+  0001:  SCALL       __int_toString, p0, r3              ; r3 = scall __int_toString(p0..., r4...)
+  0002:  MOVR        r2, r3                              ; r2 = r3
+  0003:  KILL_REF    r1                                  ; point:r1 = null (GC)
+  0004:  KILL_REF    r3                                  ; r3 = null (GC)
+  0005:  RET         REF, r2                             ; return r2
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 6
+  constants:    2
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     48 bytes

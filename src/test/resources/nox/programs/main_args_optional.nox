@@ -1,0 +1,6 @@
+// @test:arg a 5
+// @test:result "50"
+
+main(int a, int b = 10) {
+    return (a * b).toString();
+}

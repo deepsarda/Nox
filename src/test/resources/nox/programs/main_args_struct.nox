@@ -1,0 +1,8 @@
+// @test:arg point {"x": 10, "y": 20}
+// @test:result "30"
+
+type Point { int x; int y; }
+
+main(Point point) {
+    return (point.x + point.y).toString();
+}

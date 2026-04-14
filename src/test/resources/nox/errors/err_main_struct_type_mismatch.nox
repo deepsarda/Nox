@@ -1,0 +1,8 @@
+// @test:arg point {"x": 10, "y": "notanumber"}
+// @test:error TypeError
+
+type Point { int x; int y; }
+
+main(Point point) {
+    return point.x.toString();
+}
