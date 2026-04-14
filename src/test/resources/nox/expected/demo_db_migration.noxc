@@ -54,7 +54,7 @@
   0008:  SCONCAT     r1, r3, r1                          ; query:r1 = r3 + query:r1
   ;
   ; line 18  yield t;
-  0009:  YIELD       r2                                  ; yield t:r2
+  0009:  YIELD       REF, r2                             ; yield t:r2
   ;
   ; line 19  int i = 0;
   0010:  LDI         p0, 0                               ; i:p0 = 0
@@ -65,7 +65,7 @@
   0012:  SCALL       __T[]_length!Column, p3, r5         ; p3 = scall __T[]_length!Column(p4..., r5...)
   0013:  MOV         p2, p3                              ; p2 = p3
   0014:  ILT         p1, p0, p2                          ; p1 = i:p0 < p2
-  0015:  JIF         p1, @0038                           ; if p1==0 -> loop_exit_1
+  0015:  JIF         p1, @0036                           ; if p1==0 -> loop_exit_1
   ;
   ; line 21  Column c = t.cols[i];
   0016:  HACC        GET_OBJ, r4, r2, "cols"             ; r4 = t:r2.cols
@@ -83,73 +83,71 @@
   0024:  HACC        GET_OBJ, r6, r2, "cols"             ; r6 = t:r2.cols
   0025:  SCALL       __T[]_length!Column, p4, r6         ; p4 = scall __T[]_length!Column(p5..., r6...)
   0026:  MOV         p3, p4                              ; p3 = p4
-  0027:  LDI         p2, 1                               ; p2 = 1
-  0028:  ISUB        p2, p3, p2                          ; p2 = p3 - p2
-  0029:  ILT         p1, p0, p2                          ; p1 = i:p0 < p2
-  0030:  JIF         p1, @0034                           ; if p1==0 -> @0034
+  0027:  ISUB        p2, p3, #1                          ; p2 = p3 - 1
+  0028:  ILT         p1, p0, p2                          ; p1 = i:p0 < p2
+  0029:  JIF         p1, @0033                           ; if p1==0 -> @0033
   ;
   ; line 24  query = query + ", ";
-  0031:  LDC         r4, #12                             ; r4 = ", "
-  0032:  SCONCAT     r1, r1, r4                          ; query:r1 = query:r1 + r4
-  0033:  JMP         @0034                               ; -> @0034
+  0030:  LDC         r4, #12                             ; r4 = ", "
+  0031:  SCONCAT     r1, r1, r4                          ; query:r1 = query:r1 + r4
+  0032:  JMP         @0033                               ; -> @0033
   ;
   ; line 26  i = i + 1;
-  0034:  LDI         p1, 1                               ; p1 = 1
-  0035:  IADD        p0, p0, p1                          ; i:p0 = i:p0 + p1
-  0036:  KILL_REF    r6                                  ; r6 = null (GC)
-  0037:  JMP         @0011                               ; -> loop_start_1
+  0033:  IADD        p0, p0, #1                          ; i:p0 = i:p0 + 1
+  0034:  KILL_REF    r6                                  ; r6 = null (GC)
+  0035:  JMP         @0011                               ; -> loop_start_1
   ;
   ; line 28  query = query + ");";
   .loop_exit_1:
-  0038:  LDC         r4, #13                             ; r4 = ");"
-  0039:  SCONCAT     r1, r1, r4                          ; query:r1 = query:r1 + r4
+  0036:  LDC         r4, #13                             ; r4 = ");"
+  0037:  SCONCAT     r1, r1, r4                          ; query:r1 = query:r1 + r4
   ;
   ; line 31  File.write("migration.sql", query);
-  0040:  LDC         r6, #14                             ; r6 = "migration.sql"
-  0041:  MOVR        r7, r1                              ; r7 = query:r1
-  0042:  SCALL       File__write, p4, r6                 ; scall File__write(p4..., r6...)
+  0038:  LDC         r6, #14                             ; r6 = "migration.sql"
+  0039:  MOVR        r7, r1                              ; r7 = query:r1
+  0040:  SCALL       File__write, p4, r6                 ; scall File__write(p4..., r6...)
   ;
   ; line 32  File.read("migration.sql");
-  0043:  LDC         r7, #14                             ; r7 = "migration.sql"
-  0044:  SCALL       File__read, p4, r6                  ; r6 = scall File__read(p4..., r7...)
-  0045:  MOVR        r4, r6                              ; r4 = r6
-  0046:  KILL_REF    r7                                  ; r7 = null (GC)
-  0047:  JMP         @0049                               ; -> end
+  0041:  LDC         r7, #14                             ; r7 = "migration.sql"
+  0042:  SCALL       File__read, p4, r6                  ; r6 = scall File__read(p4..., r7...)
+  0043:  MOVR        r4, r6                              ; r4 = r6
+  0044:  KILL_REF    r7                                  ; r7 = null (GC)
+  0045:  JMP         @0047                               ; -> end
   .catch_all:
-  0048:  JMP         @0049                               ; -> end
+  0046:  JMP         @0047                               ; -> end
   ;
   ; line 37  if (query == "CREATE TABLE users (id INT, name VARCHAR);") {
   .end:
-  0049:  LDC         r4, #17                             ; err:r4 = "CREATE TABLE users (id INT, name VARCHAR);"
-  0050:  SEQ         p1, r1, r4                          ; p1 = query:r1 == err:r4
-  0051:  JIF         p1, @0061                           ; if p1==0 -> @0061
+  0047:  LDC         r4, #17                             ; err:r4 = "CREATE TABLE users (id INT, name VARCHAR);"
+  0048:  SEQ         p1, r1, r4                          ; p1 = query:r1 == err:r4
+  0049:  JIF         p1, @0059                           ; if p1==0 -> @0059
   ;
   ; line 38  return "ok";
-  0052:  LDC         r1, #18                             ; query:r1 = "ok"
-  0053:  KILL_REF    r2                                  ; t:r2 = null (GC)
-  0054:  KILL_REF    r3                                  ; c:r3 = null (GC)
-  0055:  KILL_REF    r4                                  ; err:r4 = null (GC)
-  0056:  KILL_REF    r5                                  ; r5 = null (GC)
-  0057:  KILL_REF    r6                                  ; r6 = null (GC)
-  0058:  KILL_REF    r7                                  ; r7 = null (GC)
-  0059:  RET         r1                                  ; return query:r1
-  0060:  JMP         @0061                               ; -> @0061
+  0050:  LDC         r1, #18                             ; query:r1 = "ok"
+  0051:  KILL_REF    r2                                  ; t:r2 = null (GC)
+  0052:  KILL_REF    r3                                  ; c:r3 = null (GC)
+  0053:  KILL_REF    r4                                  ; err:r4 = null (GC)
+  0054:  KILL_REF    r5                                  ; r5 = null (GC)
+  0055:  KILL_REF    r6                                  ; r6 = null (GC)
+  0056:  KILL_REF    r7                                  ; r7 = null (GC)
+  0057:  RET         REF, r1                             ; return query:r1
+  0058:  JMP         @0059                               ; -> @0059
   ;
   ; line 40  return "error";
-  0061:  LDC         r1, #19                             ; query:r1 = "error"
-  0062:  KILL_REF    r2                                  ; t:r2 = null (GC)
-  0063:  KILL_REF    r3                                  ; c:r3 = null (GC)
-  0064:  KILL_REF    r4                                  ; err:r4 = null (GC)
-  0065:  KILL_REF    r5                                  ; r5 = null (GC)
-  0066:  KILL_REF    r6                                  ; r6 = null (GC)
-  0067:  KILL_REF    r7                                  ; r7 = null (GC)
-  0068:  RET         r1                                  ; return query:r1
+  0059:  LDC         r1, #19                             ; query:r1 = "error"
+  0060:  KILL_REF    r2                                  ; t:r2 = null (GC)
+  0061:  KILL_REF    r3                                  ; c:r3 = null (GC)
+  0062:  KILL_REF    r4                                  ; err:r4 = null (GC)
+  0063:  KILL_REF    r5                                  ; r5 = null (GC)
+  0064:  KILL_REF    r6                                  ; r6 = null (GC)
+  0065:  KILL_REF    r7                                  ; r7 = null (GC)
+  0066:  RET         REF, r1                             ; return query:r1
 
 
 ; Exception Table
 
 .exceptions
-  [0040..0047] ANY                  -> @0048  msg=r4
+  [0038..0045] ANY                  -> @0046  msg=r4
 
 
 ; Summary
@@ -158,8 +156,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 69
+  instructions: 67
   constants:    20
   exceptions:   1
   globals:      0p + 0r
-  bytecode:     552 bytes
+  bytecode:     536 bytes

@@ -52,6 +52,13 @@ Unlike traditional sandboxes that rely on OS-level isolation (containers, VMs), 
 | [**Code Generation**](compiler/codegen.md) | Register allocation, bytecode emission, constant pools, exception tables |
 | [**Bytecode Disassembly**](compiler/disassembly.md) | The `.noxc` pretty-printed format for debugging and test assertions |
 
+### CLI
+
+| Document | Description |
+|---|---|
+| [**`nox` Runner**](cli/nox.md) | CLI runner with interactive permission/resource prompts, plugins |
+| [**`noxc` Compiler**](cli/noxc.md) | CLI compiler for `.noxc` disassembly generation |
+
 ### Testing
 See [**Testing Strategy**](testing.md) for info on unit tests, integration tests, E2E golden tests, coverage targets.
 

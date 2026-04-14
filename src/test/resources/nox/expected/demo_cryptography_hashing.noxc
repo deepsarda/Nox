@@ -43,51 +43,48 @@
   0009:  MOV         p2, p4                              ; p2 = p4
   .loop_start_1:
   0010:  ILT         p3, p1, p2                          ; p3 = p1 < p2
-  0011:  JIF         p3, @0020                           ; if p3==0 -> loop_exit_1
+  0011:  JIF         p3, @0018                           ; if p3==0 -> loop_exit_1
   0012:  AGET_IDX    r1, r2, p1                          ; c:r1 = r2[p1]
   ;
   ; line 8  hash = ((hash << 5) + hash) ^ 33;
-  0013:  LDI         p5, 5                               ; p5 = 5
-  0014:  SHL         p5, p0, p5                          ; p5 = hash:p0 << p5
-  0015:  IADD        p4, p5, p0                          ; p4 = p5 + hash:p0
-  0016:  LDI         p0, 33                              ; hash:p0 = 33
-  0017:  BXOR        p0, p4, p0                          ; hash:p0 = p4 ^ hash:p0
+  0013:  SHL         p5, p0, #5                          ; p5 = hash:p0 << 5
+  0014:  IADD        p4, p5, p0                          ; p4 = p5 + hash:p0
+  0015:  BXOR        p0, p4, #33                         ; hash:p0 = p4 ^ 33
   ;
   ; line 7  foreach (string c in chars) {
   .loop_update_1:
-  0018:  IINC        p1                                  ; p1 = p1 + 1
-  0019:  JMP         @0010                               ; -> loop_start_1
+  0016:  IINC        p1                                  ; p1 = p1 + 1
+  0017:  JMP         @0010                               ; -> loop_start_1
   ;
   ; line 11  double dhash = hash + 0.5;
   .loop_exit_1:
-  0020:  MOV         p2, p0                              ; p2 = hash:p0
-  0021:  LDC         p1, #4                              ; dhash:p1 = 0.5
-  0022:  I2D         p3, p2                              ; p3 = (double)p2
-  0023:  DADD        p1, p3, p1                          ; dhash:p1 = p3 + dhash:p1
+  0018:  MOV         p2, p0                              ; p2 = hash:p0
+  0019:  I2D         p3, p2                              ; p3 = (double)p2
+  0020:  DADD        p1, p3, @pool[4]                    ; dhash:p1 = p3 + 0.5
   ;
   ; line 12  int ihash = dhash.toInt();
-  0024:  MOV         p7, p1                              ; p7 = dhash:p1
-  0025:  SCALL       __double_toInt, p6, r3              ; p6 = scall __double_toInt(p7..., r3...)
-  0026:  MOV         p2, p6                              ; ihash:p2 = p6
+  0021:  MOV         p7, p1                              ; p7 = dhash:p1
+  0022:  SCALL       __double_toInt, p6, r3              ; p6 = scall __double_toInt(p7..., r3...)
+  0023:  MOV         p2, p6                              ; ihash:p2 = p6
   ;
   ; line 14  if (ihash == hash) {
-  0027:  IEQ         p1, p2, p0                          ; dhash:p1 = ihash:p2 == hash:p0
-  0028:  JIF         p1, @0035                           ; if dhash:p1==0 -> @0035
+  0024:  IEQ         p1, p2, p0                          ; dhash:p1 = ihash:p2 == hash:p0
+  0025:  JIF         p1, @0032                           ; if dhash:p1==0 -> @0032
   ;
   ; line 15  return "ok";
-  0029:  LDC         r2, #6                              ; r2 = "ok"
-  0030:  KILL_REF    r1                                  ; c:r1 = null (GC)
-  0031:  KILL_REF    r3                                  ; r3 = null (GC)
-  0032:  KILL_REF    r4                                  ; r4 = null (GC)
-  0033:  RET         r2                                  ; return r2
-  0034:  JMP         @0035                               ; -> @0035
+  0026:  LDC         r2, #6                              ; r2 = "ok"
+  0027:  KILL_REF    r1                                  ; c:r1 = null (GC)
+  0028:  KILL_REF    r3                                  ; r3 = null (GC)
+  0029:  KILL_REF    r4                                  ; r4 = null (GC)
+  0030:  RET         REF, r2                             ; return r2
+  0031:  JMP         @0032                               ; -> @0032
   ;
   ; line 17  return "error";
-  0035:  LDC         r2, #7                              ; r2 = "error"
-  0036:  KILL_REF    r1                                  ; c:r1 = null (GC)
-  0037:  KILL_REF    r3                                  ; r3 = null (GC)
-  0038:  KILL_REF    r4                                  ; r4 = null (GC)
-  0039:  RET         r2                                  ; return r2
+  0032:  LDC         r2, #7                              ; r2 = "error"
+  0033:  KILL_REF    r1                                  ; c:r1 = null (GC)
+  0034:  KILL_REF    r3                                  ; r3 = null (GC)
+  0035:  KILL_REF    r4                                  ; r4 = null (GC)
+  0036:  RET         REF, r2                             ; return r2
 
 
 ; Exception Table
@@ -102,8 +99,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 40
+  instructions: 37
   constants:    8
   exceptions:   0
   globals:      0p + 0r
-  bytecode:     320 bytes
+  bytecode:     296 bytes

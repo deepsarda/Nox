@@ -114,7 +114,7 @@
   0060:  KILL_REF    r7                                  ; r7 = null (GC)
   0061:  KILL_REF    r8                                  ; r8 = null (GC)
   0062:  KILL_REF    r9                                  ; r9 = null (GC)
-  0063:  RET         r1                                  ; return template:r1
+  0063:  RET         REF, r1                             ; return template:r1
   0064:  JMP         @0065                               ; -> @0065
   ;
   ; line 20  return "error";
@@ -127,7 +127,7 @@
   0071:  KILL_REF    r7                                  ; r7 = null (GC)
   0072:  KILL_REF    r8                                  ; r8 = null (GC)
   0073:  KILL_REF    r9                                  ; r9 = null (GC)
-  0074:  RET         r1                                  ; return template:r1
+  0074:  RET         REF, r1                             ; return template:r1
 
 
 ; Exception Table

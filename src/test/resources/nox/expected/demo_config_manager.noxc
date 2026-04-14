@@ -62,7 +62,7 @@
   0018:  KILL_REF    r1                                  ; configStr:r1 = null (GC)
   0019:  KILL_REF    r3                                  ; r3 = null (GC)
   0020:  KILL_REF    r4                                  ; r4 = null (GC)
-  0021:  RET         r2                                  ; return envName:r2
+  0021:  RET         REF, r2                             ; return envName:r2
   0022:  JMP         @0029                               ; -> end
   ;
   ; line 19  return "ok";
@@ -71,7 +71,7 @@
   0024:  KILL_REF    r2                                  ; err:r2 = null (GC)
   0025:  KILL_REF    r3                                  ; r3 = null (GC)
   0026:  KILL_REF    r4                                  ; r4 = null (GC)
-  0027:  RET         r1                                  ; return configStr:r1
+  0027:  RET         REF, r1                             ; return configStr:r1
   0028:  JMP         @0029                               ; -> end
   .end:
   0029:  KILL_REF    r1                                  ; configStr:r1 = null (GC)

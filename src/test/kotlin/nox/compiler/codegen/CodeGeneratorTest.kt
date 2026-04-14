@@ -237,8 +237,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
+            boolean id(boolean v) { return v; }
             main() {
-                boolean b = true || false;
+                boolean b = id(true) || id(false);
                 return "ok";
             }
         """,
@@ -250,8 +251,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
+            int id(int v) { return v; }
             main() {
-                int x = 1 << 4;
+                int x = id(1) << id(4);
                 return "ok";
             }
         """,
@@ -263,8 +265,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
+            int id(int v) { return v; }
             main() {
-                int x = 3 | 12;
+                int x = id(3) | id(12);
                 return "ok";
             }
         """,
@@ -276,8 +279,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
+            int id(int v) { return v; }
             main() {
-                int x = 5 ^ 3;
+                int x = id(5) ^ id(3);
                 return "ok";
             }
         """,
@@ -442,8 +446,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
+            boolean id(boolean v) { return v; }
             main() {
-                if (true) {
+                if (id(true)) {
                     string s = "hello";
                 }
                 return "ok";
@@ -791,8 +796,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
+            double id(double v) { return v; }
             main() {
-                double x = -3.14;
+                double x = -id(3.14);
                 return "ok";
             }
         """,
@@ -804,8 +810,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
+            boolean id(boolean v) { return v; }
             main() {
-                boolean b = !true;
+                boolean b = !id(true);
                 return "ok";
             }
         """,
@@ -817,8 +824,9 @@ class CodeGeneratorTest :
             val result =
                 compileOk(
                     """
+            int id(int v) { return v; }
             main() {
-                int x = ~0;
+                int x = ~id(0);
                 return "ok";
             }
         """,

@@ -15,10 +15,22 @@ graalvmNative {
         }
 
         named("main") {
-            imageName.set("application")
-            mainClass.set("nox.compiler.NoxcApp")
+            imageName.set("nox")
+            mainClass.set("nox.cli.NoxCliKt")
             buildArgs.add("-O3")
-            buildArgs.add("--initialize-at-build-time=io.github.classgraph")
+            sharedLibrary.set(false)
+            javaLauncher.set(
+                javaToolchains.launcherFor {
+                    languageVersion.set(JavaLanguageVersion.of(21))
+                    vendor.set(JvmVendorSpec.matching("GraalVM"))
+                },
+            )
+        }
+
+        create("noxc") {
+            imageName.set("noxc")
+            mainClass.set("nox.cli.NoxcCliKt")
+            buildArgs.add("-O3")
             sharedLibrary.set(false)
             javaLauncher.set(
                 javaToolchains.launcherFor {
@@ -62,6 +74,10 @@ dependencies {
 
     // Kotlin coroutines: used for lightweight Sandbox execution (each Sandbox is a coroutine)
     implementation(libs.coroutines.core)
+
+    // CLI framework (Clikt) and terminal UI (Mordant)
+    implementation(libs.clikt)
+    implementation(libs.mordant)
 
     // kotest-runner
     testImplementation(libs.kotest.runner)
@@ -174,22 +190,30 @@ tasks.withType<Test> {
 }
 
 /**
+ * Run a Nox program.
+ * Usage: ./gradlew nox --args="<file.nox> [options]"
+ */
+tasks.register<JavaExec>("nox") {
+    group = "nox"
+    description = "Runs a Nox program with interactive permission/resource prompts."
+
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("nox.cli.NoxCliKt")
+    jvmArgs("--enable-preview")
+    standardInput = System.`in`
+    dependsOn(tasks.compileKotlin)
+}
+
+/**
  * Compile a Nox source file and generate its .noxc disassembly.
- * Usage: ./gradlew noxc -Pfile=path/to/file.nox
+ * Usage: ./gradlew noxc --args="<file.nox> [options]"
  */
 tasks.register<JavaExec>("noxc") {
     group = "nox"
     description = "Compiles a Nox source file and generates its .noxc disassembly."
 
     classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("nox.compiler.NoxcApp")
+    mainClass.set("nox.cli.NoxcCliKt")
     jvmArgs("--enable-preview")
-
-    // Pass the file argument from the command line property 'file'
-    if (project.hasProperty("file")) {
-        args(project.property("file") as String)
-    }
-
-    // Ensure compilation happens before execution
     dependsOn(tasks.compileKotlin)
 }

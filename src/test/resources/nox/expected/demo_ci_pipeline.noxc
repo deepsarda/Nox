@@ -34,11 +34,11 @@
   ;
   ; line 7  yield "building";
   0003:  LDC         r1, #2                              ; env:r1 = "building"
-  0004:  YIELD       r1                                  ; yield env:r1
+  0004:  YIELD       REF, r1                             ; yield env:r1
   ;
   ; line 8  yield "testing";
   0005:  LDC         r1, #3                              ; env:r1 = "testing"
-  0006:  YIELD       r1                                  ; yield env:r1
+  0006:  YIELD       REF, r1                             ; yield env:r1
   ;
   ; line 11  string file = File.read("missing.log");
   0007:  LDC         r3, #4                              ; r3 = "missing.log"
@@ -49,13 +49,13 @@
   ; line 13  yield "failed";
   .catch_all:
   0011:  LDC         r2, #6                              ; r2 = "failed"
-  0012:  YIELD       r2                                  ; yield r2
+  0012:  YIELD       REF, r2                             ; yield r2
   ;
   ; line 14  return "ok";
   0013:  LDC         r2, #7                              ; r2 = "ok"
   0014:  KILL_REF    r1                                  ; err:r1 = null (GC)
   0015:  KILL_REF    r3                                  ; r3 = null (GC)
-  0016:  RET         r2                                  ; return r2
+  0016:  RET         REF, r2                             ; return r2
   0017:  JMP         @0018                               ; -> end
   ;
   ; line 17  return "error";
@@ -63,7 +63,7 @@
   0018:  LDC         r1, #8                              ; err:r1 = "error"
   0019:  KILL_REF    r2                                  ; r2 = null (GC)
   0020:  KILL_REF    r3                                  ; r3 = null (GC)
-  0021:  RET         r1                                  ; return err:r1
+  0021:  RET         REF, r1                             ; return err:r1
 
 
 ; Exception Table

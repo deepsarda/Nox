@@ -48,7 +48,7 @@
   0019:  KILL_REF    r2                                  ; r2 = null (GC)
   0020:  KILL_REF    r3                                  ; r3 = null (GC)
   0021:  KILL_REF    r4                                  ; r4 = null (GC)
-  0022:  RET         p0                                  ; return p0
+  0022:  RET         INT, p0                             ; return p0
 
 
 ; Exception Table

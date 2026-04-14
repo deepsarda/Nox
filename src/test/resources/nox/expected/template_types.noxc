@@ -34,7 +34,7 @@
   0006:  D2S         r2, p1                              ; r2 = toString(d:p1)
   0007:  SCONCAT     r1, r1, r2                          ; r1 = r1 + r2
   0008:  KILL_REF    r2                                  ; r2 = null (GC)
-  0009:  RET         r1                                  ; return r1
+  0009:  RET         REF, r1                             ; return r1
 
 
 ; Exception Table

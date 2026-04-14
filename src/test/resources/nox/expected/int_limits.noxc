@@ -23,11 +23,10 @@
   0000:  LDC         p0, #0                              ; max:p0 = 9223372036854775807
   ;
   ; line 4  int overflow = max + 1;
-  0001:  LDI         p1, 1                               ; overflow:p1 = 1
-  0002:  IADD        p1, p0, p1                          ; overflow:p1 = max:p0 + overflow:p1
+  0001:  IADD        p1, p0, #1                          ; overflow:p1 = max:p0 + 1
   ;
   ; line 5  return overflow;
-  0003:  RET         p1                                  ; return overflow:p1
+  0002:  RET         INT, p1                             ; return overflow:p1
 
 
 ; Exception Table
@@ -42,8 +41,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 4
+  instructions: 3
   constants:    1
   exceptions:   0
   globals:      0p + 0r
-  bytecode:     32 bytes
+  bytecode:     24 bytes

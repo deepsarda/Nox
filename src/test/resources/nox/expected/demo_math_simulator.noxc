@@ -35,78 +35,75 @@
   ;
   ; line 6  while (i < 10) {
   .loop_start_1:
-  0002:  LDI         p2, 10                              ; p2 = 10
-  0003:  ILT         p1, p0, p2                          ; p1 = i:p0 < p2
-  0004:  JIF         p1, @0021                           ; if p1==0 -> loop_exit_1
+  0002:  ILT         p1, p0, #10                         ; p1 = i:p0 < 10
+  0003:  JIF         p1, @0019                           ; if p1==0 -> loop_exit_1
   ;
   ; line 7  double r = Math.random();
-  0005:  SCALL       Math__random, p3, r2                ; p3 = scall Math__random(p4..., r2...)
-  0006:  MOV         p1, p3                              ; r:p1 = p3
+  0004:  SCALL       Math__random, p2, r2                ; p2 = scall Math__random(p3..., r2...)
+  0005:  MOV         p1, p2                              ; r:p1 = p2
   ;
   ; line 8  double val = Math.sqrt(Math.pow(r, 2.0));
-  0007:  MOV         p6, p1                              ; p6 = r:p1
-  0008:  LDC         p7, #1                              ; p7 = 2.0
-  0009:  SCALL       Math__pow, p5, r2                   ; p5 = scall Math__pow(p6..., r2...)
-  0010:  MOV         p4, p5                              ; p4 = p5
-  0011:  SCALL       Math__sqrt, p3, r2                  ; p3 = scall Math__sqrt(p4..., r2...)
-  0012:  MOV         p2, p3                              ; val:p2 = p3
+  0006:  MOV         p6, p1                              ; p6 = r:p1
+  0007:  LDC         p7, #1                              ; p7 = 2.0
+  0008:  SCALL       Math__pow, p5, r2                   ; p5 = scall Math__pow(p6..., r2...)
+  0009:  MOV         p4, p5                              ; p4 = p5
+  0010:  SCALL       Math__sqrt, p3, r2                  ; p3 = scall Math__sqrt(p4..., r2...)
+  0011:  MOV         p2, p3                              ; val:p2 = p3
   ;
   ; line 9  dist.push(val);
-  0013:  MOVR        r3, r1                              ; r3 = dist:r1
-  0014:  MOV         p3, p2                              ; p3 = val:p2
-  0015:  SCALL       __T[]_push!double, p3, r3           ; scall __T[]_push!double(p3..., r3...)
+  0012:  MOVR        r3, r1                              ; r3 = dist:r1
+  0013:  MOV         p3, p2                              ; p3 = val:p2
+  0014:  SCALL       __T[]_push!double, p3, r3           ; scall __T[]_push!double(p3..., r3...)
   ;
   ; line 10  i = i + 1;
-  0016:  LDI         p2, 1                               ; val:p2 = 1
-  0017:  IADD        p0, p0, p2                          ; i:p0 = i:p0 + val:p2
-  0018:  KILL_REF    r2                                  ; r2 = null (GC)
-  0019:  KILL_REF    r3                                  ; r3 = null (GC)
-  0020:  JMP         @0002                               ; -> loop_start_1
+  0015:  IADD        p0, p0, #1                          ; i:p0 = i:p0 + 1
+  0016:  KILL_REF    r2                                  ; r2 = null (GC)
+  0017:  KILL_REF    r3                                  ; r3 = null (GC)
+  0018:  JMP         @0002                               ; -> loop_start_1
   ;
   ; line 13  double sum = 0.0;
   .loop_exit_1:
-  0021:  LDC         p2, #5                              ; sum:p2 = 0.0
+  0019:  LDC         p2, #5                              ; sum:p2 = 0.0
   ;
   ; line 14  foreach (double d in dist) {
-  0022:  MOVR        r2, r1                              ; r2 = dist:r1
-  0023:  LDI         p1, 0                               ; r:p1 = 0
-  0024:  MOVR        r3, r2                              ; r3 = r2
-  0025:  SCALL       __T[]_length!double, p6, r3         ; p6 = scall __T[]_length!double(p7..., r3...)
-  0026:  MOV         p3, p6                              ; p3 = p6
+  0020:  MOVR        r2, r1                              ; r2 = dist:r1
+  0021:  LDI         p1, 0                               ; r:p1 = 0
+  0022:  MOVR        r3, r2                              ; r3 = r2
+  0023:  SCALL       __T[]_length!double, p6, r3         ; p6 = scall __T[]_length!double(p7..., r3...)
+  0024:  MOV         p3, p6                              ; p3 = p6
   .loop_start_2:
-  0027:  ILT         p4, p1, p3                          ; p4 = r:p1 < p3
-  0028:  JIF         p4, @0033                           ; if p4==0 -> loop_exit_2
-  0029:  AGET_IDX    r5, r2, p1                          ; r5 = r2[r:p1]
+  0025:  ILT         p4, p1, p3                          ; p4 = r:p1 < p3
+  0026:  JIF         p4, @0031                           ; if p4==0 -> loop_exit_2
+  0027:  AGET_IDX    r5, r2, p1                          ; r5 = r2[r:p1]
   ;
   ; line 15  sum = sum + d;
-  0030:  DADD        p2, p2, p5                          ; sum:p2 = sum:p2 + d:p5
+  0028:  DADD        p2, p2, p5                          ; sum:p2 = sum:p2 + d:p5
   ;
   ; line 14  foreach (double d in dist) {
   .loop_update_2:
-  0031:  IINC        p1                                  ; r:p1 = r:p1 + 1
-  0032:  JMP         @0027                               ; -> loop_start_2
+  0029:  IINC        p1                                  ; r:p1 = r:p1 + 1
+  0030:  JMP         @0025                               ; -> loop_start_2
   ;
   ; line 18  if (dist.length() == 10) {
   .loop_exit_2:
-  0033:  MOVR        r3, r1                              ; r3 = dist:r1
-  0034:  SCALL       __T[]_length!double, p6, r3         ; p6 = scall __T[]_length!double(p7..., r3...)
-  0035:  MOV         p3, p6                              ; p3 = p6
-  0036:  LDI         p4, 10                              ; p4 = 10
-  0037:  IEQ         p1, p3, p4                          ; r:p1 = p3 == p4
-  0038:  JIF         p1, @0044                           ; if r:p1==0 -> @0044
+  0031:  MOVR        r3, r1                              ; r3 = dist:r1
+  0032:  SCALL       __T[]_length!double, p6, r3         ; p6 = scall __T[]_length!double(p7..., r3...)
+  0033:  MOV         p3, p6                              ; p3 = p6
+  0034:  IEQ         p1, p3, #10                         ; r:p1 = p3 == 10
+  0035:  JIF         p1, @0041                           ; if r:p1==0 -> @0041
   ;
   ; line 19  return "ok";
-  0039:  LDC         r1, #7                              ; dist:r1 = "ok"
-  0040:  KILL_REF    r2                                  ; r2 = null (GC)
-  0041:  KILL_REF    r3                                  ; r3 = null (GC)
-  0042:  RET         r1                                  ; return dist:r1
-  0043:  JMP         @0044                               ; -> @0044
+  0036:  LDC         r1, #7                              ; dist:r1 = "ok"
+  0037:  KILL_REF    r2                                  ; r2 = null (GC)
+  0038:  KILL_REF    r3                                  ; r3 = null (GC)
+  0039:  RET         REF, r1                             ; return dist:r1
+  0040:  JMP         @0041                               ; -> @0041
   ;
   ; line 21  return "error";
-  0044:  LDC         r1, #8                              ; dist:r1 = "error"
-  0045:  KILL_REF    r2                                  ; r2 = null (GC)
-  0046:  KILL_REF    r3                                  ; r3 = null (GC)
-  0047:  RET         r1                                  ; return dist:r1
+  0041:  LDC         r1, #8                              ; dist:r1 = "error"
+  0042:  KILL_REF    r2                                  ; r2 = null (GC)
+  0043:  KILL_REF    r3                                  ; r3 = null (GC)
+  0044:  RET         REF, r1                             ; return dist:r1
 
 
 ; Exception Table
@@ -121,8 +118,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 48
+  instructions: 45
   constants:    9
   exceptions:   0
   globals:      0p + 0r
-  bytecode:     384 bytes
+  bytecode:     360 bytes

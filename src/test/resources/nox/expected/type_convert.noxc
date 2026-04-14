@@ -44,7 +44,7 @@
   ; line 7  return b;
   0011:  KILL_REF    r1                                  ; s:r1 = null (GC)
   0012:  KILL_REF    r2                                  ; r2 = null (GC)
-  0013:  RET         p0                                  ; return b:p0
+  0013:  RET         INT, p0                             ; return b:p0
 
 
 ; Exception Table

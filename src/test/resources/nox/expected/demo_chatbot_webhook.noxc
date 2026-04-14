@@ -65,7 +65,7 @@
   0020:  KILL_REF    r2                                  ; hook:r2 = null (GC)
   0021:  KILL_REF    r4                                  ; r4 = null (GC)
   0022:  KILL_REF    r5                                  ; r5 = null (GC)
-  0023:  RET         r3                                  ; return resp:r3
+  0023:  RET         REF, r3                             ; return resp:r3
   0024:  JMP         @0025                               ; -> @0025
   0025:  KILL_REF    r4                                  ; r4 = null (GC)
   0026:  KILL_REF    r5                                  ; r5 = null (GC)
@@ -77,7 +77,7 @@
   0030:  KILL_REF    r2                                  ; hook:r2 = null (GC)
   0031:  KILL_REF    r4                                  ; r4 = null (GC)
   0032:  KILL_REF    r5                                  ; r5 = null (GC)
-  0033:  RET         r3                                  ; return resp:r3
+  0033:  RET         REF, r3                             ; return resp:r3
 
 
 ; Exception Table

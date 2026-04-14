@@ -108,4 +108,49 @@ class NoxRuntimeTest :
             result.shouldBeInstanceOf<NoxResult.Success>()
             result.yields shouldContainExactly listOf("handled")
         }
+
+        test("onYieldCallbackFiringInRealTime") {
+            val streamed = mutableListOf<String>()
+            val runtime =
+                NoxRuntime
+                    .builder()
+                    .onYield { streamed.add(it) }
+                    .build()
+            val result =
+                runtime.execute(
+                    """
+                    main() {
+                        yield "a";
+                        yield "b";
+                        yield "c";
+                        return "done";
+                    }
+                    """.trimIndent(),
+                )
+            result.shouldBeInstanceOf<NoxResult.Success>()
+            result.returnValue shouldBe "done"
+            // Both the callback and the result collect yields
+            streamed shouldContainExactly listOf("a", "b", "c")
+            result.yields shouldContainExactly listOf("a", "b", "c")
+        }
+
+        test("onYieldCallbackFiresBeforeError") {
+            val streamed = mutableListOf<String>()
+            val runtime =
+                NoxRuntime
+                    .builder()
+                    .onYield { streamed.add(it) }
+                    .build()
+            val result =
+                runtime.execute(
+                    """
+                    main() {
+                        yield "before";
+                        throw "boom";
+                    }
+                    """.trimIndent(),
+                )
+            result.shouldBeInstanceOf<NoxResult.Error>()
+            streamed shouldContainExactly listOf("before")
+        }
     })

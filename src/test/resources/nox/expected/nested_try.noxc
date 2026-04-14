@@ -31,14 +31,14 @@
   .catch_InnerError:
   0004:  LDC         r2, #1                              ; r2 = "inner"
   0005:  KILL_REF    r1                                  ; e:r1 = null (GC)
-  0006:  RET         r2                                  ; return r2
+  0006:  RET         REF, r2                             ; return r2
   0007:  JMP         @0012                               ; -> end
   ;
   ; line 9  return "inner";
   .catch_all:
   0008:  LDC         r2, #1                              ; r2 = "inner"
   0009:  KILL_REF    r1                                  ; err:r1 = null (GC)
-  0010:  RET         r2                                  ; return r2
+  0010:  RET         REF, r2                             ; return r2
   0011:  JMP         @0012                               ; -> end
   .end:
   0012:  KILL_REF    r1                                  ; err:r1 = null (GC)
@@ -49,7 +49,7 @@
   .catch_all:
   0015:  LDC         r2, #2                              ; r2 = "outer"
   0016:  KILL_REF    r1                                  ; err:r1 = null (GC)
-  0017:  RET         r2                                  ; return r2
+  0017:  RET         REF, r2                             ; return r2
   0018:  JMP         @0019                               ; -> end
   .end:
   0019:  KILL_REF    r1                                  ; err:r1 = null (GC)

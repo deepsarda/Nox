@@ -334,6 +334,30 @@ class NoxcEmitter {
         /** Maps a binary opcode to its source-level operator symbol. */
         fun opcodeSymbol(op: Int) = Opcode.symbol(op) ?: Opcode.name(op)
 
+        /** Formats the C operand based on subOp mode for arithmetic/comparison instructions. */
+        fun immC(
+            c: Int,
+            subOp: Int,
+        ): String =
+            when (subOp) {
+                SubOp.REG_IMM -> "#$c"
+                SubOp.REG_POOL -> "@pool[$c]"
+                else -> pr(c)
+            }
+
+        fun immCn(
+            c: Int,
+            subOp: Int,
+        ): String =
+            when (subOp) {
+                SubOp.REG_IMM -> "$c"
+                SubOp.REG_POOL -> {
+                    val v = pool.getOrNull(c)
+                    v?.toString() ?: "@pool[$c]"
+                }
+                else -> pn(c)
+            }
+
         return when (opcode) {
             // Arithmetic & comparison (pMem only)
             Opcode.IADD, Opcode.ISUB, Opcode.IMUL, Opcode.IDIV, Opcode.IMOD,
@@ -342,7 +366,9 @@ class NoxcEmitter {
             Opcode.IEQ, Opcode.INE, Opcode.ILT, Opcode.ILE, Opcode.IGT, Opcode.IGE,
             Opcode.DEQ, Opcode.DNE, Opcode.DLT, Opcode.DLE, Opcode.DGT, Opcode.DGE,
             Opcode.BAND, Opcode.BOR, Opcode.BXOR, Opcode.SHL, Opcode.SHR, Opcode.USHR,
-            -> "${pr(a)}, ${pr(b)}, ${pr(c)}" to "${pn(a)} = ${pn(b)} ${opcodeSymbol(opcode)} ${pn(c)}"
+            ->
+                "${pr(a)}, ${pr(b)}, ${immC(c, subOp)}" to
+                    "${pn(a)} = ${pn(b)} ${opcodeSymbol(opcode)} ${immCn(c, subOp)}"
 
             Opcode.SEQ, Opcode.SNE,
             -> "${pr(a)}, ${rr(b)}, ${rr(c)}" to "${pn(a)} = ${rn(b)} ${opcodeSymbol(opcode)} ${rn(c)}"
@@ -409,15 +435,14 @@ class NoxcEmitter {
             }
 
             Opcode.RET -> {
-                val isVoid = a == 1
-                if (isVoid) {
-                    "" to "return (void)"
-                } else {
-                    if (b < 3) {
-                        pr(c) to "return ${pn(c)}"
-                    } else {
-                        rr(c) to "return ${rn(c)}"
-                    }
+                val tag = SubOp.name(subOp)
+                when (subOp) {
+                    SubOp.TYPE_VOID -> "$tag" to "return (void)"
+                    SubOp.TYPE_INT, SubOp.TYPE_DBL, SubOp.TYPE_BOOL ->
+                        "$tag, ${pr(c)}" to "return ${pn(c)}"
+                    SubOp.TYPE_REF ->
+                        "$tag, ${rr(c)}" to "return ${rn(c)}"
+                    else -> "$tag, c=$c" to "return (?)"
                 }
             }
 
@@ -461,10 +486,13 @@ class NoxcEmitter {
             Opcode.ASET_IDX -> "${rr(a)}, ${pr(b)}, ${pr(c)}" to "${rn(a)}[${pn(b)}] = ${pn(c)}"
 
             Opcode.YIELD -> {
-                if (b < 3) {
-                    pr(a) to "yield ${pn(a)}"
-                } else {
-                    rr(a) to "yield ${rn(a)}"
+                val tag = SubOp.name(subOp)
+                when (subOp) {
+                    SubOp.TYPE_INT, SubOp.TYPE_DBL, SubOp.TYPE_BOOL ->
+                        "$tag, ${pr(a)}" to "yield ${pn(a)}"
+                    SubOp.TYPE_REF ->
+                        "$tag, ${rr(a)}" to "yield ${rn(a)}"
+                    else -> "$tag, a=$a" to "yield (?)"
                 }
             }
 

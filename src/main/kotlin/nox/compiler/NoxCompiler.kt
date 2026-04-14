@@ -106,12 +106,15 @@ object NoxCompiler {
             return CompilationResult(program, typedProgram, errors, warnings, modules)
         }
 
+        // Phase 5b: Constant Folding & Dead Branch Elimination
+        val foldedProgram = ConstantFolder.fold(typedProgram)
+
         // Populate source lines for the disassembler
         program.sourceLines.addAll(source.lines())
-        typedProgram.sourceLines.addAll(source.lines())
+        foldedProgram.sourceLines.addAll(source.lines())
 
         // Phase 6: Code Generation
-        val compiledProgram = CodeGenerator(errors, typedModules, registry).generate(typedProgram)
+        val compiledProgram = CodeGenerator(errors, typedModules, registry).generate(foldedProgram)
 
         // Phase 7: Disassembly
         val programName = program.headers.firstOrNull { it.key == "name" }?.value ?: "(unnamed)"

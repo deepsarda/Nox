@@ -15,7 +15,7 @@
 ;  Function: main
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=4  rMem=0
+;    Frame:      pMem=3  rMem=0
 
 .func main
   ;
@@ -25,21 +25,20 @@
   ; line 4  for (int i = 0; i < 5; i++) {
   0001:  LDI         p1, 0                               ; i:p1 = 0
   .loop_start_1:
-  0002:  LDI         p3, 5                               ; p3 = 5
-  0003:  ILT         p2, p1, p3                          ; p2 = i:p1 < p3
-  0004:  JIF         p2, @0008                           ; if p2==0 -> loop_exit_1
+  0002:  ILT         p2, p1, #5                          ; p2 = i:p1 < 5
+  0003:  JIF         p2, @0007                           ; if p2==0 -> loop_exit_1
   ;
   ; line 5  count++;
-  0005:  IINC        p0                                  ; count:p0 = count:p0 + 1
+  0004:  IINC        p0                                  ; count:p0 = count:p0 + 1
   ;
   ; line 4  for (int i = 0; i < 5; i++) {
   .loop_update_1:
-  0006:  IINC        p1                                  ; i:p1 = i:p1 + 1
-  0007:  JMP         @0002                               ; -> loop_start_1
+  0005:  IINC        p1                                  ; i:p1 = i:p1 + 1
+  0006:  JMP         @0002                               ; -> loop_start_1
   ;
   ; line 7  return count;
   .loop_exit_1:
-  0008:  RET         p0                                  ; return count:p0
+  0007:  RET         INT, p0                             ; return count:p0
 
 
 ; Exception Table
@@ -54,8 +53,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 9
+  instructions: 8
   constants:    0
   exceptions:   0
   globals:      0p + 0r
-  bytecode:     72 bytes
+  bytecode:     64 bytes

@@ -39,6 +39,22 @@ Each operand can carry flags to modify its interpretation:
 
 - **Global flag `[G]`**: Read from global memory (`gMem`) instead of the local frame
 - **Constant flag `[K]`**: The operand is a constant pool index, not a register
+
+### Arithmetic Operand Modes (SubOp)
+
+Arithmetic and comparison opcodes use the SubOp field to encode how operand C should be interpreted:
+
+| SubOp | Constant | Meaning |
+|---|---|---|
+| `REG_REG` | 0x00 | Default: C is a register index |
+| `REG_IMM` | 0x01 | C is a 16-bit unsigned immediate (0-65535) |
+| `REG_POOL` | 0x02 | C is a constant pool index |
+
+This allows the compiler to bake constant operands directly into instructions, eliminating the preceding `LDI`/`LDC` instruction. For example, `x + 10` emits a single `IADD [REG_IMM] dest, x, 10` instead of `LDI tmp, 10` followed by `IADD dest, x, tmp`.
+
+The optimization applies to: `IADD`-`IMOD`, `DADD`-`DMOD`, `IEQ`-`IGE`, `DEQ`-`DGE`, `AND`, `OR`, `BAND`, `BOR`, `BXOR`, `SHL`, `SHR`, `USHR`.
+
+For double-precision operations, only `REG_POOL` is used (doubles don't fit in 16 bits).
  
 ## Opcode Reference
 
@@ -99,8 +115,7 @@ Each operand can carry flags to modify its interpretation:
 | `JIF` | `JIF A, target` | Jump if false: `if (pMem[A] == 0) pc = target` |
 | `JIT` | `JIT A, target` | Jump if true: `if (pMem[A] != 0) pc = target` |
 | `CALL` | `CALL [subOp] funcId, primArgStart, refArgStart` | Push frame, slide `bp` and `bpRef`, jump to function. `subOp` indicates return type (0=REF, 1=PRIM, 2=VOID). |
-| `RET` | `RET isVoid, reg` | Returns from function. If `isVoid=0`, copies `reg` to the caller's result slot. |
-| `RET` | `RET isVoid, typeTag, reg` | Returns from function. If `isVoid=0`, copies `reg` to caller's result slot. `typeTag` (0=INT, 1=DBL, 2=BOOL, 3=REF) used for conversion in `main`. |
+| `RET` | `RET [subOp] C` | Returns from function. SubOp encodes the value type: `VOID` (0x20), `INT` (0x21), `DBL` (0x22), `BOOL` (0x23), `REF` (0x24). Operand C holds the source register. |
 
 ### System Calls
 
@@ -133,7 +148,7 @@ Each operand can carry flags to modify its interpretation:
 
 | Opcode | Syntax | Description |
 |---|---|---|
-| `YIELD` | `YIELD A, typeTag` | Send intermediate output via `RuntimeContext.yield()`. `typeTag` used for string conversion. |
+| `YIELD` | `YIELD [subOp] A` | Send intermediate output via `RuntimeContext.yield()`. Uses the same type tags as `RET`: `INT` (0x21), `DBL` (0x22), `BOOL` (0x23), `REF` (0x24). |
 
 ### Increment & Decrement
 

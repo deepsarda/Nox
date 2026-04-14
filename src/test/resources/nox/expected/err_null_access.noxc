@@ -28,7 +28,7 @@
   0003:  MOV         p0, p1                              ; p0 = p1
   0004:  KILL_REF    r1                                  ; s:r1 = null (GC)
   0005:  KILL_REF    r2                                  ; r2 = null (GC)
-  0006:  RET         p0                                  ; return p0
+  0006:  RET         INT, p0                             ; return p0
 
 
 ; Exception Table

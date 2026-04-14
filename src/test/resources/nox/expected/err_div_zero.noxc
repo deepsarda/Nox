@@ -21,9 +21,8 @@
   ;
   ; line 3  return 1 / 0;
   0000:  LDI         p1, 1                               ; p1 = 1
-  0001:  LDI         p0, 0                               ; p0 = 0
-  0002:  IDIV        p0, p1, p0                          ; p0 = p1 / p0
-  0003:  RET         p0                                  ; return p0
+  0001:  IDIV        p0, p1, #0                          ; p0 = p1 / 0
+  0002:  RET         INT, p0                             ; return p0
 
 
 ; Exception Table
@@ -38,8 +37,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 4
+  instructions: 3
   constants:    0
   exceptions:   0
   globals:      0p + 0r
-  bytecode:     32 bytes
+  bytecode:     24 bytes

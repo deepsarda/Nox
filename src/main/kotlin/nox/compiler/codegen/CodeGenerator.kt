@@ -131,7 +131,7 @@ class CodeGenerator(
             val gDest = BytecodeEmitter.GLOBAL_FLAG or global.globalSlot
             emitter.emitExpr(init, gDest, line)
         }
-        emitter.emit(Opcode.RET, 0, 1, 0, 0) // init is always void return (A=1)
+        emitter.emit(Opcode.RET, SubOp.TYPE_VOID, 1, 0, 0) // init is always void return
 
         appendEmitter(entryPc, emitter)
 
@@ -230,7 +230,7 @@ class CodeGenerator(
         emitter.emitBlock(body)
 
         if (implicitVoidReturn) {
-            emitter.emit(Opcode.RET, 0, 1, 0, 0) // A=1 (void)
+            emitter.emit(Opcode.RET, SubOp.TYPE_VOID, 1, 0, 0) // implicit void return
         }
 
         appendEmitter(entryPc, emitter)

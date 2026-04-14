@@ -28,9 +28,9 @@
   0004:  OBJ_SET     SET_INT, r1, "y", p0                ; p:r1.y = p0
   ;
   ; line 8  return p.x;
-  0005:  HACC        GET_INT, r0, r1, "x"                ; r0 = p:r1.x
+  0005:  HACC        IMM, r0, r1, "x"                    ; r0 = p:r1.x
   0006:  KILL_REF    r1                                  ; p:r1 = null (GC)
-  0007:  RET         p0                                  ; return p0
+  0007:  RET         INT, p0                             ; return p0
 
 
 ; Exception Table

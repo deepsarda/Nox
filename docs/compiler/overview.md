@@ -30,6 +30,14 @@
         ▼
    Annotated AST
         │
+        │  Phase 3.5: Constant Folding & Dead Branch Elimination
+        │  ├─ Bottom-up expression folding (5+5 → 10)
+        │  ├─ Unary folding (-5, !true)
+        │  ├─ String concat folding ("a" + "b" → "ab")
+        │  └─ Dead branch elimination (if(true) → inline then block)
+        ▼
+   Optimized AST
+        │
         │  Phase 4: Code Generation
         │  ├─ Register allocation (liveness analysis)
         │  ├─ Bytecode emission (opcode selection)

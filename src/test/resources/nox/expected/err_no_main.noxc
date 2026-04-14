@@ -21,7 +21,7 @@
   ;
   ; line 3  return 1;
   0000:  LDI         p1, 1                               ; p1 = 1
-  0001:  RET         p1                                  ; return p1
+  0001:  RET         INT, p1                             ; return p1
 
 
 ; Exception Table

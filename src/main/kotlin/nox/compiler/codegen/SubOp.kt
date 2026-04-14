@@ -34,6 +34,25 @@ object SubOp {
     const val SET_BOOL = 0x14
     const val SET_OBJ = 0x15
 
+    // Shared type tags for RET and YIELD (opcode distinguishes the operation)
+
+    const val TYPE_VOID = 0x20
+    const val TYPE_INT = 0x21
+    const val TYPE_DBL = 0x22
+    const val TYPE_BOOL = 0x23
+    const val TYPE_REF = 0x24
+
+    // Arithmetic operand modes (for IADD, ISUB, IMUL, ... and comparisons)
+
+    /** Default: operand C is a register index. */
+    const val REG_REG = 0x00
+
+    /** Operand C is a 16-bit unsigned immediate value (0–65535). */
+    const val REG_IMM = 0x01
+
+    /** Operand C is a constant pool index. */
+    const val REG_POOL = 0x02
+
     // Reverse Lookup
 
     private val names: Map<Int, String> by lazy {
@@ -48,6 +67,13 @@ object SubOp {
             put(SET_STR, "SET_STR")
             put(SET_BOOL, "SET_BOOL")
             put(SET_OBJ, "SET_OBJ")
+            put(TYPE_VOID, "VOID")
+            put(TYPE_INT, "INT")
+            put(TYPE_DBL, "DBL")
+            put(TYPE_BOOL, "BOOL")
+            put(TYPE_REF, "REF")
+            put(REG_IMM, "IMM")
+            put(REG_POOL, "POOL")
         }
     }
 

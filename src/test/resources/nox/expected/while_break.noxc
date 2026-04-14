@@ -15,7 +15,7 @@
 ;  Function: main
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=3  rMem=0
+;    Frame:      pMem=2  rMem=0
 
 .func main
   ;
@@ -25,22 +25,21 @@
   ; line 4  while (true) {
   .loop_start_1:
   0001:  LDI         p1, 1                               ; p1 = 1
-  0002:  JIF         p1, @0010                           ; if p1==0 -> loop_exit_1
+  0002:  JIF         p1, @0009                           ; if p1==0 -> loop_exit_1
   ;
   ; line 5  i++;
   0003:  IINC        p0                                  ; i:p0 = i:p0 + 1
   ;
   ; line 6  if (i == 10) {
-  0004:  LDI         p2, 10                              ; p2 = 10
-  0005:  IEQ         p1, p0, p2                          ; p1 = i:p0 == p2
-  0006:  JIF         p1, @0009                           ; if p1==0 -> @0009
-  0007:  JMP         @0010                               ; -> loop_exit_1
-  0008:  JMP         @0009                               ; -> @0009
-  0009:  JMP         @0001                               ; -> loop_start_1
+  0004:  IEQ         p1, p0, #10                         ; p1 = i:p0 == 10
+  0005:  JIF         p1, @0008                           ; if p1==0 -> @0008
+  0006:  JMP         @0009                               ; -> loop_exit_1
+  0007:  JMP         @0008                               ; -> @0008
+  0008:  JMP         @0001                               ; -> loop_start_1
   ;
   ; line 10  return i;
   .loop_exit_1:
-  0010:  RET         p0                                  ; return i:p0
+  0009:  RET         INT, p0                             ; return i:p0
 
 
 ; Exception Table
@@ -55,8 +54,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 11
+  instructions: 10
   constants:    0
   exceptions:   0
   globals:      0p + 0r
-  bytecode:     88 bytes
+  bytecode:     80 bytes

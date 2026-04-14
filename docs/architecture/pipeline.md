@@ -5,14 +5,14 @@
 Every `.nox` script passes through a multi-stage pipeline before execution. Each stage progressively transforms the code and validates it, ensuring that by the time the VM begins execution, the bytecode is **fully verified and optimized**.
 
 ```
-  ┌────────────┐     ┌────────────┐     ┌────────────┐     ┌────────────┐     ┌────────────┐
-  │   Source   │     │   Token    │     │  Abstract  │     │  Validated │     │  Bytecode  │
-  │   Text     │────▶│  Stream    │────▶│  Syntax    │────▶│    AST     │────▶│  + Metadata│
-  │  (.nox)    │     │            │     │   Tree     │     │            │     │            │
-  └────────────┘     └────────────┘     └────────────┘     └────────────┘     └────────────┘
-     Stage 1:           Stage 2:           Stage 3:           Stage 4:           Stage 5:
-     Lexing             Parsing            Semantic         Compilation        Execution
-                                          Validation
+  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+  │  Source  │    │  Token   │    │ Abstract │    │ Validated│    │ Optimized│    │ Bytecode │
+  │  Text    │───▶│  Stream  │───▶│  Syntax  │───▶│   AST    │───▶│   AST    │───▶│+Metadata │
+  │ (.nox)   │    │          │    │  Tree    │    │          │    │          │    │          │
+  └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘
+    Stage 1:        Stage 2:        Stage 3:        Stage 4:        Stage 5:        Stage 6:
+    Lexing          Parsing         Semantic        Constant       Compilation      Execution
+                                   Validation       Folding
 ```
  
 ## Stage 1: Parsing (ANTLR 4)

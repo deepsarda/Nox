@@ -66,7 +66,7 @@
   0021:  AGET_IDX    r2, r1, p1                          ; item:r2 = data:r1[p1]
   ;
   ; line 19  sum = sum + item.value;
-  0022:  HACC        GET_INT, r4, r2, "value"            ; r4 = item:r2.value
+  0022:  HACC        IMM, r4, r2, "value"                ; r4 = item:r2.value
   0023:  IADD        p0, p0, p4                          ; sum:p0 = sum:p0 + p4
   ;
   ; line 18  foreach (Item item in items) {
@@ -76,24 +76,23 @@
   ;
   ; line 22  if (sum == 30) {
   .loop_exit_1:
-  0026:  LDI         p2, 30                              ; p2 = 30
-  0027:  IEQ         p1, p0, p2                          ; p1 = sum:p0 == p2
-  0028:  JIF         p1, @0035                           ; if p1==0 -> @0035
+  0026:  IEQ         p1, p0, #30                         ; p1 = sum:p0 == 30
+  0027:  JIF         p1, @0034                           ; if p1==0 -> @0034
   ;
   ; line 23  return "ok";
-  0029:  LDC         r1, #8                              ; data:r1 = "ok"
-  0030:  KILL_REF    r2                                  ; item:r2 = null (GC)
-  0031:  KILL_REF    r3                                  ; r3 = null (GC)
-  0032:  KILL_REF    r4                                  ; r4 = null (GC)
-  0033:  RET         r1                                  ; return data:r1
-  0034:  JMP         @0035                               ; -> @0035
+  0028:  LDC         r1, #8                              ; data:r1 = "ok"
+  0029:  KILL_REF    r2                                  ; item:r2 = null (GC)
+  0030:  KILL_REF    r3                                  ; r3 = null (GC)
+  0031:  KILL_REF    r4                                  ; r4 = null (GC)
+  0032:  RET         REF, r1                             ; return data:r1
+  0033:  JMP         @0034                               ; -> @0034
   ;
   ; line 25  return "error";
-  0035:  LDC         r1, #9                              ; data:r1 = "error"
-  0036:  KILL_REF    r2                                  ; item:r2 = null (GC)
-  0037:  KILL_REF    r3                                  ; r3 = null (GC)
-  0038:  KILL_REF    r4                                  ; r4 = null (GC)
-  0039:  RET         r1                                  ; return data:r1
+  0034:  LDC         r1, #9                              ; data:r1 = "error"
+  0035:  KILL_REF    r2                                  ; item:r2 = null (GC)
+  0036:  KILL_REF    r3                                  ; r3 = null (GC)
+  0037:  KILL_REF    r4                                  ; r4 = null (GC)
+  0038:  RET         REF, r1                             ; return data:r1
 
 
 ; Exception Table
@@ -108,8 +107,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 40
+  instructions: 39
   constants:    10
   exceptions:   1
   globals:      0p + 0r
-  bytecode:     320 bytes
+  bytecode:     312 bytes

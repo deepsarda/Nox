@@ -32,10 +32,10 @@
   0005:  CAST_STRUCT r2, r1, #2                          ; p:r2 = j:r1 as Point
   ;
   ; line 9  return p.x;
-  0006:  HACC        GET_INT, r0, r2, "x"                ; r0 = p:r2.x
+  0006:  HACC        IMM, r0, r2, "x"                    ; r0 = p:r2.x
   0007:  KILL_REF    r1                                  ; j:r1 = null (GC)
   0008:  KILL_REF    r2                                  ; p:r2 = null (GC)
-  0009:  RET         p0                                  ; return p0
+  0009:  RET         INT, p0                             ; return p0
 
 
 ; Exception Table

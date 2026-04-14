@@ -28,7 +28,7 @@
 ;  Function: main
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=4  rMem=6
+;    Frame:      pMem=3  rMem=6
 
 .func main
   ;
@@ -67,56 +67,55 @@
   0019:  MOVR        r3, r2                              ; r3 = parts:r2
   0020:  SCALL       __T[]_length!string, p2, r3         ; p2 = scall __T[]_length!string(p3..., r3...)
   0021:  MOV         p1, p2                              ; p1 = p2
-  0022:  LDI         p2, 1                               ; p2 = 1
-  0023:  IGT         p0, p1, p2                          ; p0 = p1 > p2
-  0024:  JIF         p0, @0052                           ; if p0==0 -> @0052
+  0022:  IGT         p0, p1, #1                          ; p0 = p1 > 1
+  0023:  JIF         p0, @0051                           ; if p0==0 -> @0051
   ;
   ; line 17  string body = parts[1];
-  0025:  LDI         p0, 1                               ; p0 = 1
-  0026:  AGET_IDX    r1, r2, p0                          ; body:r1 = parts:r2[p0]
+  0024:  LDI         p0, 1                               ; p0 = 1
+  0025:  AGET_IDX    r1, r2, p0                          ; body:r1 = parts:r2[p0]
   ;
   ; line 18  if (body.contains("Some Data")) {
-  0027:  MOVR        r3, r1                              ; r3 = body:r1
-  0028:  LDC         r4, #8                              ; r4 = "Some Data"
-  0029:  SCALL       __string_contains, p3, r3           ; p3 = scall __string_contains(p4..., r3...)
-  0030:  MOV         p0, p3                              ; p0 = p3
-  0031:  JIF         p0, @0051                           ; if p0==0 -> @0051
+  0026:  MOVR        r3, r1                              ; r3 = body:r1
+  0027:  LDC         r4, #8                              ; r4 = "Some Data"
+  0028:  SCALL       __string_contains, p2, r3           ; p2 = scall __string_contains(p3..., r3...)
+  0029:  MOV         p0, p2                              ; p0 = p2
+  0030:  JIF         p0, @0050                           ; if p0==0 -> @0050
   ;
   ; line 19  string lower = body.lower();
-  0032:  MOVR        r4, r1                              ; r4 = body:r1
-  0033:  SCALL       __string_lower, p3, r3              ; r3 = scall __string_lower(p3..., r4...)
-  0034:  MOVR        r2, r3                              ; lower:r2 = r3
+  0031:  MOVR        r4, r1                              ; r4 = body:r1
+  0032:  SCALL       __string_lower, p2, r3              ; r3 = scall __string_lower(p2..., r4...)
+  0033:  MOVR        r2, r3                              ; lower:r2 = r3
   ;
   ; line 20  string upper = lower.upper();
-  0035:  MOVR        r4, r2                              ; r4 = lower:r2
-  0036:  SCALL       __string_upper, p3, r3              ; r3 = scall __string_upper(p3..., r4...)
-  0037:  MOVR        r1, r3                              ; upper:r1 = r3
+  0034:  MOVR        r4, r2                              ; r4 = lower:r2
+  0035:  SCALL       __string_upper, p2, r3              ; r3 = scall __string_upper(p2..., r4...)
+  0036:  MOVR        r1, r3                              ; upper:r1 = r3
   ;
   ; line 21  if (upper.contains("SOME DATA")) {
-  0038:  MOVR        r3, r1                              ; r3 = upper:r1
-  0039:  LDC         r4, #11                             ; r4 = "SOME DATA"
-  0040:  SCALL       __string_contains, p3, r3           ; p3 = scall __string_contains(p4..., r3...)
-  0041:  MOV         p0, p3                              ; p0 = p3
-  0042:  JIF         p0, @0050                           ; if p0==0 -> @0050
+  0037:  MOVR        r3, r1                              ; r3 = upper:r1
+  0038:  LDC         r4, #11                             ; r4 = "SOME DATA"
+  0039:  SCALL       __string_contains, p2, r3           ; p2 = scall __string_contains(p3..., r3...)
+  0040:  MOV         p0, p2                              ; p0 = p2
+  0041:  JIF         p0, @0049                           ; if p0==0 -> @0049
   ;
   ; line 22  return "ok";
-  0043:  LDC         r1, #12                             ; upper:r1 = "ok"
-  0044:  KILL_REF    r2                                  ; lower:r2 = null (GC)
-  0045:  KILL_REF    r3                                  ; r3 = null (GC)
-  0046:  KILL_REF    r4                                  ; r4 = null (GC)
-  0047:  KILL_REF    r5                                  ; r5 = null (GC)
-  0048:  RET         r1                                  ; return upper:r1
+  0042:  LDC         r1, #12                             ; upper:r1 = "ok"
+  0043:  KILL_REF    r2                                  ; lower:r2 = null (GC)
+  0044:  KILL_REF    r3                                  ; r3 = null (GC)
+  0045:  KILL_REF    r4                                  ; r4 = null (GC)
+  0046:  KILL_REF    r5                                  ; r5 = null (GC)
+  0047:  RET         REF, r1                             ; return upper:r1
+  0048:  JMP         @0049                               ; -> @0049
   0049:  JMP         @0050                               ; -> @0050
   0050:  JMP         @0051                               ; -> @0051
-  0051:  JMP         @0052                               ; -> @0052
   ;
   ; line 27  return "error";
-  0052:  LDC         r1, #13                             ; upper:r1 = "error"
-  0053:  KILL_REF    r2                                  ; lower:r2 = null (GC)
-  0054:  KILL_REF    r3                                  ; r3 = null (GC)
-  0055:  KILL_REF    r4                                  ; r4 = null (GC)
-  0056:  KILL_REF    r5                                  ; r5 = null (GC)
-  0057:  RET         r1                                  ; return upper:r1
+  0051:  LDC         r1, #13                             ; upper:r1 = "error"
+  0052:  KILL_REF    r2                                  ; lower:r2 = null (GC)
+  0053:  KILL_REF    r3                                  ; r3 = null (GC)
+  0054:  KILL_REF    r4                                  ; r4 = null (GC)
+  0055:  KILL_REF    r5                                  ; r5 = null (GC)
+  0056:  RET         REF, r1                             ; return upper:r1
 
 
 ; Exception Table
@@ -131,8 +130,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 58
+  instructions: 57
   constants:    14
   exceptions:   1
   globals:      0p + 0r
-  bytecode:     464 bytes
+  bytecode:     456 bytes

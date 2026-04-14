@@ -33,10 +33,10 @@
   ; line 7  return boxes[1].value;
   0009:  LDI         p1, 1                               ; p1 = 1
   0010:  AGET_IDX    r2, r1, p1                          ; r2 = boxes:r1[p1]
-  0011:  HACC        GET_INT, r0, r2, "value"            ; r0 = r2.value
+  0011:  HACC        IMM, r0, r2, "value"                ; r0 = r2.value
   0012:  KILL_REF    r1                                  ; boxes:r1 = null (GC)
   0013:  KILL_REF    r2                                  ; r2 = null (GC)
-  0014:  RET         p0                                  ; return p0
+  0014:  RET         INT, p0                             ; return p0
 
 
 ; Exception Table

@@ -165,11 +165,21 @@ class ExpressionEmitter(
         val rightType = expr.right.type
         val resultType = expr.type
 
+        val opcode = OpcodeSelector.binaryOpcode(expr.op, resultType, leftType, rightType)
+
+        // Try immediate/pool mode: right operand is a literal, no widening needed,
+        // and the opcode operates on pMem (not string ops).
+        val rNeedsWide = rightType == TypeRef.INT && resultType == TypeRef.DOUBLE
+        if (!rNeedsWide && opcode != Opcode.SCONCAT && opcode != Opcode.SEQ && opcode != Opcode.SNE) {
+            val immResult = tryImmediateRight(expr, opcode, dest, line)
+            if (immResult) return
+        }
+
+        // Standard path: eval both into registers
         val lResolved = ctx.resolveRegister(expr.left)
         val rResolved = ctx.resolveRegister(expr.right)
 
         val lNeedsWide = leftType == TypeRef.INT && resultType == TypeRef.DOUBLE
-        val rNeedsWide = rightType == TypeRef.INT && resultType == TypeRef.DOUBLE
 
         val lReg =
             if (lResolved != null && !lNeedsWide) {
@@ -211,7 +221,6 @@ class ExpressionEmitter(
                 rReg
             }
 
-        val opcode = OpcodeSelector.binaryOpcode(expr.op, resultType, leftType, rightType)
         ctx.emit(opcode, 0, dest, lWide, rWide, line)
 
         if (lWide != lReg) ctx.freep(lWide)
@@ -222,6 +231,69 @@ class ExpressionEmitter(
         // Always check for variable frees at these nodes AFTER instruction emission
         ctx.freeNodeRegisters(expr.left)
         ctx.freeNodeRegisters(expr.right)
+    }
+
+    /**
+     * Attempts to emit a binary op with the right operand as an immediate or pool constant.
+     * Returns true if successful, false if the standard path should be used instead.
+     */
+    private fun tryImmediateRight(
+        expr: TypedBinaryExpr,
+        opcode: Int,
+        dest: Int,
+        line: Int,
+    ): Boolean {
+        val right = expr.right
+        val leftType = expr.left.type
+        val resultType = expr.type
+
+        // Determine subOp and C value for the right operand
+        val subOp: Int
+        val cValue: Int
+
+        when {
+            right is TypedIntLiteralExpr && right.value in 0..65535 -> {
+                subOp = SubOp.REG_IMM
+                cValue = right.value.toInt()
+            }
+            right is TypedIntLiteralExpr -> {
+                subOp = SubOp.REG_POOL
+                cValue = ctx.pool.add(right.value)
+            }
+            right is TypedDoubleLiteralExpr -> {
+                subOp = SubOp.REG_POOL
+                cValue = ctx.pool.add(right.value)
+            }
+            else -> return false
+        }
+
+        // Emit the left operand
+        val lNeedsWide = leftType == TypeRef.INT && resultType == TypeRef.DOUBLE
+        val lResolved = ctx.resolveRegister(expr.left)
+        val lReg =
+            if (lResolved != null && !lNeedsWide) {
+                lResolved
+            } else {
+                val r = ctx.alloc(leftType)
+                emitExpr(expr.left, r, line)
+                r
+            }
+        val lWide =
+            if (lNeedsWide) {
+                val w = ctx.allocp()
+                ctx.emit(Opcode.I2D, 0, w, lReg, 0, line)
+                w
+            } else {
+                lReg
+            }
+
+        ctx.emit(opcode, subOp, dest, lWide, cValue, line)
+
+        if (lWide != lReg) ctx.freep(lWide)
+        if (lReg != lResolved) ctx.free(leftType, lReg)
+        ctx.freeNodeRegisters(expr.left)
+        ctx.freeNodeRegisters(expr.right)
+        return true
     }
 
     private fun emitUnary(

@@ -56,6 +56,10 @@ class NoxVM(
 
     private var returnValue: String? = null
 
+    // Constant pool (cached for helper access)
+
+    private val pool: Array<Any?> = program.constantPool
+
     // SCALL cache
 
     private val scallCache: Array<NoxNativeFunc?>
@@ -70,7 +74,6 @@ class NoxVM(
     init {
         // Build SCALL cache: for each constant pool entry that's a String,
         // try to resolve it as a native function name.
-        val pool = program.constantPool
         scallCache =
             Array(pool.size) { i ->
                 val entry = pool[i]
@@ -144,6 +147,27 @@ class NoxVM(
             else -> readR(reg)
         }
 
+    /** Reads integer operand C based on arithmetic subOp mode. */
+    private fun readIntC(
+        subOp: Int,
+        c: Int,
+    ): Long =
+        when (subOp) {
+            SubOp.REG_IMM -> c.toLong()
+            SubOp.REG_POOL -> pool[c] as Long
+            else -> readP(c)
+        }
+
+    /** Reads double operand C based on arithmetic subOp mode. */
+    private fun readDoubleC(
+        subOp: Int,
+        c: Int,
+    ): Double =
+        when (subOp) {
+            SubOp.REG_POOL -> pool[c] as Double
+            else -> longBitsToDouble(readP(c))
+        }
+
     private fun valueToString(
         typeTag: Int,
         reg: Int,
@@ -164,6 +188,26 @@ class NoxVM(
                     .write(obj)
             } else {
                 obj?.toString() ?: "null"
+            }
+        }
+
+    private fun valueToStringSubOp(
+        subOp: Int,
+        reg: Int,
+    ): String =
+        when (subOp) {
+            SubOp.TYPE_INT -> readP(reg).toString()
+            SubOp.TYPE_DBL -> longBitsToDouble(readP(reg)).toString()
+            SubOp.TYPE_BOOL -> if (readP(reg) != 0L) "true" else "false"
+            else -> {
+                val obj = readR(reg)
+                if (obj != null && obj !is String) {
+                    nox.runtime.json
+                        .NoxJsonWriter(prettyPrint = false)
+                        .write(obj)
+                } else {
+                    obj?.toString() ?: "null"
+                }
             }
         }
 
@@ -344,7 +388,6 @@ class NoxVM(
     @Suppress("LongMethod")
     private suspend fun loop() {
         val bytecode = program.bytecode
-        val pool = program.constantPool
 
         while (running) {
             val inst = bytecode[pc++]
@@ -381,25 +424,25 @@ class NoxVM(
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, readP(b) + readP(c))
+                    writeP(a, readP(b) + readIntC(Instruction.subOp(inst), c))
                 }
                 Opcode.ISUB -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, readP(b) - readP(c))
+                    writeP(a, readP(b) - readIntC(Instruction.subOp(inst), c))
                 }
                 Opcode.IMUL -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, readP(b) * readP(c))
+                    writeP(a, readP(b) * readIntC(Instruction.subOp(inst), c))
                 }
                 Opcode.IDIV -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    val divisor = readP(c)
+                    val divisor = readIntC(Instruction.subOp(inst), c)
                     if (divisor == 0L) {
                         handleException(NoxException(NoxError.DivisionByZeroError, "Division by zero", pc - 1))
                         continue
@@ -410,7 +453,7 @@ class NoxVM(
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    val divisor = readP(c)
+                    val divisor = readIntC(Instruction.subOp(inst), c)
                     if (divisor == 0L) {
                         handleException(NoxException(NoxError.DivisionByZeroError, "Division by zero", pc - 1))
                         continue
@@ -429,31 +472,31 @@ class NoxVM(
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, doubleToRawLongBits(longBitsToDouble(readP(b)) + longBitsToDouble(readP(c))))
+                    writeP(a, doubleToRawLongBits(longBitsToDouble(readP(b)) + readDoubleC(Instruction.subOp(inst), c)))
                 }
                 Opcode.DSUB -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, doubleToRawLongBits(longBitsToDouble(readP(b)) - longBitsToDouble(readP(c))))
+                    writeP(a, doubleToRawLongBits(longBitsToDouble(readP(b)) - readDoubleC(Instruction.subOp(inst), c)))
                 }
                 Opcode.DMUL -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, doubleToRawLongBits(longBitsToDouble(readP(b)) * longBitsToDouble(readP(c))))
+                    writeP(a, doubleToRawLongBits(longBitsToDouble(readP(b)) * readDoubleC(Instruction.subOp(inst), c)))
                 }
                 Opcode.DDIV -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, doubleToRawLongBits(longBitsToDouble(readP(b)) / longBitsToDouble(readP(c))))
+                    writeP(a, doubleToRawLongBits(longBitsToDouble(readP(b)) / readDoubleC(Instruction.subOp(inst), c)))
                 }
                 Opcode.DMOD -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, doubleToRawLongBits(longBitsToDouble(readP(b)) % longBitsToDouble(readP(c))))
+                    writeP(a, doubleToRawLongBits(longBitsToDouble(readP(b)) % readDoubleC(Instruction.subOp(inst), c)))
                 }
                 Opcode.DNEG -> {
                     val a = Instruction.opA(inst)
@@ -487,37 +530,37 @@ class NoxVM(
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, if (readP(b) == readP(c)) 1L else 0L)
+                    writeP(a, if (readP(b) == readIntC(Instruction.subOp(inst), c)) 1L else 0L)
                 }
                 Opcode.INE -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, if (readP(b) != readP(c)) 1L else 0L)
+                    writeP(a, if (readP(b) != readIntC(Instruction.subOp(inst), c)) 1L else 0L)
                 }
                 Opcode.ILT -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, if (readP(b) < readP(c)) 1L else 0L)
+                    writeP(a, if (readP(b) < readIntC(Instruction.subOp(inst), c)) 1L else 0L)
                 }
                 Opcode.ILE -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, if (readP(b) <= readP(c)) 1L else 0L)
+                    writeP(a, if (readP(b) <= readIntC(Instruction.subOp(inst), c)) 1L else 0L)
                 }
                 Opcode.IGT -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, if (readP(b) > readP(c)) 1L else 0L)
+                    writeP(a, if (readP(b) > readIntC(Instruction.subOp(inst), c)) 1L else 0L)
                 }
                 Opcode.IGE -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, if (readP(b) >= readP(c)) 1L else 0L)
+                    writeP(a, if (readP(b) >= readIntC(Instruction.subOp(inst), c)) 1L else 0L)
                 }
 
                 // Double Comparison
@@ -526,37 +569,37 @@ class NoxVM(
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, if (longBitsToDouble(readP(b)) == longBitsToDouble(readP(c))) 1L else 0L)
+                    writeP(a, if (longBitsToDouble(readP(b)) == readDoubleC(Instruction.subOp(inst), c)) 1L else 0L)
                 }
                 Opcode.DNE -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, if (longBitsToDouble(readP(b)) != longBitsToDouble(readP(c))) 1L else 0L)
+                    writeP(a, if (longBitsToDouble(readP(b)) != readDoubleC(Instruction.subOp(inst), c)) 1L else 0L)
                 }
                 Opcode.DLT -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, if (longBitsToDouble(readP(b)) < longBitsToDouble(readP(c))) 1L else 0L)
+                    writeP(a, if (longBitsToDouble(readP(b)) < readDoubleC(Instruction.subOp(inst), c)) 1L else 0L)
                 }
                 Opcode.DLE -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, if (longBitsToDouble(readP(b)) <= longBitsToDouble(readP(c))) 1L else 0L)
+                    writeP(a, if (longBitsToDouble(readP(b)) <= readDoubleC(Instruction.subOp(inst), c)) 1L else 0L)
                 }
                 Opcode.DGT -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, if (longBitsToDouble(readP(b)) > longBitsToDouble(readP(c))) 1L else 0L)
+                    writeP(a, if (longBitsToDouble(readP(b)) > readDoubleC(Instruction.subOp(inst), c)) 1L else 0L)
                 }
                 Opcode.DGE -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, if (longBitsToDouble(readP(b)) >= longBitsToDouble(readP(c))) 1L else 0L)
+                    writeP(a, if (longBitsToDouble(readP(b)) >= readDoubleC(Instruction.subOp(inst), c)) 1L else 0L)
                 }
 
                 // String Comparison
@@ -686,15 +729,15 @@ class NoxVM(
                 }
 
                 Opcode.RET -> {
-                    val isVoid = Instruction.opA(inst) == 1
-                    val typeTag = Instruction.opB(inst)
-                    val isPrimitive = typeTag < 3
+                    val subOp = Instruction.subOp(inst)
+                    val isVoid = subOp == SubOp.TYPE_VOID
+                    val isPrimitive = subOp == SubOp.TYPE_INT || subOp == SubOp.TYPE_DBL || subOp == SubOp.TYPE_BOOL
                     val retReg = Instruction.opC(inst)
 
                     if (csp == 0) {
                         // Returning from main/init function so end execution
                         running = false
-                        if (!isVoid) returnValue = valueToString(typeTag, retReg)
+                        if (!isVoid) returnValue = valueToStringSubOp(subOp, retReg)
                         return
                     }
 
@@ -918,8 +961,8 @@ class NoxVM(
 
                 Opcode.YIELD -> {
                     val a = Instruction.opA(inst)
-                    val typeTag = Instruction.opB(inst)
-                    val value = valueToString(typeTag, a)
+                    val subOp = Instruction.subOp(inst)
+                    val value = valueToStringSubOp(subOp, a)
                     context.yield(value)
                 }
 
@@ -968,19 +1011,19 @@ class NoxVM(
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, readP(b) and readP(c))
+                    writeP(a, readP(b) and readIntC(Instruction.subOp(inst), c))
                 }
                 Opcode.BOR -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, readP(b) or readP(c))
+                    writeP(a, readP(b) or readIntC(Instruction.subOp(inst), c))
                 }
                 Opcode.BXOR -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, readP(b) xor readP(c))
+                    writeP(a, readP(b) xor readIntC(Instruction.subOp(inst), c))
                 }
                 Opcode.BNOT -> {
                     val a = Instruction.opA(inst)
@@ -991,19 +1034,19 @@ class NoxVM(
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, readP(b) shl readP(c).toInt())
+                    writeP(a, readP(b) shl readIntC(Instruction.subOp(inst), c).toInt())
                 }
                 Opcode.SHR -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, readP(b) shr readP(c).toInt())
+                    writeP(a, readP(b) shr readIntC(Instruction.subOp(inst), c).toInt())
                 }
                 Opcode.USHR -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
                     val c = Instruction.opC(inst)
-                    writeP(a, readP(b) ushr readP(c).toInt())
+                    writeP(a, readP(b) ushr readIntC(Instruction.subOp(inst), c).toInt())
                 }
 
                 // Exception Handling

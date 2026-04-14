@@ -507,12 +507,12 @@ class StatementEmitter(
 
     // Exit / Exception
 
-    private fun typeTagFor(type: TypeRef): Int =
+    private fun typeSubOp(type: TypeRef): Int =
         when {
-            type == TypeRef.INT -> 0
-            type == TypeRef.DOUBLE -> 1
-            type == TypeRef.BOOLEAN -> 2
-            else -> 3
+            type == TypeRef.INT -> SubOp.TYPE_INT
+            type == TypeRef.DOUBLE -> SubOp.TYPE_DBL
+            type == TypeRef.BOOLEAN -> SubOp.TYPE_BOOL
+            else -> SubOp.TYPE_REF
         }
 
     private fun emitReturn(stmt: TypedReturnStmt) {
@@ -523,7 +523,7 @@ class StatementEmitter(
             for (reg in ctx.allocator.allRefRegs.sorted()) {
                 ctx.emit(Opcode.KILL_REF, 0, reg, 0, 0, line)
             }
-            ctx.emit(Opcode.RET, 0, 1, 0, 0, line) // A=1 (void)
+            ctx.emit(Opcode.RET, SubOp.TYPE_VOID, 1, 0, 0, line)
         } else {
             val type = stmt.value.type
 
@@ -537,7 +537,7 @@ class StatementEmitter(
                     tmp
                 }
 
-            val typeTag = typeTagFor(type)
+            val subOp = typeSubOp(type)
 
             // Emit KILL_REF for all live rMem registers EXCEPT the return register.
             for (r in ctx.allocator.allRefRegs.sorted()) {
@@ -546,7 +546,7 @@ class StatementEmitter(
                 }
             }
 
-            ctx.emit(Opcode.RET, 0, 0, typeTag, retReg, line)
+            ctx.emit(Opcode.RET, subOp, 0, 0, retReg, line)
 
             if (reg != null) {
                 ctx.freeNodeRegisters(stmt.value)
@@ -561,15 +561,15 @@ class StatementEmitter(
         val type = stmt.value.type
         val reg = ctx.resolveRegister(stmt.value)
 
-        val typeTag = typeTagFor(type)
+        val subOp = typeSubOp(type)
 
         if (reg != null) {
             ctx.freeNodeRegisters(stmt.value)
-            ctx.emit(Opcode.YIELD, 0, reg, typeTag, 0, line)
+            ctx.emit(Opcode.YIELD, subOp, reg, 0, 0, line)
         } else {
             val tmp = ctx.alloc(type)
             ctx.emitExpr(stmt.value, tmp, line)
-            ctx.emit(Opcode.YIELD, 0, tmp, typeTag, 0, line)
+            ctx.emit(Opcode.YIELD, subOp, tmp, 0, 0, line)
             ctx.free(type, tmp)
         }
     }

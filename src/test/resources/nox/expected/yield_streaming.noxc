@@ -23,15 +23,15 @@
   ;
   ; line 4  yield "a";
   0000:  LDC         r1, #0                              ; r1 = "a"
-  0001:  YIELD       r1                                  ; yield r1
+  0001:  YIELD       REF, r1                             ; yield r1
   ;
   ; line 5  yield "b";
   0002:  LDC         r1, #1                              ; r1 = "b"
-  0003:  YIELD       r1                                  ; yield r1
+  0003:  YIELD       REF, r1                             ; yield r1
   ;
   ; line 6  return "c";
   0004:  LDC         r1, #2                              ; r1 = "c"
-  0005:  RET         r1                                  ; return r1
+  0005:  RET         REF, r1                             ; return r1
 
 
 ; Exception Table

@@ -26,7 +26,7 @@
   0001:  LDI         p1, 1                               ; p1 = 1
   0002:  AGET_IDX    r0, r1, p1                          ; r0 = arr:r1[p1]
   0003:  KILL_REF    r1                                  ; arr:r1 = null (GC)
-  0004:  RET         p0                                  ; return p0
+  0004:  RET         INT, p0                             ; return p0
 
 
 ; Exception Table

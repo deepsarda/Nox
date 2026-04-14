@@ -22,7 +22,7 @@
   ; params: r1=name
   ;
   ; line 3  return name;
-  0000:  RET         r1                                  ; return name:r1
+  0000:  RET         REF, r1                             ; return name:r1
 
 ;  Function: main
 ;    Entry PC:   1
@@ -39,7 +39,7 @@
   0003:  MOVR        r1, r2                              ; r1 = r2
   0004:  KILL_REF    r2                                  ; r2 = null (GC)
   0005:  KILL_REF    r3                                  ; r3 = null (GC)
-  0006:  RET         r1                                  ; return r1
+  0006:  RET         REF, r1                             ; return r1
 
 
 ; Exception Table

@@ -27,7 +27,7 @@
   ;
   ; line 6  return err;
   .catch_all:
-  0004:  RET         r1                                  ; return err:r1
+  0004:  RET         REF, r1                             ; return err:r1
   0005:  JMP         @0006                               ; -> end
   .end:
   0006:  KILL_REF    r1                                  ; err:r1 = null (GC)

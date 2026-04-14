@@ -47,7 +47,7 @@
   .loop_exit_1:
   0012:  KILL_REF    r0                                  ; vals:r0 = null (GC)
   0013:  KILL_REF    r2                                  ; r2 = null (GC)
-  0014:  RET         p1                                  ; return total:p1
+  0014:  RET         INT, p1                             ; return total:p1
 
 ;  Function: main
 ;    Entry PC:   15
@@ -69,7 +69,7 @@
   0024:  CALL        sum, p1, r1                         ; p1 = call sum(p2..., r1...)
   0025:  MOV         p0, p1                              ; p0 = p1
   0026:  KILL_REF    r1                                  ; r1 = null (GC)
-  0027:  RET         p0                                  ; return p0
+  0027:  RET         INT, p0                             ; return p0
 
 
 ; Exception Table

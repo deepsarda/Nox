@@ -43,7 +43,7 @@
   0015:  AGET_IDX    r4, r2, p1                          ; r4 = r2[p1]
   ;
   ; line 6  yield x;
-  0016:  YIELD       p4                                  ; yield x:p4
+  0016:  YIELD       INT, p4                             ; yield x:p4
   ;
   ; line 7  sum = sum + x;
   0017:  IADD        p0, p0, p4                          ; sum:p0 = sum:p0 + x:p4
@@ -58,7 +58,7 @@
   0020:  KILL_REF    r1                                  ; arr:r1 = null (GC)
   0021:  KILL_REF    r2                                  ; r2 = null (GC)
   0022:  KILL_REF    r3                                  ; r3 = null (GC)
-  0023:  RET         p0                                  ; return sum:p0
+  0023:  RET         INT, p0                             ; return sum:p0
 
 
 ; Exception Table

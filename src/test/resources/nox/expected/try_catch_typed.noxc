@@ -36,18 +36,18 @@
   0007:  LDC         r2, #2                              ; r2 = "caught network"
   0008:  KILL_REF    r1                                  ; e:r1 = null (GC)
   0009:  KILL_REF    r3                                  ; r3 = null (GC)
-  0010:  RET         r2                                  ; return r2
+  0010:  RET         REF, r2                             ; return r2
   0011:  JMP         @0018                               ; -> end
   ;
   ; line 8  yield err;
   .catch_all:
-  0012:  YIELD       r1                                  ; yield err:r1
+  0012:  YIELD       REF, r1                             ; yield err:r1
   ;
   ; line 9  return "other";
   0013:  LDC         r1, #3                              ; err:r1 = "other"
   0014:  KILL_REF    r2                                  ; r2 = null (GC)
   0015:  KILL_REF    r3                                  ; r3 = null (GC)
-  0016:  RET         r1                                  ; return err:r1
+  0016:  RET         REF, r1                             ; return err:r1
   0017:  JMP         @0018                               ; -> end
   .end:
   0018:  KILL_REF    r1                                  ; err:r1 = null (GC)

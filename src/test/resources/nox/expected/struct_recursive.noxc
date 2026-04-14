@@ -45,7 +45,7 @@
   0013:  AGET_PATH   r1, r2, "left.value"                ; leaf:r1 = root:r2.left.value
   0014:  KILL_REF    r2                                  ; root:r2 = null (GC)
   0015:  KILL_REF    r3                                  ; r3 = null (GC)
-  0016:  RET         r1                                  ; return leaf:r1
+  0016:  RET         REF, r1                             ; return leaf:r1
 
 
 ; Exception Table

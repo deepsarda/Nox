@@ -39,7 +39,7 @@
   0010:  KILL_REF    r4                                  ; r4 = null (GC)
   0011:  KILL_REF    r5                                  ; r5 = null (GC)
   0012:  KILL_REF    r6                                  ; r6 = null (GC)
-  0013:  RET         r2                                  ; return r2
+  0013:  RET         REF, r2                             ; return r2
 
 
 ; Exception Table

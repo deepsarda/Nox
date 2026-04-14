@@ -27,7 +27,7 @@
   0002:  SEQ         p0, r1, r2                          ; p0 = s:r1 == r2
   0003:  KILL_REF    r1                                  ; s:r1 = null (GC)
   0004:  KILL_REF    r2                                  ; r2 = null (GC)
-  0005:  RET         p0                                  ; return p0
+  0005:  RET         BOOL, p0                            ; return p0
 
 
 ; Exception Table

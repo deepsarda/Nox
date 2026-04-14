@@ -22,7 +22,7 @@
   ;
   ; line 3  return a + b;
   0000:  IADD        p3, p1, p2                          ; p3 = a:p1 + b:p2
-  0001:  RET         p3                                  ; return p3
+  0001:  RET         INT, p3                             ; return p3
 
 ;  Function: main
 ;    Entry PC:   2
@@ -39,7 +39,7 @@
   0004:  LDI         p4, 2                               ; p4 = 2
   0005:  CALL        add, p2, r1                         ; p2 = call add(p3..., r1...)
   0006:  MOV         p1, p2                              ; p1 = p2
-  0007:  RET         p1                                  ; return p1
+  0007:  RET         INT, p1                             ; return p1
 
 
 ; Exception Table
