@@ -3,6 +3,7 @@ package nox.format
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
+// TODO: Make this actully good and run on actual files. For now, just a few hardcoded cases to catch the most egregious formatting issues.
 class FormatterSnapshotTest :
     StringSpec({
         "reformats ugly input into canonical style" {

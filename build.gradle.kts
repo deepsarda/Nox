@@ -188,7 +188,10 @@ kover {
 }
 
 tasks.withType<Test> {
-    jvmArgs("-agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image/nox-agent", "--enable-native-access=ALL-UNNAMED")
+    jvmArgs(
+        "-agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image/nox-agent",
+        "--enable-native-access=ALL-UNNAMED",
+    )
     this.testLogging {
         this.showStandardStreams = true
     }

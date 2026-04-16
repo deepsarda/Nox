@@ -70,6 +70,12 @@ class LibraryRegistry {
     /** Whether [name] is a built-in (Tier 0) or external (Tier 1) namespace. */
     fun isBuiltinNamespace(name: String): Boolean = name in namespaceFunctions || name in _externalPluginNamespaces
 
+    /** All function names registered under [namespace], for completion enumeration. */
+    fun getNamespaceFunctionNames(namespace: String): Set<String> = namespaceFunctions[namespace]?.keys.orEmpty()
+
+    /** All [CallTarget]s registered under [namespace], for completion and signature-help rendering. */
+    fun getNamespaceFunctions(namespace: String): Map<String, CallTarget> = namespaceFunctions[namespace].orEmpty()
+
     /** Look up a namespace function by [namespace] and [funcName]. */
     fun lookupNamespaceFunc(
         namespace: String,

@@ -1,0 +1,40 @@
+{
+  "main function": {
+    "prefix": "main",
+    "body": [
+      "fn main() {",
+      "\t$1",
+      "}"
+    ],
+    "description": "Main entry point function"
+  },
+  "struct definition": {
+    "prefix": "struct",
+    "body": [
+      "struct ${1:Name} {",
+      "\t$2",
+      "}"
+    ],
+    "description": "Define a struct"
+  },
+  "foreach loop": {
+    "prefix": "foreach",
+    "body": [
+      "for ${1:item} in ${2:collection} {",
+      "\t$3",
+      "}"
+    ],
+    "description": "Foreach loop"
+  },
+  "try catch": {
+    "prefix": "try",
+    "body": [
+      "try {",
+      "\t$1",
+      "} catch (${2:err}) {",
+      "\t$3",
+      "}"
+    ],
+    "description": "Try/catch block"
+  }
+}

@@ -87,45 +87,48 @@ class DeclarationCollector(
         var varargsSeen = false
 
         val params =
-            decl.params.mapIndexed { index, p ->
+            decl.params.mapIndexedNotNull { index, p ->
+                if (p is RawErrorParam) return@mapIndexedNotNull null
+                val param = p as RawParamImpl
+
                 // Validate Optional Param Ordering
-                if (p.defaultValue != null) {
+                if (param.defaultValue != null) {
                     optionalSeen = true
-                } else if (!p.isVarargs && optionalSeen) {
+                } else if (!param.isVarargs && optionalSeen) {
                     errors.report(
-                        p.loc,
-                        "Required parameter '${p.name}' must come before optional parameters",
+                        param.loc,
+                        "Required parameter '${param.name}' must come before optional parameters",
                         suggestion = "Reorder parameters: put all required params before any with default values",
                     )
                 }
 
                 // Validate Varargs Constraints
-                if (p.isVarargs) {
+                if (param.isVarargs) {
                     if (varargsSeen) {
                         errors.report(
-                            p.loc,
+                            param.loc,
                             "A function can only have one varargs parameter ('...')",
                             suggestion = "Remove extra '...' markers",
                         )
                     }
                     if (index != decl.params.size - 1) {
                         errors.report(
-                            p.loc,
-                            "Varargs parameter '${p.name}' must be the last parameter in the function signature",
-                            suggestion = "Move '${p.name}' to the end of the parameter list",
+                            param.loc,
+                            "Varargs parameter '${param.name}' must be the last parameter in the function signature",
+                            suggestion = "Move '${param.name}' to the end of the parameter list",
                         )
                     }
-                    if (p.defaultValue != null) {
+                    if (param.defaultValue != null) {
                         errors.report(
-                            p.loc,
-                            "Varargs parameter '${p.name}' cannot have a default value",
-                            suggestion = "Remove the '= ...' default from '${p.name}'",
+                            param.loc,
+                            "Varargs parameter '${param.name}' cannot have a default value",
+                            suggestion = "Remove the '= ...' default from '${param.name}'",
                         )
                     }
                     varargsSeen = true
                 }
 
-                ParamSymbol(p.name, p.type, p.defaultValue, p.isVarargs)
+                ParamSymbol(param.name, param.type, param.defaultValue, param.isVarargs)
             }
 
         val symbol = FuncSymbol(decl.name, decl.returnType, params, decl)

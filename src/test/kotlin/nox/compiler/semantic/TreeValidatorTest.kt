@@ -75,7 +75,7 @@ class TreeValidatorTest :
             val rawBlock = RawBlock(emptyList(), loc1)
             val typedBlock = TypedBlock(emptyList(), loc1, 0)
 
-            val rawParam = RawParam(TypeRef.INT, "x", null, false, loc1)
+            val rawParam = RawParamImpl(TypeRef.INT, "x", null, false, loc1)
             val typedParam = TypedParam(TypeRef.INT, "x", null, false, loc1, VarSymbol("x", TypeRef.INT, 0))
 
             val raw = RawFuncDef(TypeRef.VOID, "f", listOf(rawParam), rawBlock, loc1)
@@ -126,7 +126,7 @@ class TreeValidatorTest :
             val errors = CompilerErrors()
             val validator = TreeValidator(errors)
 
-            val raw = RawTypeDef("T", listOf(RawFieldDecl(TypeRef.INT, "f", loc1)), loc1)
+            val raw = RawTypeDef("T", listOf(RawFieldDeclImpl(TypeRef.INT, "f", loc1)), loc1)
             val typed = TypedTypeDef("T", listOf(TypedFieldDecl(TypeRef.INT, "f", loc1)), loc1)
 
             validator.validate(

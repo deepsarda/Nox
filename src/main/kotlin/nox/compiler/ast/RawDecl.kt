@@ -33,11 +33,19 @@ class RawTypeDef(
 /**
  * A single field within a [RawTypeDef].
  */
-data class RawFieldDecl(
-    val type: TypeRef,
-    val name: String,
+sealed class RawFieldDecl(
     val loc: SourceLocation,
 )
+
+class RawFieldDeclImpl(
+    val type: TypeRef,
+    val name: String,
+    loc: SourceLocation,
+) : RawFieldDecl(loc)
+
+class RawErrorFieldDecl(
+    loc: SourceLocation,
+) : RawFieldDecl(loc)
 
 /**
  * User-defined function:
@@ -97,19 +105,31 @@ class RawImportDecl(
 /**
  * A function parameter.
  *
+ * @property loc         source position
+ */
+sealed class RawParam(
+    val loc: SourceLocation,
+)
+
+/** 
+ * A well-formed parameter with type, name, and optional default value.
+ *
  * @property type        the declared type
  * @property name        the parameter name
  * @property defaultValue the default value expression, or `null` if required
  * @property isVarargs   whether this is a varargs parameter (`int ...values[]`)
- * @property loc         source position
  */
-data class RawParam(
+class RawParamImpl(
     val type: TypeRef,
     val name: String,
     val defaultValue: RawExpr?,
     val isVarargs: Boolean,
-    val loc: SourceLocation,
-)
+    loc: SourceLocation,
+) : RawParam(loc)
+
+class RawErrorParam(
+    loc: SourceLocation,
+) : RawParam(loc)
 
 /** Placeholder for invalid or un-parseable declarations. */
 class RawErrorDecl(

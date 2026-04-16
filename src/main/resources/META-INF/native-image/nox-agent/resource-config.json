@@ -29,25 +29,11 @@
   }, {
     "pattern":"\\QMETA-INF/services/org.slf4j.spi.SLF4JServiceProvider\\E"
   }, {
-    "pattern":"\\Qcom/sun/jna/Pointer.class\\E"
-  }, {
-    "pattern":"\\Qcom/sun/jna/darwin-aarch64/libjnidispatch.jnilib\\E"
-  }, {
-    "pattern":"\\Qio/kotest/assertions/Actual.class\\E"
-  }, {
-    "pattern":"\\Qio/kotest/assertions/Expected.class\\E"
+    "pattern":"\\Qio/kotest/assertions/ErrorCollector.class\\E"
   }, {
     "pattern":"\\Qio/kotest/assertions/eq/DataClassDifference.class\\E"
   }, {
     "pattern":"\\Qio/kotest/assertions/eq/PropertyDifference.class\\E"
-  }, {
-    "pattern":"\\Qio/kotest/assertions/equals/Equality.class\\E"
-  }, {
-    "pattern":"\\Qio/kotest/assertions/equals/EqualityResult.class\\E"
-  }, {
-    "pattern":"\\Qio/kotest/assertions/equals/SimpleEqualityResult.class\\E"
-  }, {
-    "pattern":"\\Qio/kotest/assertions/print/Printed.class\\E"
   }, {
     "pattern":"\\Qio/kotest/core/annotation/DisplayName.class\\E"
   }, {
@@ -91,8 +77,6 @@
   }, {
     "pattern":"\\Qio/kotest/engine/test/interceptors/TestTimeoutException.class\\E"
   }, {
-    "pattern":"\\Qio/kotest/matchers/ErrorCollector.class\\E"
-  }, {
     "pattern":"\\Qio/kotest/matchers/collections/CollectionMatchersKt$matchInOrder$1$MatchInOrderSubsetResult.class\\E"
   }, {
     "pattern":"\\Qjava/io/BufferedReader.class\\E"
@@ -116,8 +100,6 @@
     "pattern":"\\Qjava/io/Serializable.class\\E"
   }, {
     "pattern":"\\Qjava/lang/AbstractStringBuilder.class\\E"
-  }, {
-    "pattern":"\\Qjava/lang/AssertionError.class\\E"
   }, {
     "pattern":"\\Qjava/lang/AutoCloseable.class\\E"
   }, {
@@ -309,8 +291,6 @@
   }, {
     "pattern":"\\Qkotlin/Unit.class\\E"
   }, {
-    "pattern":"\\Qkotlin/collections/IndexedValue.class\\E"
-  }, {
     "pattern":"\\Qkotlin/collections/collections.kotlin_builtins\\E"
   }, {
     "pattern":"\\Qkotlin/coroutines/AbstractCoroutineContextElement.class\\E"
@@ -340,6 +320,10 @@
     "pattern":"\\Qkotlin/jvm/internal/ClassBasedDeclarationContainer.class\\E"
   }, {
     "pattern":"\\Qkotlin/jvm/internal/KTypeBase.class\\E"
+  }, {
+    "pattern":"\\Qkotlin/jvm/internal/KTypeParameterBase.class\\E"
+  }, {
+    "pattern":"\\Qkotlin/jvm/internal/KotlinGenericDeclaration.class\\E"
   }, {
     "pattern":"\\Qkotlin/jvm/internal/PropertyReference.class\\E"
   }, {
@@ -431,8 +415,6 @@
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/descriptors/FunctionDescriptor.class\\E"
   }, {
-    "pattern":"\\Qkotlin/reflect/jvm/internal/impl/descriptors/InlineClassRepresentation.class\\E"
-  }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/descriptors/MemberDescriptor.class\\E"
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/descriptors/Named.class\\E"
@@ -458,8 +440,6 @@
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/descriptors/SourceElement.class\\E"
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/descriptors/Substitutable.class\\E"
-  }, {
-    "pattern":"\\Qkotlin/reflect/jvm/internal/impl/descriptors/ValueClassRepresentation.class\\E"
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/descriptors/ValueParameterDescriptor.class\\E"
   }, {
@@ -509,6 +489,10 @@
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/km/KmClassifier.class\\E"
   }, {
+    "pattern":"\\Qkotlin/reflect/jvm/internal/impl/km/KmDeclarationContainer.class\\E"
+  }, {
+    "pattern":"\\Qkotlin/reflect/jvm/internal/impl/km/KmFlexibleTypeUpperBound.class\\E"
+  }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/km/KmPropertyAccessorAttributes.class\\E"
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/km/KmType.class\\E"
@@ -524,8 +508,6 @@
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/load/java/JavaDefaultQualifiers.class\\E"
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/load/java/JavaTypeQualifiersByElementType.class\\E"
-  }, {
-    "pattern":"\\Qkotlin/reflect/jvm/internal/impl/load/java/SpecialGenericSignatures$Companion$NameAndSignature.class\\E"
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/load/java/lazy/LazyJavaResolverContext.class\\E"
   }, {
@@ -553,11 +535,9 @@
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/load/java/structure/JavaType.class\\E"
   }, {
-    "pattern":"\\Qkotlin/reflect/jvm/internal/impl/load/java/typeEnhancement/MutabilityQualifier.class\\E"
-  }, {
-    "pattern":"\\Qkotlin/reflect/jvm/internal/impl/load/java/typeEnhancement/NullabilityQualifierWithMigrationStatus.class\\E"
-  }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/load/java/typeEnhancement/PredefinedFunctionEnhancementInfo.class\\E"
+  }, {
+    "pattern":"\\Qkotlin/reflect/jvm/internal/impl/load/java/typeEnhancement/WithMigrationStatus.class\\E"
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/load/kotlin/KotlinJvmBinaryClass$AnnotationArgumentVisitor.class\\E"
   }, {
@@ -592,8 +572,6 @@
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/name/ClassId.class\\E"
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/name/FqName.class\\E"
-  }, {
-    "pattern":"\\Qkotlin/reflect/jvm/internal/impl/name/Name.class\\E"
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/protobuf/AbstractMessageLite$Builder.class\\E"
   }, {
@@ -731,10 +709,6 @@
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/types/model/TypeParameterMarker.class\\E"
   }, {
-    "pattern":"\\Qkotlin/reflect/jvm/internal/impl/types/model/TypeSystemContext.class\\E"
-  }, {
-    "pattern":"\\Qkotlin/reflect/jvm/internal/impl/types/model/TypeSystemOptimizationContext.class\\E"
-  }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/types/model/TypeVariance.class\\E"
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/util/AbstractArrayMapOwner.class\\E"
@@ -745,11 +719,11 @@
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/util/ModuleVisibilityHelper.class\\E"
   }, {
-    "pattern":"\\Qkotlin/reflect/jvm/internal/internal.kotlin_builtins\\E"
-  }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/types/AbstractKType.class\\E"
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/types/CapturedKType.class\\E"
+  }, {
+    "pattern":"\\Qkotlin/reflect/jvm/internal/types/DescriptorKType.class\\E"
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/types/KTypeSubstitutor.class\\E"
   }, {
@@ -843,6 +817,8 @@
   }, {
     "pattern":"\\Qnox/compiler/ast/RawHeader.class\\E"
   }, {
+    "pattern":"\\Qnox/compiler/ast/RawHeaderImpl.class\\E"
+  }, {
     "pattern":"\\Qnox/compiler/ast/RawProgram.class\\E"
   }, {
     "pattern":"\\Qnox/compiler/ast/RawStmt.class\\E"
@@ -858,8 +834,6 @@
     "pattern":"\\Qnox/compiler/ast/typed/TypedProgram.class\\E"
   }, {
     "pattern":"\\Qnox/compiler/ast/typed/TypedTypeDef.class\\E"
-  }, {
-    "pattern":"\\Qnox/compiler/codegen/FuncMeta.class\\E"
   }, {
     "pattern":"\\Qnox/compiler/codegen/RegNameEvent.class\\E"
   }, {
@@ -1079,6 +1053,10 @@
   }, {
     "pattern":"\\Qorg/gradle/api/internal/tasks/testing/TestFailureSerializationException.class\\E"
   }, {
+    "pattern":"\\Qorg/gradle/api/internal/tasks/testing/filter/TestSelectionMatcher$FullQualifiedClassNameSelector.class\\E"
+  }, {
+    "pattern":"\\Qorg/gradle/api/internal/tasks/testing/filter/TestSelectionMatcher$SimpleClassNameSelector.class\\E"
+  }, {
     "pattern":"\\Qorg/gradle/internal/classloader/CachingClassLoader.class\\E"
   }, {
     "pattern":"\\Qorg/gradle/internal/dispatch/BoundedDispatch.class\\E"
@@ -1160,8 +1138,6 @@
     "pattern":"java.base:\\Qjava/io/Serializable.class\\E"
   }, {
     "pattern":"java.base:\\Qjava/lang/AbstractStringBuilder.class\\E"
-  }, {
-    "pattern":"java.base:\\Qjava/lang/AssertionError.class\\E"
   }, {
     "pattern":"java.base:\\Qjava/lang/AutoCloseable.class\\E"
   }, {

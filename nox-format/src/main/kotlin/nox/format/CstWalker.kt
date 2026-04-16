@@ -133,7 +133,6 @@ internal class CstWalker(
         return (nl - 1).coerceAtLeast(0)
     }
 
-
     private fun emitToken(
         tok: Token,
         prev: Token?,

@@ -58,11 +58,14 @@ class GoldenTest :
                             val name = parts[0].trim()
                             val valueStr = parts[1].trim()
                             // Try to parse as JSON if it looks like it, else keep as string
-                            val value = try {
-                                nox.runtime.json.NoxJsonParser(valueStr).parse()
-                            } catch (e: Exception) {
-                                valueStr.removeSurrounding("\"")
-                            }
+                            val value =
+                                try {
+                                    nox.runtime.json
+                                        .NoxJsonParser(valueStr)
+                                        .parse()
+                                } catch (e: Exception) {
+                                    valueStr.removeSurrounding("\"")
+                                }
                             args[name] = value
                         }
                     }

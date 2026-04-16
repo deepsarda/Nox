@@ -212,7 +212,10 @@ class NoxVM(
         }
 
     // Entry point
-    suspend fun execute(primArgs: LongArray = LongArray(0), refArgs: Array<Any?> = emptyArray()): String? {
+    suspend fun execute(
+        primArgs: LongArray = LongArray(0),
+        refArgs: Array<Any?> = emptyArray(),
+    ): String? {
         val vmThread = Thread.currentThread()
         val watchdog = createWatchdogThread(vmThread)
         watchdog.start()

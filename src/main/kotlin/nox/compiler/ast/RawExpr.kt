@@ -98,11 +98,19 @@ class RawStructLiteralExpr(
 /**
  * A single field initializer within a struct literal.
  */
-data class RawFieldInit(
-    val name: String,
-    val value: RawExpr,
+sealed class RawFieldInit(
     val loc: SourceLocation,
 )
+
+class RawFieldInitImpl(
+    val name: String,
+    val value: RawExpr,
+    loc: SourceLocation,
+) : RawFieldInit(loc)
+
+class RawErrorFieldInit(
+    loc: SourceLocation,
+) : RawFieldInit(loc)
 
 // Operators
 

@@ -144,15 +144,18 @@ class ExpressionResolver(
         if (structType == TypeRef.JSON) {
             val seenKeys = mutableSetOf<String>()
             val typedFields =
-                expr.fields.map { init ->
-                    if (!seenKeys.add(init.name)) {
+                expr.fields.mapNotNull { init ->
+                    if (init is RawErrorFieldInit) return@mapNotNull null
+                    val f = init as RawFieldInitImpl
+
+                    if (!seenKeys.add(f.name)) {
                         errors.report(
-                            init.loc,
-                            "Key '${init.name}' appears more than once in this json literal",
+                            f.loc,
+                            "Key '${f.name}' appears more than once in this json literal",
                             suggestion = "Remove the duplicate key or rename it",
                         )
                     }
-                    TypedFieldInit(init.name, resolveExpr(scope, init.value), init.loc)
+                    TypedFieldInit(f.name, resolveExpr(scope, f.value), f.loc)
                 }
             return TypedStructLiteralExpr(typedFields, expr.loc, TypeRef.JSON)
         }
@@ -171,26 +174,29 @@ class ExpressionResolver(
         val typedFields = mutableListOf<TypedFieldInit>()
 
         for (init in expr.fields) {
-            provided.add(init.name)
-            val expectedFieldType = typeSym.fields[init.name]
+            if (init is RawErrorFieldInit) continue
+            val f = init as RawFieldInitImpl
+
+            provided.add(f.name)
+            val expectedFieldType = typeSym.fields[f.name]
             if (expectedFieldType == null) {
                 val suggestion =
-                    DiagnosticHelpers.didYouMeanMsg(init.name, typeSym.fields.keys)
+                    DiagnosticHelpers.didYouMeanMsg(f.name, typeSym.fields.keys)
                         ?: "Available fields: ${typeSym.fields.keys.joinToString(", ")}"
-                errors.report(init.loc, "Struct '${typeSym.name}' has no field '${init.name}'", suggestion = suggestion)
-                typedFields.add(TypedFieldInit(init.name, resolveExpr(scope, init.value), init.loc))
+                errors.report(f.loc, "Struct '${typeSym.name}' has no field '${f.name}'", suggestion = suggestion)
+                typedFields.add(TypedFieldInit(f.name, resolveExpr(scope, f.value), f.loc))
                 continue
             }
 
-            val actualType = resolveExpr(scope, init.value, expectedFieldType)
+            val actualType = resolveExpr(scope, f.value, expectedFieldType)
             if (!expectedFieldType.isAssignableFrom(actualType.type)) {
                 errors.report(
-                    init.loc,
-                    "Field '${init.name}' expects '$expectedFieldType', but '${actualType.type}' was given",
+                    f.loc,
+                    "Field '${f.name}' expects '$expectedFieldType', but '${actualType.type}' was given",
                     suggestion = DiagnosticHelpers.conversionHint(actualType.type, expectedFieldType),
                 )
             }
-            typedFields.add(TypedFieldInit(init.name, actualType, init.loc))
+            typedFields.add(TypedFieldInit(f.name, actualType, f.loc))
         }
 
         for (fieldName in typeSym.fields.keys) {
@@ -342,7 +348,7 @@ class ExpressionResolver(
                         CallTarget(
                             name = importedFunc.name,
                             params =
-                                importedFunc.params.map {
+                                importedFunc.params.filterIsInstance<RawParamImpl>().map {
                                     NoxParam(it.name, it.type)
                                 },
                             returnType = importedFunc.returnType,

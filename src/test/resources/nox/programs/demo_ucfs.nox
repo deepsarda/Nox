@@ -1,0 +1,20 @@
+// @test:result "true"
+
+string upperWrapper(string s) {
+    return s.upper();
+}
+
+string[] splitWrapper(string s, string delimiter) {
+    return s.split(delimiter);
+}
+
+main(){
+    string s = "Hello, World!";
+
+    string s1 = upperWrapper(s).splitWrapper(", ")[0].lower(); // with UCFS
+    
+    string s2 = splitWrapper(upperWrapper(s), ", ")[0].lower(); // Without UCFS
+
+    return s1 == s2;
+}
+

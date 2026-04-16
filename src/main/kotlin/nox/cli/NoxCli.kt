@@ -155,14 +155,23 @@ class NoxCli : CliktCommand(name = "nox") {
             }
         }
 
-        val (primArgs, refArgs) = try {
-            runBlocking {
-                nox.runtime.NoxRuntime.prepareArgs(compiled.typedProgram?.main, args, compiled.typedProgram, argProvider)
+        val (primArgs, refArgs) =
+            try {
+                runBlocking {
+                    nox.runtime.NoxRuntime.prepareArgs(
+                        compiled.typedProgram?.main,
+                        args,
+                        compiled.typedProgram,
+                        argProvider,
+                    )
+                }
+            } catch (e: nox.vm.NoxException) {
+                terminal.println(
+                    com.github.ajalt.mordant.rendering.TextColors
+                        .red("Error preparing arguments: ${e.message}"),
+                )
+                exitProcess(1)
             }
-        } catch (e: nox.vm.NoxException) {
-            terminal.println(com.github.ajalt.mordant.rendering.TextColors.red("Error preparing arguments: ${e.message}"))
-            exitProcess(1)
-        }
 
         val vm = NoxVM(program, ctx, registry, config)
         val result =
@@ -180,7 +189,7 @@ class NoxCli : CliktCommand(name = "nox") {
         terminal: Terminal,
         name: String,
         type: nox.compiler.types.TypeRef,
-        program: nox.compiler.ast.typed.TypedProgram?
+        program: nox.compiler.ast.typed.TypedProgram?,
     ): Any? {
         if (type.isStructType() && program != null) {
             terminal.println(TextColors.blue("Provide fields for '$name' (${type.name}):"))

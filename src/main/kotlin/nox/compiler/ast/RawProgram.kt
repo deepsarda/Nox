@@ -21,7 +21,7 @@ import nox.compiler.types.SourceLocation
 class RawProgram(
     val fileName: String,
     val headers: List<RawHeader>,
-    val imports: List<RawImportDecl>,
+    val imports: List<RawDecl>,
     val declarations: List<RawDecl>,
 ) {
     /** Type definitions indexed by name. Populated during AST construction. */
@@ -52,12 +52,23 @@ class RawProgram(
  * The `@tool:` prefix is stripped during AST construction,
  * so [key] contains only the bare name (e.g. `"name"`, `"description"`).
  *
- * @property key   the header key (prefix stripped)
- * @property value the header value string
  * @property loc   source position
  */
-data class RawHeader(
-    val key: String,
-    val value: String,
+sealed class RawHeader(
     val loc: SourceLocation,
 )
+
+/**
+ * A well-formed `@tool:` header with a key and value, e.g. `@tool:name "My Program"`
+ * @property key   the header key (prefix stripped)
+ * @property value the header value string
+ */
+class RawHeaderImpl(
+    val key: String,
+    val value: String,
+    loc: SourceLocation,
+) : RawHeader(loc)
+
+class RawErrorHeader(
+    loc: SourceLocation,
+) : RawHeader(loc)

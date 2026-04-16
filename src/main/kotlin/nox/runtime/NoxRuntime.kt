@@ -38,11 +38,12 @@ class NoxRuntime private constructor(
                 ?: return NoxResult.Error(NoxError.CompilationError, "No compiled output", emptyList())
 
         val typedMain = result.typedProgram?.main
-        val (primArgs, refArgs) = try {
-            runBlocking { prepareArgs(typedMain, args, result.typedProgram, argProvider) }
-        } catch (e: NoxException) {
-            return NoxResult.Error(e.type, e.message, emptyList())
-        }
+        val (primArgs, refArgs) =
+            try {
+                runBlocking { prepareArgs(typedMain, args, result.typedProgram, argProvider) }
+            } catch (e: NoxException) {
+                return NoxResult.Error(e.type, e.message, emptyList())
+            }
 
         val yields = mutableListOf<String>()
 
@@ -119,8 +120,15 @@ class NoxRuntime private constructor(
             val refCount = typedMain.params.count { !it.type.isPrimitive() }
 
             val pOffset = if (typedMain.returnType.isPrimitive()) 1 else 0
-            val rOffset = if (!typedMain.returnType.isPrimitive() && typedMain.returnType != nox.compiler.types.TypeRef.VOID) 1 else 0
-            
+            val rOffset =
+                if (!typedMain.returnType.isPrimitive() &&
+                    typedMain.returnType != nox.compiler.types.TypeRef.VOID
+                ) {
+                    1
+                } else {
+                    0
+                }
+
             val primArgs = LongArray(pOffset + primCount)
             val refArgs = arrayOfNulls<Any?>(rOffset + refCount)
 
@@ -129,21 +137,29 @@ class NoxRuntime private constructor(
 
             for (param in typedMain.params) {
                 var rawValue = args[param.name] ?: argProvider?.invoke(param.name, param.type)
-                
+
                 if (rawValue == null && param.defaultValue != null) {
                     rawValue = extractLiteralValue(param.defaultValue)
-                        ?: throw NoxException(NoxError.Error, "Default value for '${param.name}' is not a supported literal", 0)
+                        ?: throw NoxException(
+                            NoxError.Error,
+                            "Default value for '${param.name}' is not a supported literal",
+                            0,
+                        )
                 }
-                
+
                 if (rawValue != null) {
                     val coerced = RuntimeTypeValidator.validateAndCoerce(rawValue, param.type, program)
-                    
+
                     if (param.type.isPrimitive()) {
-                        primArgs[pIdx++] = when (param.type) {
-                            nox.compiler.types.TypeRef.DOUBLE -> java.lang.Double.doubleToRawLongBits(coerced as Double)
-                            nox.compiler.types.TypeRef.BOOLEAN -> if (coerced as Boolean) 1L else 0L
-                            else -> coerced as Long
-                        }
+                        primArgs[pIdx++] =
+                            when (param.type) {
+                                nox.compiler.types.TypeRef.DOUBLE ->
+                                    java.lang.Double.doubleToRawLongBits(
+                                        coerced as Double,
+                                    )
+                                nox.compiler.types.TypeRef.BOOLEAN -> if (coerced as Boolean) 1L else 0L
+                                else -> coerced as Long
+                            }
                     } else {
                         refArgs[rIdx++] = coerced
                     }

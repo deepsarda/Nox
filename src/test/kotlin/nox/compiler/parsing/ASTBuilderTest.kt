@@ -40,10 +40,12 @@ class ASTBuilderTest :
                     """.trimIndent(),
                 )
             prog.headers shouldHaveSize 2
-            prog.headers[0].key shouldBe "name"
-            prog.headers[0].value shouldBe "my_tool"
-            prog.headers[1].key shouldBe "description"
-            prog.headers[1].value shouldBe "A test tool"
+            val h0 = prog.headers[0] as RawHeaderImpl
+            val h1 = prog.headers[1] as RawHeaderImpl
+            h0.key shouldBe "name"
+            h0.value shouldBe "my_tool"
+            h1.key shouldBe "description"
+            h1.value shouldBe "A test tool"
         }
 
         test("import declarations are parsed") {
@@ -54,8 +56,9 @@ class ASTBuilderTest :
                     """.trimIndent(),
                 )
             prog.imports shouldHaveSize 1
-            prog.imports[0].path shouldBe "utils/helpers.nox"
-            prog.imports[0].namespace shouldBe "helpers"
+            val imp = prog.imports[0] as RawImportDecl
+            imp.path shouldBe "utils/helpers.nox"
+            imp.namespace shouldBe "helpers"
         }
 
         // Type definitions
@@ -74,10 +77,12 @@ class ASTBuilderTest :
             val point = prog.typesByName["Point"]
             point.shouldNotBeNull()
             point.fields shouldHaveSize 2
-            point.fields[0].name shouldBe "x"
-            point.fields[0].type shouldBe TypeRef.INT
-            point.fields[1].name shouldBe "y"
-            point.fields[1].type shouldBe TypeRef.INT
+            val f0 = point.fields[0] as RawFieldDeclImpl
+            val f1 = point.fields[1] as RawFieldDeclImpl
+            f0.name shouldBe "x"
+            f0.type shouldBe TypeRef.INT
+            f1.name shouldBe "y"
+            f1.type shouldBe TypeRef.INT
         }
 
         test("type definition with reference type fields") {
@@ -91,8 +96,8 @@ class ASTBuilderTest :
                     """.trimIndent(),
                 )
             val node = prog.typesByName["Node"]!!
-            node.fields[0].type shouldBe TypeRef.STRING
-            node.fields[1].type shouldBe TypeRef.JSON
+            (node.fields[0] as RawFieldDeclImpl).type shouldBe TypeRef.STRING
+            (node.fields[1] as RawFieldDeclImpl).type shouldBe TypeRef.JSON
         }
 
         test("type definition with array type fields") {
@@ -106,8 +111,8 @@ class ASTBuilderTest :
                     """.trimIndent(),
                 )
             val cont = prog.typesByName["Container"]!!
-            cont.fields[0].type shouldBe TypeRef("int", 1)
-            cont.fields[1].type shouldBe TypeRef("string", 1)
+            (cont.fields[0] as RawFieldDeclImpl).type shouldBe TypeRef("int", 1)
+            (cont.fields[1] as RawFieldDeclImpl).type shouldBe TypeRef("string", 1)
         }
 
         // Function definitions
@@ -125,10 +130,10 @@ class ASTBuilderTest :
             func.shouldNotBeNull()
             func.returnType shouldBe TypeRef.INT
             func.params shouldHaveSize 2
-            func.params[0].name shouldBe "a"
-            func.params[0].type shouldBe TypeRef.INT
-            func.params[1].name shouldBe "b"
-            func.params[1].type shouldBe TypeRef.INT
+            (func.params[0] as RawParamImpl).name shouldBe "a"
+            (func.params[0] as RawParamImpl).type shouldBe TypeRef.INT
+            (func.params[1] as RawParamImpl).name shouldBe "b"
+            (func.params[1] as RawParamImpl).type shouldBe TypeRef.INT
         }
 
         test("function with default parameters") {
@@ -141,9 +146,10 @@ class ASTBuilderTest :
                     """.trimIndent(),
                 )
             val func = prog.functionsByName["greet"]!!
-            func.params[0].defaultValue.shouldNotBeNull()
-            func.params[0].defaultValue.shouldBeInstanceOf<RawStringLiteralExpr>()
-            (func.params[0].defaultValue as RawStringLiteralExpr).value shouldBe "World"
+            val p0 = func.params[0] as RawParamImpl
+            p0.defaultValue.shouldNotBeNull()
+            p0.defaultValue.shouldBeInstanceOf<RawStringLiteralExpr>()
+            (p0.defaultValue as RawStringLiteralExpr).value shouldBe "World"
         }
 
         test("function with varargs parameter") {
@@ -156,8 +162,9 @@ class ASTBuilderTest :
                     """.trimIndent(),
                 )
             val func = prog.functionsByName["sum"]!!
-            func.params[0].isVarargs shouldBe true
-            func.params[0].type shouldBe TypeRef("int", 1)
+            val p0 = func.params[0] as RawParamImpl
+            p0.isVarargs shouldBe true
+            p0.type shouldBe TypeRef("int", 1)
         }
 
         // Main definition
@@ -173,8 +180,9 @@ class ASTBuilderTest :
                 )
             prog.main.shouldNotBeNull()
             prog.main!!.params shouldHaveSize 1
-            prog.main!!.params[0].name shouldBe "url"
-            prog.main!!.params[0].type shouldBe TypeRef.STRING
+            val p0 = prog.main!!.params[0] as RawParamImpl
+            p0.name shouldBe "url"
+            p0.type shouldBe TypeRef.STRING
         }
 
         test("main with default parameters") {
@@ -186,11 +194,9 @@ class ASTBuilderTest :
                     }
                     """.trimIndent(),
                 )
-            prog.main!!
-                .params[0]
-                .defaultValue
-                .shouldNotBeNull()
-            val default = prog.main!!.params[0].defaultValue as RawIntLiteralExpr
+            val p0 = prog.main!!.params[0] as RawParamImpl
+            p0.defaultValue.shouldNotBeNull()
+            val default = p0.defaultValue as RawIntLiteralExpr
             default.value shouldBe 5L
         }
 
@@ -310,8 +316,8 @@ class ASTBuilderTest :
             val decl = prog.main!!.body.statements[0] as RawVarDeclStmt
             val struct = decl.initializer as RawStructLiteralExpr
             struct.fields shouldHaveSize 2
-            struct.fields[0].name shouldBe "x"
-            struct.fields[1].name shouldBe "y"
+            (struct.fields[0] as RawFieldInitImpl).name shouldBe "x"
+            (struct.fields[1] as RawFieldInitImpl).name shouldBe "y"
         }
 
         // Template literals

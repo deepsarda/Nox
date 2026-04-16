@@ -51,12 +51,21 @@ class TypeResolver(
             }
         }
 
-        val typedImports = program.imports.map { resolveImportDecl(it) }
+        val typedImports = program.imports.map {
+            when (it) {
+                is RawImportDecl -> resolveImportDecl(it)
+                else -> TypedErrorDecl(it.loc)
+            }
+        }
+
+        val typedHeaders = program.headers.mapNotNull { h ->
+            if (h is RawHeaderImpl) TypedHeader(h.key, h.value, h.loc) else null
+        }
 
         val typedProgram =
             TypedProgram(
                 fileName = program.fileName,
-                headers = program.headers.map { TypedHeader(it.key, it.value, it.loc) },
+                headers = typedHeaders,
                 imports = typedImports,
                 declarations = typedDecls,
             )
@@ -74,41 +83,44 @@ class TypeResolver(
         val seenFields = mutableSetOf<String>()
 
         for (field in typeDef.fields) {
-            if (field.name in seenFields) {
+            if (field is RawErrorFieldDecl) continue
+            val f = field as RawFieldDeclImpl
+
+            if (f.name in seenFields) {
                 errors.report(
-                    field.loc,
-                    "Field '${field.name}' is declared more than once in struct '${typeDef.name}'",
+                    f.loc,
+                    "Field '${f.name}' is declared more than once in struct '${typeDef.name}'",
                     suggestion = "Remove or rename the duplicate field",
                 )
                 continue
             }
-            seenFields.add(field.name)
+            seenFields.add(f.name)
 
-            if (!isKnownType(field.type)) {
+            if (!isKnownType(f.type)) {
                 val candidates = globalScope.allNamesInScope { it is TypeSymbol }
                 val suggestion =
-                    DiagnosticHelpers.didYouMeanMsg(field.type.name, candidates)
+                    DiagnosticHelpers.didYouMeanMsg(f.type.name, candidates)
                         ?: (
-                            "Declare the type first with 'type ${field.type.name} { ... }' " +
+                            "Declare the type first with 'type ${f.type.name} { ... }' " +
                                 "or use a built-in type (int, double, boolean, string, json)"
                         )
                 errors.report(
-                    field.loc,
-                    "Unknown type '${field.type}' for field '${field.name}' in struct '${typeDef.name}'",
+                    f.loc,
+                    "Unknown type '${f.type}' for field '${f.name}' in struct '${typeDef.name}'",
                     suggestion = suggestion,
                 )
                 continue
             }
-            if (!field.type.isValidAsVariable()) {
+            if (!f.type.isValidAsVariable()) {
                 errors.report(
-                    field.loc,
-                    "Field '${field.name}' cannot have type '${field.type}' since 'void' is not allowed for struct fields",
+                    f.loc,
+                    "Field '${f.name}' cannot have type '${f.type}' since 'void' is not allowed for struct fields",
                 )
                 continue
             }
 
-            typeSym?.fields?.put(field.name, field.type)
-            typedFields.add(TypedFieldDecl(field.type, field.name, field.loc))
+            typeSym?.fields?.put(f.name, f.type)
+            typedFields.add(TypedFieldDecl(f.type, f.name, f.loc))
         }
 
         return TypedTypeDef(typeDef.name, typedFields, typeDef.loc)
@@ -142,52 +154,50 @@ class TypeResolver(
     ): List<TypedParam> {
         val typedParams = mutableListOf<TypedParam>()
         for (param in params) {
-            if (!isKnownType(param.type)) {
+            if (param is RawErrorParam) continue
+            val p = param as RawParamImpl
+
+            if (!isKnownType(p.type)) {
                 val candidates = globalScope.allNamesInScope { it is TypeSymbol }
                 val suggestion =
-                    DiagnosticHelpers.didYouMeanMsg(param.type.name, candidates)
+                    DiagnosticHelpers.didYouMeanMsg(p.type.name, candidates)
                         ?: "Supported types: int, double, boolean, string, json, or a declared struct type"
                 errors.report(
-                    param.loc,
-                    "Parameter '${param.name}' has unknown type '${param.type}'",
+                    p.loc,
+                    "Parameter '${p.name}' has unknown type '${p.type}'",
                     suggestion = suggestion,
                 )
             }
-            if (!param.type.isValidAsVariable()) {
+            if (!p.type.isValidAsVariable()) {
                 errors.report(
-                    param.loc,
-                    "Parameter '${param.name}' cannot have type 'void'",
+                    p.loc,
+                    "Parameter '${p.name}' cannot have type 'void'",
                     suggestion = "Use a concrete type: int, double, boolean, string, json, or a struct type",
                 )
             }
 
             var typedDefaultValue: TypedExpr? = null
-            if (param.defaultValue != null) {
-                // If it's a struct literal, ExpressionResolver needs to know the expected type.
-                // We'll pass it down via context or handle it.
-                // For now we assume exprResolver.resolveExpr can take expectedType?
-                // Wait, ExpressionResolver.resolveExpr doesn't take expectedType.
-                // It just returns TypedExpr.
-                typedDefaultValue = exprResolver.resolveExpr(scope, param.defaultValue)
-                if (!param.type.isAssignableFrom(typedDefaultValue.type)) {
+            if (p.defaultValue != null) {
+                typedDefaultValue = exprResolver.resolveExpr(scope, p.defaultValue)
+                if (!p.type.isAssignableFrom(typedDefaultValue.type)) {
                     errors.report(
-                        param.defaultValue.loc,
-                        "Default value for '${param.name}' has type '${typedDefaultValue.type}', but the parameter expects '${param.type}'",
-                        suggestion = DiagnosticHelpers.conversionHint(typedDefaultValue.type, param.type),
+                        p.defaultValue.loc,
+                        "Default value for '${p.name}' has type '${typedDefaultValue.type}', but the parameter expects '${p.type}'",
+                        suggestion = DiagnosticHelpers.conversionHint(typedDefaultValue.type, p.type),
                     )
                 }
             }
 
-            val symbol = ParamSymbol(param.name, param.type, param.defaultValue, param.isVarargs)
-            if (!scope.define(param.name, symbol)) {
+            val symbol = ParamSymbol(p.name, p.type, p.defaultValue, p.isVarargs)
+            if (!scope.define(p.name, symbol)) {
                 errors.report(
-                    param.loc,
-                    "Parameter '${param.name}' is declared more than once",
+                    p.loc,
+                    "Parameter '${p.name}' is declared more than once",
                     suggestion = "Rename one of the parameters",
                 )
             }
 
-            typedParams.add(TypedParam(param.type, param.name, typedDefaultValue, param.isVarargs, param.loc, symbol))
+            typedParams.add(TypedParam(p.type, p.name, typedDefaultValue, p.isVarargs, p.loc, symbol))
         }
         return typedParams
     }

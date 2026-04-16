@@ -1,18 +1,21 @@
 package nox.plugin.external
 
+import com.sun.jna.Callback
+import com.sun.jna.CallbackReference
+import com.sun.jna.Function
+import com.sun.jna.Memory
+import com.sun.jna.NativeLibrary
+import com.sun.jna.Pointer
 import nox.plugin.LibraryRegistry
 import nox.plugin.NoxNativeFunc
 import nox.runtime.json.NoxJsonParser
 import nox.runtime.json.NoxJsonWriter
-import com.sun.jna.Callback
-import com.sun.jna.CallbackReference
-import com.sun.jna.Memory
-import com.sun.jna.NativeLibrary
-import com.sun.jna.Pointer
-import com.sun.jna.Function
 
 interface YieldCallback : Callback {
-    fun callback(contextId: Long, dataPtr: Pointer?)
+    fun callback(
+        contextId: Long,
+        dataPtr: Pointer?,
+    )
 }
 
 object ExternalPluginBridge {
@@ -22,7 +25,10 @@ object ExternalPluginBridge {
             .AtomicLong(1)
 
     class YieldCallbackImpl : YieldCallback {
-        override fun callback(contextId: Long, dataPtr: Pointer?) {
+        override fun callback(
+            contextId: Long,
+            dataPtr: Pointer?,
+        ) {
             val ctx = activeContexts[contextId] ?: return
             val data = dataPtr?.getString(0) ?: return
             ctx.yield(data)
@@ -40,10 +46,11 @@ object ExternalPluginBridge {
     ) {
         val jnaLibrary = NativeLibrary.getInstance(libraryPath)
         loadedLibraries.add(jnaLibrary)
-        
+
         val initFunc = jnaLibrary.getFunction("nox_plugin_init")
-        val manifestPtr = initFunc.invokePointer(emptyArray())
-            ?: throw IllegalStateException("nox_plugin_init returned NULL")
+        val manifestPtr =
+            initFunc.invokePointer(emptyArray())
+                ?: throw IllegalStateException("nox_plugin_init returned NULL")
 
         val namespaceStr = manifestPtr.getPointer(0).getString(0)
         val funcCount = manifestPtr.getInt(8)
@@ -53,7 +60,7 @@ object ExternalPluginBridge {
 
         for (i in 0 until funcCount) {
             val funcPtr = funcsArrayPtr.share(i * 40L)
-            
+
             val name = funcPtr.getPointer(0).getString(0)
             val paramCount = funcPtr.getInt(8)
             val paramTypesPtr = funcPtr.getPointer(16)
@@ -183,7 +190,10 @@ object ExternalPluginBridge {
                         pMem[bp + destReg] = (jnaFunc.invoke(Long::class.java, args) as Number).toLong()
                     }
                     NoxTypeTag.DOUBLE -> {
-                        pMem[bp + destReg] = java.lang.Double.doubleToRawLongBits((jnaFunc.invoke(Double::class.java, args) as Number).toDouble())
+                        pMem[bp + destReg] =
+                            java.lang.Double.doubleToRawLongBits(
+                                (jnaFunc.invoke(Double::class.java, args) as Number).toDouble(),
+                            )
                     }
                     NoxTypeTag.BOOLEAN -> {
                         val result = jnaFunc.invoke(Boolean::class.java, args) as Boolean

@@ -21,7 +21,7 @@ import nox.compiler.types.*
 class TypedProgram(
     val fileName: String,
     val headers: List<TypedHeader>,
-    val imports: List<TypedImportDecl>,
+    val imports: List<TypedDecl>,
     val declarations: List<TypedDecl>,
 ) {
     /** Type definitions indexed by name. Populated during AST construction. */

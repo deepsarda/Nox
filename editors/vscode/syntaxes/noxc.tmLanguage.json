@@ -1,0 +1,158 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Nox Disassembly",
+  "patterns": [
+    {
+      "include": "#headers"
+    },
+    {
+      "include": "#sections"
+    },
+    {
+      "include": "#labels"
+    },
+    {
+      "include": "#instructions"
+    },
+    {
+      "include": "#constants"
+    },
+    {
+      "include": "#registers"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#comments"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.semicolon.noxc",
+          "begin": ";",
+          "end": "$",
+          "patterns": [
+            {
+              "name": "meta.line-number.noxc",
+              "match": "line [0-9]+"
+            },
+            {
+              "name": "constant.character.gc.noxc",
+              "match": "\\(GC\\)"
+            },
+            {
+              "name": "variable.language.register.primitive.noxc",
+              "match": "\\b(p[0-9]+|g[0-9]+)\\b"
+            },
+            {
+              "name": "variable.language.register.reference.noxc",
+              "match": "\\b(r[0-9]+|gr[0-9]+)\\b"
+            },
+            {
+              "name": "keyword.operator.instruction.noxc",
+              "match": "\\b[A-Z_]{2,}\\b"
+            }
+          ]
+        }
+      ]
+    },
+    "headers": {
+      "patterns": [
+        {
+          "name": "entity.name.section.noxc",
+          "match": "^;\\s+(Nox Bytecode Disassembly|Functions|Constant Pool|Source|Program|Modules|Exception Table|Summary)\\b"
+        },
+        {
+          "name": "entity.name.function.noxc",
+          "match": "^;\\s+Function: ([a-zA-Z_][a-zA-Z0-9_]*)"
+        },
+        {
+          "name": "keyword.other.header.noxc",
+          "match": ";\\s+(Entry PC|Params|Frame|modules|init_blocks|functions|instructions|constants|exceptions|globals|bytecode):"
+        }
+      ]
+    },
+    "sections": {
+      "patterns": [
+        {
+          "name": "keyword.control.directive.noxc",
+          "match": "^\\.(constants|func|init|exceptions|summary)\\b"
+        }
+      ]
+    },
+    "labels": {
+      "patterns": [
+        {
+          "name": "entity.name.label.noxc",
+          "match": "^\\s*\\.[a-zA-Z0-9_]+:"
+        },
+        {
+          "name": "entity.name.label.noxc",
+          "match": "@[0-9]{4}"
+        }
+      ]
+    },
+    "instructions": {
+      "patterns": [
+        {
+          "name": "keyword.operator.instruction.noxc",
+          "match": "\\b[A-Z_]{2,}\\b"
+        },
+        {
+          "name": "constant.numeric.pc.noxc",
+          "match": "^\\s*[0-9]{4}:"
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.pool.noxc",
+          "match": "#[0-9]+"
+        },
+        {
+          "name": "storage.type.noxc",
+          "match": "\\b(str|dbl|lng|type)\\b"
+        }
+      ]
+    },
+    "registers": {
+      "patterns": [
+        {
+          "name": "variable.language.register.primitive.noxc",
+          "match": "\\b(p[0-9]+|g[0-9]+)\\b"
+        },
+        {
+          "name": "variable.language.register.reference.noxc",
+          "match": "\\b(r[0-9]+|gr[0-9]+)\\b"
+        },
+        {
+          "name": "variable.other.member.noxc",
+          "match": "\\b(pMem|rMem)\\b"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.noxc",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.noxc",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "numbers": {
+      "name": "constant.numeric.noxc",
+      "match": "\\b[0-9]+(\\.[0-9]+)?\\b"
+    }
+  },
+  "scopeName": "source.noxc"
+}

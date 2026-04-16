@@ -22,13 +22,24 @@ class TreeValidator(
     ) {
         if (raw.declarations.size != typed.declarations.size) {
             errors.report(
-                SourceLocation("", 0, 0),
+                SourceLocation(raw.fileName, 0, 0),
                 "AST mismatch: RawProgram has ${raw.declarations.size} declarations, TypedProgram has ${typed.declarations.size}",
             )
-            return
+        }
+        if (raw.imports.size != typed.imports.size) {
+            errors.report(
+                SourceLocation(raw.fileName, 0, 0),
+                "AST mismatch: RawProgram has ${raw.imports.size} imports, TypedProgram has ${typed.imports.size}",
+            )
         }
 
-        for (i in raw.declarations.indices) {
+        val minImports = minOf(raw.imports.size, typed.imports.size)
+        for (i in 0 until minImports) {
+            validateDecl(raw.imports[i], typed.imports[i])
+        }
+
+        val minDecls = minOf(raw.declarations.size, typed.declarations.size)
+        for (i in 0 until minDecls) {
             validateDecl(raw.declarations[i], typed.declarations[i])
         }
     }
@@ -52,10 +63,12 @@ class TreeValidator(
                 for (i in raw.params.indices) {
                     val rParam = raw.params[i]
                     val tParam = typed.params[i]
-                    if (rParam.loc != tParam.loc || rParam.name != tParam.name) return reportMismatch(raw, typed)
-                    if (rParam.defaultValue != null && tParam.defaultValue != null) {
-                        validateExpr(rParam.defaultValue, tParam.defaultValue)
-                    } else if (rParam.defaultValue != null || tParam.defaultValue != null) {
+                    if (rParam is RawErrorParam) continue
+                    val rp = rParam as RawParamImpl
+                    if (rp.loc != tParam.loc || rp.name != tParam.name) return reportMismatch(raw, typed)
+                    if (rp.defaultValue != null && tParam.defaultValue != null) {
+                        validateExpr(rp.defaultValue, tParam.defaultValue)
+                    } else if (rp.defaultValue != null || tParam.defaultValue != null) {
                         return reportMismatch(raw, typed)
                     }
                 }
@@ -64,6 +77,13 @@ class TreeValidator(
             is RawMainDef -> {
                 if (typed !is TypedMainDef) return reportMismatch(raw, typed)
                 if (raw.params.size != typed.params.size) return reportMismatch(raw, typed)
+                for (i in raw.params.indices) {
+                    val rParam = raw.params[i]
+                    val tParam = typed.params[i]
+                    if (rParam is RawErrorParam) continue
+                    val rp = rParam as RawParamImpl
+                    if (rp.loc != tParam.loc || rp.name != tParam.name) return reportMismatch(raw, typed)
+                }
                 validateStmt(raw.body, typed.body)
             }
             is RawGlobalVarDecl -> {
@@ -80,7 +100,11 @@ class TreeValidator(
                 if (raw.name != typed.name) return reportMismatch(raw, typed)
                 if (raw.fields.size != typed.fields.size) return reportMismatch(raw, typed)
                 for (i in raw.fields.indices) {
-                    if (raw.fields[i].loc != typed.fields[i].loc || raw.fields[i].name != typed.fields[i].name) {
+                    val rf = raw.fields[i]
+                    val tf = typed.fields[i]
+                    if (rf is RawErrorFieldDecl) continue
+                    val rfi = rf as RawFieldDeclImpl
+                    if (rfi.loc != tf.loc || rfi.name != tf.name) {
                         return reportMismatch(raw, typed)
                     }
                 }
@@ -259,8 +283,12 @@ class TreeValidator(
                 if (typed !is TypedStructLiteralExpr) return reportMismatch(raw, typed)
                 if (raw.fields.size != typed.fields.size) return reportMismatch(raw, typed)
                 for (i in raw.fields.indices) {
-                    if (raw.fields[i].name != typed.fields[i].name) return reportMismatch(raw, typed)
-                    validateExpr(raw.fields[i].value, typed.fields[i].value)
+                    val rInit = raw.fields[i]
+                    val tInit = typed.fields[i]
+                    if (rInit is RawErrorFieldInit) continue
+                    val ri = rInit as RawFieldInitImpl
+                    if (ri.name != tInit.name) return reportMismatch(raw, typed)
+                    validateExpr(ri.value, tInit.value)
                 }
             }
             is RawFieldAccessExpr -> {

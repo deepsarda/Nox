@@ -46,10 +46,6 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
-  "name":"com.sun.jna.CallbackProxy",
-  "methods":[{"name":"callback","parameterTypes":["java.lang.Object[]"] }]
-},
-{
   "name":"io.kotest.core.TestConfiguration"
 },
 {
@@ -126,8 +122,7 @@
 },
 {
   "name":"java.lang.Throwable",
-  "allDeclaredFields":true,
-  "methods":[{"name":"addSuppressed","parameterTypes":["java.lang.Throwable"] }]
+  "allDeclaredFields":true
 },
 {
   "name":"java.lang.instrument.Instrumentation",
@@ -139,10 +134,6 @@
 {
   "name":"java.lang.module.ModuleDescriptor",
   "methods":[{"name":"name","parameterTypes":[] }]
-},
-{
-  "name":"java.lang.reflect.Method",
-  "methods":[{"name":"isVarArgs","parameterTypes":[] }]
 },
 {
   "name":"java.net.ConnectException",
@@ -163,12 +154,6 @@
 },
 {
   "name":"java.net.http.HttpRequest$Builder"
-},
-{
-  "name":"java.nio.Buffer"
-},
-{
-  "name":"java.nio.file.Path"
 },
 {
   "name":"java.security.AlgorithmParametersSpi"
@@ -320,9 +305,6 @@
   "name":"kotlin.jvm.internal.FunctionBase"
 },
 {
-  "name":"kotlin.reflect.jvm.internal.KClassImpl"
-},
-{
   "name":"kotlin.reflect.jvm.internal.ReflectionFactoryImpl",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
@@ -421,28 +403,22 @@
   "name":"nox.PackageConfig"
 },
 {
-  "name":"nox.compiler.CompilerError",
-  "fields":[{"name":"loc"}, {"name":"message"}, {"name":"suggestion"}],
-  "methods":[{"name":"getLoc","parameterTypes":[] }, {"name":"getMessage","parameterTypes":[] }, {"name":"getSuggestion","parameterTypes":[] }]
+  "name":"nox.ProjectConfig"
 },
 {
-  "name":"nox.compiler.CompilerErrorsTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+  "name":"nox.compiler.CompilerErrorsTest"
 },
 {
-  "name":"nox.compiler.LexerSmokeTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+  "name":"nox.compiler.LexerSmokeTest"
 },
 {
-  "name":"nox.compiler.NoxCompilerTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+  "name":"nox.compiler.NoxCompilerTest"
 },
 {
   "name":"nox.compiler.NoxCompilerTestKt"
 },
 {
-  "name":"nox.compiler.NoxcEmitterTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+  "name":"nox.compiler.NoxcEmitterTest"
 },
 {
   "name":"nox.compiler.PackageConfig"
@@ -454,11 +430,7 @@
   "name":"nox.compiler.ast.typed.TypedMethodCallExpr$Resolution"
 },
 {
-  "name":"nox.compiler.codegen.CodeGeneratorTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
-},
-{
-  "name":"nox.compiler.codegen.PackageConfig"
+  "name":"nox.compiler.codegen.CodeGeneratorTest"
 },
 {
   "name":"nox.compiler.parsing.ASTBuilderTest",
@@ -468,15 +440,13 @@
   "name":"nox.compiler.parsing.PackageConfig"
 },
 {
-  "name":"nox.compiler.semantic.ControlFlowValidatorTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+  "name":"nox.compiler.semantic.ControlFlowValidatorTest"
 },
 {
   "name":"nox.compiler.semantic.ControlFlowValidatorTest$1$ValidationResult"
 },
 {
-  "name":"nox.compiler.semantic.DeclarationCollectorTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+  "name":"nox.compiler.semantic.DeclarationCollectorTest"
 },
 {
   "name":"nox.compiler.semantic.ExpressionResolverIsolatedTest",
@@ -504,8 +474,7 @@
   "name":"nox.compiler.semantic.ExpressionResolverIsolatedTest$1$7"
 },
 {
-  "name":"nox.compiler.semantic.ImportResolverTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+  "name":"nox.compiler.semantic.ImportResolverTest"
 },
 {
   "name":"nox.compiler.semantic.ImportResolverTestKt"
@@ -514,44 +483,17 @@
   "name":"nox.compiler.semantic.PackageConfig"
 },
 {
-  "name":"nox.compiler.semantic.StatementResolverIsolatedTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+  "name":"nox.compiler.semantic.StatementResolverIsolatedTest"
 },
 {
-  "name":"nox.compiler.semantic.StatementResolverIsolatedTest$1$1"
-},
-{
-  "name":"nox.compiler.semantic.StatementResolverIsolatedTest$1$2"
-},
-{
-  "name":"nox.compiler.semantic.StatementResolverIsolatedTest$1$3"
-},
-{
-  "name":"nox.compiler.semantic.StatementResolverIsolatedTest$1$4"
-},
-{
-  "name":"nox.compiler.semantic.StatementResolverIsolatedTest$1$5"
-},
-{
-  "name":"nox.compiler.semantic.StatementResolverIsolatedTest$1$6"
-},
-{
-  "name":"nox.compiler.semantic.StatementResolverIsolatedTest$1$7"
-},
-{
-  "name":"nox.compiler.semantic.SymbolTableTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+  "name":"nox.compiler.semantic.SymbolTableTest"
 },
 {
   "name":"nox.compiler.semantic.TreeValidatorTest",
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
 },
 {
-  "name":"nox.compiler.semantic.TypeResolverTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
-},
-{
-  "name":"nox.compiler.semantic.TypeResolverTest$1$186"
+  "name":"nox.compiler.semantic.TypeResolverTest"
 },
 {
   "name":"nox.compiler.types.AssignOp"
@@ -560,34 +502,13 @@
   "name":"nox.compiler.types.BinaryOp"
 },
 {
-  "name":"nox.compiler.types.FieldSpec"
-},
-{
-  "name":"nox.compiler.types.FieldSpec$INT"
-},
-{
-  "name":"nox.compiler.types.FieldSpec$STRING"
-},
-{
-  "name":"nox.compiler.types.PackageConfig"
-},
-{
   "name":"nox.compiler.types.PostfixOp"
-},
-{
-  "name":"nox.compiler.types.SourceLocation",
-  "fields":[{"name":"column"}, {"name":"file"}, {"name":"line"}],
-  "methods":[{"name":"getColumn","parameterTypes":[] }, {"name":"getFile","parameterTypes":[] }, {"name":"getLine","parameterTypes":[] }]
-},
-{
-  "name":"nox.compiler.types.TypeDescriptor"
 },
 {
   "name":"nox.compiler.types.TypeRef"
 },
 {
-  "name":"nox.compiler.types.TypeRefTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+  "name":"nox.compiler.types.TypeRefTest"
 },
 {
   "name":"nox.compiler.types.UnaryOp"
@@ -603,18 +524,6 @@
   "name":"nox.e2e.PackageConfig"
 },
 {
-  "name":"nox.parser.NoxLexer"
-},
-{
-  "name":"nox.parser.NoxParser"
-},
-{
-  "name":"nox.parser.NoxParserBaseVisitor"
-},
-{
-  "name":"nox.parser.NoxParserVisitor"
-},
-{
   "name":"nox.plugin.GeneratedRegistry",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
@@ -623,22 +532,11 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
-  "name":"nox.plugin.LibraryRegistryTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
-},
-{
-  "name":"nox.plugin.Linker",
-  "methods":[{"name":"buildAdapter","parameterTypes":["java.lang.invoke.MethodHandle","java.lang.Object","boolean","boolean","java.util.List","nox.plugin.Linker$ReturnDescriptor"] }]
-},
-{
-  "name":"nox.plugin.Linker$buildAdapter$1"
+  "name":"nox.plugin.LibraryRegistryTest"
 },
 {
   "name":"nox.plugin.Linker$buildAdapter$1$invoke$1",
   "fields":[{"name":"label"}]
-},
-{
-  "name":"nox.plugin.PackageConfig"
 },
 {
   "name":"nox.plugin.TestNamespaceModule",
@@ -687,21 +585,7 @@
   "methods":[{"name":"name","parameterTypes":[] }, {"name":"targetType","parameterTypes":[] }]
 },
 {
-  "name":"nox.plugin.external.ExternalPluginBridge$YieldCallbackImpl",
-  "fields":[{"name":"OPTIONS"}, {"name":"STRING_ENCODING"}, {"name":"STRUCTURE_ALIGNMENT"}, {"name":"TYPE_MAPPER"}]
-},
-{
-  "name":"nox.plugin.external.ExternalPluginBridgeTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
-},
-{
-  "name":"nox.plugin.external.PackageConfig"
-},
-{
-  "name":"nox.plugin.external.YieldCallback",
-  "queryAllDeclaredMethods":true,
-  "queryAllPublicMethods":true,
-  "methods":[{"name":"callback","parameterTypes":["long","com.sun.jna.Pointer"] }]
+  "name":"nox.plugin.external.ExternalPluginBridgeTest"
 },
 {
   "name":"nox.plugin.stdlib.ArrayMethods",
@@ -768,22 +652,13 @@
   "methods":[{"name":"abs","parameterTypes":["double"] }, {"name":"ceil","parameterTypes":["double"] }, {"name":"floor","parameterTypes":["double"] }, {"name":"max","parameterTypes":["double","double"] }, {"name":"min","parameterTypes":["double","double"] }, {"name":"pow","parameterTypes":["double","double"] }, {"name":"random","parameterTypes":[] }, {"name":"round","parameterTypes":["double"] }, {"name":"sqrt","parameterTypes":["double"] }]
 },
 {
-  "name":"nox.plugin.stdlib.PackageConfig"
-},
-{
-  "name":"nox.plugin.stdlib.PermissionGatedModuleTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
-},
-{
-  "name":"nox.plugin.stdlib.PermissionGatedModuleTest$1$23$1",
-  "fields":[{"name":"label"}]
+  "name":"nox.plugin.stdlib.PermissionGatedModuleTest"
 },
 {
   "name":"nox.plugin.stdlib.PermissionGatedModuleTest$1$TrackingContext"
 },
 {
-  "name":"nox.plugin.stdlib.StdlibModuleTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+  "name":"nox.plugin.stdlib.StdlibModuleTest"
 },
 {
   "name":"nox.plugin.stdlib.StringMethods",
@@ -800,14 +675,8 @@
   "methods":[{"name":"boolToString","parameterTypes":["boolean"] }, {"name":"doubleToInt","parameterTypes":["double"] }, {"name":"doubleToString","parameterTypes":["double"] }, {"name":"intToDouble","parameterTypes":["long"] }, {"name":"intToString","parameterTypes":["long"] }, {"name":"stringToDouble","parameterTypes":["java.lang.String","double"] }, {"name":"stringToInt","parameterTypes":["java.lang.String","long"] }]
 },
 {
-  "name":"nox.runtime.NoxError"
-},
-{
   "name":"nox.runtime.NoxRuntime$execute$ret$1",
   "fields":[{"name":"label"}]
-},
-{
-  "name":"nox.runtime.PackageConfig"
 },
 {
   "name":"nox.runtime.PermissionRequest"
@@ -831,23 +700,16 @@
   "name":"nox.runtime.RuntimeContext"
 },
 {
-  "name":"nox.runtime.RuntimeTypeValidatorTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+  "name":"nox.runtime.RuntimeTypeValidatorTest"
 },
 {
-  "name":"nox.runtime.json.NoxJsonParserTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+  "name":"nox.runtime.json.NoxJsonParserTest"
 },
 {
-  "name":"nox.runtime.json.NoxJsonWriterTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+  "name":"nox.runtime.json.NoxJsonWriterTest"
 },
 {
-  "name":"nox.runtime.json.PackageConfig"
-},
-{
-  "name":"nox.vm.NoxRuntimeTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+  "name":"nox.vm.NoxRuntimeTest"
 },
 {
   "name":"nox.vm.NoxVM$execute$1",
@@ -862,15 +724,10 @@
   "fields":[{"name":"label"}]
 },
 {
-  "name":"nox.vm.NoxVMTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+  "name":"nox.vm.NoxVMTest"
 },
 {
-  "name":"nox.vm.PackageConfig"
-},
-{
-  "name":"nox.vm.ResourceGuardTest",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["kotlin.jvm.internal.DefaultConstructorMarker"] }]
+  "name":"nox.vm.ResourceGuardTest"
 },
 {
   "name":"org.gradle.api.internal.file.temp.GradleUserHomeTemporaryFileProvider",
@@ -891,7 +748,19 @@
   "name":"org.gradle.api.internal.tasks.testing.filter.TestFilterSpec"
 },
 {
+  "name":"org.gradle.api.internal.tasks.testing.filter.TestSelectionMatcher",
+  "fields":[{"name":"buildScriptIncludePatterns"}, {"name":"commandLineIncludePatterns"}]
+},
+{
+  "name":"org.gradle.api.internal.tasks.testing.filter.TestSelectionMatcher$TestPattern",
+  "fields":[{"name":"pattern"}]
+},
+{
   "name":"org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformSpec"
+},
+{
+  "name":"org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestDefinitionProcessor$ClassMethodNameFilter",
+  "fields":[{"name":"matcher"}]
 },
 {
   "name":"org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestDefinitionProcessorFactory"

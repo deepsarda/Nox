@@ -104,10 +104,10 @@ class ExpressionResolverIsolatedTest :
                 val resolver = createResolver(scope, errors)
 
                 val sType = TypeRef("S")
-                val sDef = RawTypeDef("S", listOf(RawFieldDecl(TypeRef.INT, "a", loc)), loc)
+                val sDef = RawTypeDef("S", listOf(RawFieldDeclImpl(TypeRef.INT, "a", loc)), loc)
                 scope.define("S", TypeSymbol("S", linkedMapOf("a" to TypeRef.INT), sDef))
 
-                val expr = RawStructLiteralExpr(listOf(RawFieldInit("a", RawIntLiteralExpr(1, loc), loc)), loc)
+                val expr = RawStructLiteralExpr(listOf(RawFieldInitImpl("a", RawIntLiteralExpr(1, loc), loc)), loc)
                 val typed = resolver.resolveExpr(scope, expr, sType)
                 typed.type shouldBe sType
                 errors.hasErrors() shouldBe false
@@ -119,7 +119,7 @@ class ExpressionResolverIsolatedTest :
                 val resolver = createResolver(scope, errors)
 
                 val sType = TypeRef("S")
-                val sDef = RawTypeDef("S", listOf(RawFieldDecl(TypeRef.INT, "a", loc)), loc)
+                val sDef = RawTypeDef("S", listOf(RawFieldDeclImpl(TypeRef.INT, "a", loc)), loc)
                 scope.define("S", TypeSymbol("S", linkedMapOf("a" to TypeRef.INT), sDef))
 
                 val expr = RawStructLiteralExpr(emptyList(), loc)
@@ -133,7 +133,7 @@ class ExpressionResolverIsolatedTest :
                 val resolver = createResolver(scope, errors)
 
                 val sType = TypeRef("S")
-                val sDef = RawTypeDef("S", listOf(RawFieldDecl(TypeRef.INT, "a", loc)), loc)
+                val sDef = RawTypeDef("S", listOf(RawFieldDeclImpl(TypeRef.INT, "a", loc)), loc)
                 scope.define("S", TypeSymbol("S", linkedMapOf("a" to TypeRef.INT), sDef))
                 scope.define("obj", VarSymbol("obj", sType, 0))
 
@@ -218,7 +218,7 @@ class ExpressionResolverIsolatedTest :
                 val resolver = createResolver(scope, errors)
 
                 val sType = TypeRef("S")
-                val sDef = RawTypeDef("S", listOf(RawFieldDecl(TypeRef.INT, "a", loc)), loc)
+                val sDef = RawTypeDef("S", listOf(RawFieldDeclImpl(TypeRef.INT, "a", loc)), loc)
                 scope.define("S", TypeSymbol("S", linkedMapOf("a" to TypeRef.INT), sDef))
                 scope.define("obj", VarSymbol("obj", TypeRef.JSON, 0))
 

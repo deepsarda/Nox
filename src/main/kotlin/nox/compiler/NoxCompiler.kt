@@ -1,5 +1,6 @@
 package nox.compiler
 
+import nox.compiler.ast.RawHeaderImpl
 import nox.compiler.ast.RawProgram
 import nox.compiler.ast.typed.TypedProgram
 import nox.compiler.codegen.CodeGenerator
@@ -45,6 +46,55 @@ object NoxCompiler {
     )
 
     /**
+     * Compile a Nox source string through upto codegen.
+     * Designed to be consumed by the LSP server, which needs the typed AST and error/warning info for IDE features.
+     *
+     * @param source     the complete `.nox` source code
+     * @param fileName   the source file name (for error messages)
+     * @param basePath   absolute path of the source file (for import resolution, if not provided, it will be inferred from the file name)
+     * @param fileReader abstraction over file I/O, for testability
+     * @return a [CompilationResult] with the annotated AST, errors, warnings, and modules
+     */
+    fun analyze(
+        source: String,
+        fileName: String,
+        basePath: Path? = null,
+        registry: LibraryRegistry = LibraryRegistry.createDefault(),
+        fileReader: (Path) -> String = { it.toFile().readText() },
+    ): CompilationResult {
+        val resolvedBasePath = basePath ?: Path.of(fileName).parent?.toAbsolutePath() ?: Path.of(".").toAbsolutePath()
+        val errors = CompilerErrors()
+        val warnings = CompilerWarnings()
+
+        val lines = source.lines()
+        errors.sourceLines = lines
+        warnings.sourceLines = lines
+
+        val program = NoxParsing.parse(source, fileName, errors)
+
+        val importResolver =
+            ImportResolver(
+                basePath = resolvedBasePath,
+                errors = errors,
+                fileReader = fileReader,
+                builtinNamespaces = registry.builtinNamespaceNames,
+                externalPluginNamespaces = registry.externalPluginNamespaces,
+            )
+        importResolver.resolveImports(program)
+        val modules = importResolver.modules.toList()
+
+
+        val globalScope = SymbolTable()
+        DeclarationCollector(globalScope, errors).collect(program)
+
+        val (typedProgram, typedModules) = TypeResolver(globalScope, errors, modules, registry).resolve(program)
+        TreeValidator(errors).validate(program, typedProgram)
+        ControlFlowValidator(errors, warnings).validate(typedProgram)   
+
+        return CompilationResult(program, typedProgram, errors, warnings, modules)
+    }
+
+    /**
      * Compile a Nox source string through all implemented phases.
      *
      * @param source     the complete `.nox` source code
@@ -56,10 +106,11 @@ object NoxCompiler {
     fun compile(
         source: String,
         fileName: String,
-        basePath: Path = Path.of(fileName).toAbsolutePath(),
+        basePath: Path? = null,
         registry: LibraryRegistry = LibraryRegistry.createDefault(),
         fileReader: (Path) -> String = { it.toFile().readText() },
     ): CompilationResult {
+        val resolvedBasePath = basePath ?: Path.of(fileName).parent?.toAbsolutePath() ?: Path.of(".").toAbsolutePath()
         val errors = CompilerErrors()
         val warnings = CompilerWarnings()
 
@@ -74,7 +125,7 @@ object NoxCompiler {
         // Phase 2: Import Resolution
         val importResolver =
             ImportResolver(
-                basePath = basePath,
+                basePath = resolvedBasePath,
                 errors = errors,
                 fileReader = fileReader,
                 builtinNamespaces = registry.builtinNamespaceNames,
@@ -117,7 +168,7 @@ object NoxCompiler {
         val compiledProgram = CodeGenerator(errors, typedModules, registry).generate(foldedProgram)
 
         // Phase 7: Disassembly
-        val programName = program.headers.firstOrNull { it.key == "name" }?.value ?: "(unnamed)"
+        val programName = program.headers.filterIsInstance<RawHeaderImpl>().firstOrNull { it.key == "name" }?.value ?: "(unnamed)"
         val disassembly = NoxcEmitter().emit(compiledProgram, fileName, programName, program.sourceLines)
 
         return CompilationResult(program, typedProgram, errors, warnings, modules, compiledProgram, disassembly)

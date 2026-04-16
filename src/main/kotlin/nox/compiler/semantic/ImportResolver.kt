@@ -55,7 +55,9 @@ internal class ImportResolver(
      */
     fun resolveImports(program: RawProgram) {
         for (imp in program.imports) {
-            resolveImport(imp)
+            if (imp is RawImportDecl) {
+                resolveImport(imp)
+            }
         }
     }
 

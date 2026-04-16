@@ -1,0 +1,120 @@
+{
+  "name": "nox",
+  "displayName": "Nox Language Support",
+  "description": "Language support and LSP client for Nox",
+  "version": "0.1.0",
+  "publisher": "nox-lang",
+  "engines": {
+    "vscode": "^1.82.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:nox"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "nox",
+        "aliases": [
+          "Nox",
+          "nox"
+        ],
+        "extensions": [
+          ".nox"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "noxc",
+        "aliases": [
+          "Nox Disassembly",
+          "noxc"
+        ],
+        "extensions": [
+          ".noxc"
+        ]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "nox",
+        "scopeName": "source.nox",
+        "path": "./syntaxes/nox.tmLanguage.json"
+      },
+      {
+        "language": "noxc",
+        "scopeName": "source.noxc",
+        "path": "./syntaxes/noxc.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "nox",
+        "path": "./snippets/nox.json"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Nox",
+      "properties": {
+        "nox.lsp.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to a custom Nox LSP binary. If left empty, the extension will download the latest matching native binary automatically."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "nox.run",
+        "title": "Run",
+        "category": "Nox"
+      },
+      {
+        "command": "nox.disassemble",
+        "title": "Disassemble",
+        "category": "Nox"
+      },
+      {
+        "command": "nox.format",
+        "title": "Format",
+        "category": "Nox"
+      },
+      {
+        "command": "nox.restartServer",
+        "title": "Restart Server",
+        "category": "Nox"
+      },
+      {
+        "command": "nox.version",
+        "title": "Version",
+        "category": "Nox"
+      },
+      {
+        "command": "nox.downloadServer",
+        "title": "Download/Update Server",
+        "category": "Nox"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/vscode": "^1.82.0",
+    "@vscode/vsce": "^3.8.1",
+    "typescript": "~5.5.4"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  }
+}

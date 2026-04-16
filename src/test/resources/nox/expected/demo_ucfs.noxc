@@ -1,0 +1,126 @@
+;  Nox Bytecode Disassembly
+;  Source:   demo_ucfs.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "__string_upper"
+  #1   str   "__string_split"
+  #2   str   "Hello, World!"
+  #3   str   "upperWrapper"
+  #4   str   ", "
+  #5   str   "splitWrapper"
+  #6   str   "__string_lower"
+
+
+; Functions
+
+;  Function: upperWrapper
+;    Entry PC:   0
+;    Params:     1
+;    Frame:      pMem=0  rMem=5
+
+.func upperWrapper
+  ; params: r1=s
+  ;
+  ; line 4  return s.upper();
+  0000:  MOVR        r4, r1                              ; r4 = s:r1
+  0001:  SCALL       __string_upper, p0, r3              ; r3 = scall __string_upper(p0..., r4...)
+  0002:  MOVR        r2, r3                              ; r2 = r3
+  0003:  KILL_REF    r1                                  ; s:r1 = null (GC)
+  0004:  KILL_REF    r3                                  ; r3 = null (GC)
+  0005:  KILL_REF    r4                                  ; r4 = null (GC)
+  0006:  RET         REF, r2                             ; return r2
+
+;  Function: splitWrapper
+;    Entry PC:   7
+;    Params:     2
+;    Frame:      pMem=0  rMem=7
+
+.func splitWrapper
+  ; params: r1=s  r2=delimiter
+  ;
+  ; line 8  return s.split(delimiter);
+  0007:  MOVR        r5, r1                              ; r5 = s:r1
+  0008:  MOVR        r6, r2                              ; r6 = delimiter:r2
+  0009:  SCALL       __string_split, p0, r4              ; r4 = scall __string_split(p0..., r5...)
+  0010:  MOVR        r3, r4                              ; r3 = r4
+  0011:  KILL_REF    r1                                  ; s:r1 = null (GC)
+  0012:  KILL_REF    r2                                  ; delimiter:r2 = null (GC)
+  0013:  KILL_REF    r4                                  ; r4 = null (GC)
+  0014:  KILL_REF    r5                                  ; r5 = null (GC)
+  0015:  KILL_REF    r6                                  ; r6 = null (GC)
+  0016:  RET         REF, r3                             ; return r3
+
+;  Function: main
+;    Entry PC:   17
+;    Params:     0
+;    Frame:      pMem=1  rMem=14
+
+.func main
+  ;
+  ; line 12  string s = "Hello, World!";
+  0017:  LDC         r1, #2                              ; s:r1 = "Hello, World!"
+  ;
+  ; line 14  string s1 = upperWrapper(s).splitWrapper(", ")[0].lower(); // with UCFS
+  0018:  MOVR        r11, r1                             ; r11 = s:r1
+  0019:  CALL        upperWrapper, p0, r10               ; r10 = call upperWrapper(p0..., r11...)
+  0020:  MOVR        r7, r10                             ; r7 = r10
+  0021:  LDC         r8, #4                              ; r8 = ", "
+  0022:  CALL        splitWrapper, p0, r6                ; r6 = call splitWrapper(p0..., r7...)
+  0023:  MOVR        r5, r6                              ; r5 = r6
+  0024:  LDI         p0, 0                               ; p0 = 0
+  0025:  AGET_IDX    r4, r5, p0                          ; r4 = r5[p0]
+  0026:  SCALL       __string_lower, p0, r3              ; r3 = scall __string_lower(p0..., r4...)
+  0027:  MOVR        r2, r3                              ; s1:r2 = r3
+  ;
+  ; line 16  string s2 = splitWrapper(upperWrapper(s), ", ")[0].lower(); // Without UCFS
+  0028:  MOVR        r13, r1                             ; r13 = s:r1
+  0029:  CALL        upperWrapper, p1, r12               ; r12 = call upperWrapper(p1..., r13...)
+  0030:  MOVR        r10, r12                            ; r10 = r12
+  0031:  LDC         r11, #4                             ; r11 = ", "
+  0032:  CALL        splitWrapper, p1, r9                ; r9 = call splitWrapper(p1..., r10...)
+  0033:  MOVR        r8, r9                              ; r8 = r9
+  0034:  LDI         p0, 0                               ; p0 = 0
+  0035:  AGET_IDX    r7, r8, p0                          ; r7 = r8[p0]
+  0036:  SCALL       __string_lower, p1, r6              ; r6 = scall __string_lower(p1..., r7...)
+  0037:  MOVR        r5, r6                              ; s2:r5 = r6
+  ;
+  ; line 18  return s1 == s2;
+  0038:  SEQ         p0, r2, r5                          ; p0 = s1:r2 == s2:r5
+  0039:  KILL_REF    r1                                  ; s:r1 = null (GC)
+  0040:  KILL_REF    r2                                  ; s1:r2 = null (GC)
+  0041:  KILL_REF    r3                                  ; r3 = null (GC)
+  0042:  KILL_REF    r4                                  ; r4 = null (GC)
+  0043:  KILL_REF    r5                                  ; s2:r5 = null (GC)
+  0044:  KILL_REF    r6                                  ; r6 = null (GC)
+  0045:  KILL_REF    r7                                  ; r7 = null (GC)
+  0046:  KILL_REF    r8                                  ; r8 = null (GC)
+  0047:  KILL_REF    r9                                  ; r9 = null (GC)
+  0048:  KILL_REF    r10                                 ; r10 = null (GC)
+  0049:  KILL_REF    r11                                 ; r11 = null (GC)
+  0050:  KILL_REF    r12                                 ; r12 = null (GC)
+  0051:  KILL_REF    r13                                 ; r13 = null (GC)
+  0052:  RET         BOOL, p0                            ; return p0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    3
+  instructions: 53
+  constants:    7
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     424 bytes
