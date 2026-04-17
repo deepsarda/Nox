@@ -33,16 +33,16 @@
   ; line 5  int i = 0;
   0001:  LDI         p0, 0                               ; i:p0 = 0
   ;
-  ; line 6  while (i < 10) {
+  ; line 7  while (i < 10) {
   .loop_start_1:
   0002:  ILT         p1, p0, #10                         ; p1 = i:p0 < 10
   0003:  JIF         p1, @0019                           ; if p1==0 -> loop_exit_1
   ;
-  ; line 7  double r = Math.random();
+  ; line 8  double r = Math.random();
   0004:  SCALL       Math__random, p2, r2                ; p2 = scall Math__random(p3..., r2...)
   0005:  MOV         p1, p2                              ; r:p1 = p2
   ;
-  ; line 8  double val = Math.sqrt(Math.pow(r, 2.0));
+  ; line 9  double val = Math.sqrt(Math.pow(r, 2.0));
   0006:  MOV         p6, p1                              ; p6 = r:p1
   0007:  LDC         p7, #1                              ; p7 = 2.0
   0008:  SCALL       Math__pow, p5, r2                   ; p5 = scall Math__pow(p6..., r2...)
@@ -50,12 +50,12 @@
   0010:  SCALL       Math__sqrt, p3, r2                  ; p3 = scall Math__sqrt(p4..., r2...)
   0011:  MOV         p2, p3                              ; val:p2 = p3
   ;
-  ; line 9  dist.push(val);
+  ; line 10  dist.push(val);
   0012:  MOVR        r3, r1                              ; r3 = dist:r1
   0013:  MOV         p3, p2                              ; p3 = val:p2
   0014:  SCALL       __T[]_push!double, p3, r3           ; scall __T[]_push!double(p3..., r3...)
   ;
-  ; line 10  i = i + 1;
+  ; line 11  i = i + 1;
   0015:  IADD        p0, p0, #1                          ; i:p0 = i:p0 + 1
   0016:  KILL_REF    r2                                  ; r2 = null (GC)
   0017:  KILL_REF    r3                                  ; r3 = null (GC)

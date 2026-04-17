@@ -31,7 +31,7 @@
   ; line 4  int sum = 0;
   0007:  LDI         p0, 0                               ; sum:p0 = 0
   ;
-  ; line 5  foreach (int x in arr) {
+  ; line 6  foreach (int x in arr) {
   0008:  MOVR        r2, r1                              ; r2 = arr:r1
   0009:  LDI         p1, 0                               ; p1 = 0
   0010:  MOVR        r3, r2                              ; r3 = r2
@@ -42,18 +42,18 @@
   0014:  JIF         p3, @0020                           ; if p3==0 -> loop_exit_1
   0015:  AGET_IDX    r4, r2, p1                          ; r4 = r2[p1]
   ;
-  ; line 6  yield x;
+  ; line 7  yield x;
   0016:  YIELD       INT, p4                             ; yield x:p4
   ;
-  ; line 7  sum = sum + x;
+  ; line 8  sum = sum + x;
   0017:  IADD        p0, p0, p4                          ; sum:p0 = sum:p0 + x:p4
   ;
-  ; line 5  foreach (int x in arr) {
+  ; line 6  foreach (int x in arr) {
   .loop_update_1:
   0018:  IINC        p1                                  ; p1 = p1 + 1
   0019:  JMP         @0013                               ; -> loop_start_1
   ;
-  ; line 9  return sum;
+  ; line 11  return sum;
   .loop_exit_1:
   0020:  KILL_REF    r1                                  ; arr:r1 = null (GC)
   0021:  KILL_REF    r2                                  ; r2 = null (GC)

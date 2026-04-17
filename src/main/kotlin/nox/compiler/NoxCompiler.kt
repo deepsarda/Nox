@@ -62,7 +62,7 @@ object NoxCompiler {
         registry: LibraryRegistry = LibraryRegistry.createDefault(),
         fileReader: (Path) -> String = { it.toFile().readText() },
     ): CompilationResult {
-        val resolvedBasePath = basePath ?: Path.of(fileName).parent?.toAbsolutePath() ?: Path.of(".").toAbsolutePath()
+        val resolvedBasePath = basePath ?: Path.of(fileName).toAbsolutePath()
         val errors = CompilerErrors()
         val warnings = CompilerWarnings()
 
@@ -110,7 +110,7 @@ object NoxCompiler {
         registry: LibraryRegistry = LibraryRegistry.createDefault(),
         fileReader: (Path) -> String = { it.toFile().readText() },
     ): CompilationResult {
-        val resolvedBasePath = basePath ?: Path.of(fileName).parent?.toAbsolutePath() ?: Path.of(".").toAbsolutePath()
+        val resolvedBasePath = basePath ?: Path.of(fileName).toAbsolutePath()
         val errors = CompilerErrors()
         val warnings = CompilerWarnings()
 

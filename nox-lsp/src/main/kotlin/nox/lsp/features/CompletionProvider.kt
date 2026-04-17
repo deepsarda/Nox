@@ -27,20 +27,65 @@ object CompletionProvider {
         lspLine: Int,
         lspColumn: Int,
         registry: LibraryRegistry = LibraryRegistry.createDefault(),
+        uri: String = "",
     ): List<CompletionItem> {
         val raw = result.program
         val namespaces = namespacesInScope(raw, registry)
-        val dotCtx = dotContext(source, lspLine, lspColumn)
-
+        
         val items = mutableListOf<CompletionItem>()
+        
+        val lines = source.split('\n')
+        val line = lines.getOrNull(lspLine) ?: ""
+        val prefix = line.substring(0, lspColumn)
+        
+        // Import file completion
+        val importMatch = Regex("import\\s+\"([^\"]*)$" ).find(prefix)
+        if (importMatch != null) {
+            try {
+                if (uri.startsWith("file:")) {
+                    val file = java.io.File(java.net.URI(uri))
+                    val dir = file.parentFile
+                    if (dir != null && dir.isDirectory) {
+                        dir.listFiles { f -> f.name.endsWith(".nox") && f.name != file.name }?.forEach { f ->
+                            items += CompletionItem(f.name, kind = CompletionItemKind.File)
+                        }
+                    }
+                } else if (uri.isEmpty() && java.io.File(".").exists()) {
+                    java.io.File(".").listFiles { f -> f.name.endsWith(".nox") }?.forEach { f ->
+                        items += CompletionItem(f.name, kind = CompletionItemKind.File)
+                    }
+                }
+            } catch (e: Exception) {}
+            return items
+        }
 
-        if (dotCtx != null) {
+        val dotIdx = prefix.lastIndexOf('.')
+        val isDotContext = dotIdx != -1
+        val dotCtx = if (isDotContext) {
+            prefix.substring(0, dotIdx).takeLastWhile { it.isLetterOrDigit() || it == '_' }.ifEmpty { null }
+        } else null
+
+        if (isDotContext) {
             // Namespace completion
-            if (dotCtx in namespaces) {
-                return registry
+            if (dotCtx != null && dotCtx in namespaces) {
+                val nsItems = registry
                     .getNamespaceFunctions(dotCtx)
                     .entries
-                    .map { (name, target) -> functionItem(name, target, CompletionItemKind.Function) }
+                    .mapTo(mutableListOf()) { (name, target) -> functionItem(name, target, CompletionItemKind.Function) }
+                
+                val module = result.modules.find { it.namespace == dotCtx }
+                if (module != null) {
+                    module.program.functionsByName.values.forEach { func ->
+                        val callTarget = CallTarget(
+                            name = func.name,
+                            params = func.params.filterIsInstance<RawParamImpl>().map { nox.compiler.types.NoxParam(it.name, it.type) },
+                            returnType = func.returnType,
+                            astNode = func
+                        )
+                        nsItems += functionItem(func.name, callTarget, CompletionItemKind.Function)
+                    }
+                }
+                return nsItems
             }
 
             // Struct member completion
@@ -49,13 +94,13 @@ object CompletionProvider {
                 var targetType: nox.compiler.types.TypeRef? = null
                 
                 // First try to find the expression immediately before the dot (outermost mode)
-                val expr = ExprAtPosition.find(typedProgram, lspLine, Math.max(0, lspColumn - 1), outermost = true)
+                val expr = ExprAtPosition.find(typedProgram, lspLine, dotIdx, outermost = true)
                 if (expr != null) {
                     targetType = expr.type
                 }
                 
                 // Fallback to local variables
-                if (targetType == null) {
+                if (targetType == null && dotCtx != null) {
                     val locals = ScopeWalker.variablesAt(typedProgram, lspLine, lspColumn)
                     targetType = locals.find { it.name == dotCtx }?.type
                 }
@@ -127,17 +172,6 @@ object CompletionProvider {
         return items
     }
 
-    private fun dotContext(source: String, lspLine: Int, lspColumn: Int): String? {
-        val lines = source.split('\n')
-        val line = lines.getOrNull(lspLine) ?: return null
-        val prefix = line.substring(0, lspColumn)
-        val dot = prefix.lastIndexOf('.')
-        if (dot == -1) return null
-
-        val ident = prefix.substring(0, dot).takeLastWhile { it.isLetterOrDigit() || it == '_' }
-        return ident.ifEmpty { null }
-    }
-
     private fun simpleItem(label: String, kind: Int): CompletionItem = CompletionItem(label, kind = kind)
 
     private fun functionItem(label: String, target: CallTarget, kind: Int): CompletionItem = 
@@ -145,7 +179,8 @@ object CompletionProvider {
             label = label,
             kind = kind,
             detail = renderSignature(label, target),
-            insertText = "${'$'}label(${'$'}1)",
+            insertText = "$label(${'$'}1)",
+            insertTextFormat = 2,
         )
 
     private fun renderSignature(name: String, target: CallTarget): String {

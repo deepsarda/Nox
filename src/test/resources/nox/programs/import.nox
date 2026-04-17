@@ -1,0 +1,6 @@
+// @test:result "1"
+import "ufcs_call.nox" as demo;
+
+main() {
+    return demo.add(40, 2) - 41;
+}

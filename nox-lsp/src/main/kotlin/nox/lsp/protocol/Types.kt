@@ -311,7 +311,8 @@ data class CompletionItem(
     val detail: String? = null,
     val documentation: MarkupContent? = null,
     val textEdit: TextEdit? = null,
-    val insertText: String? = null
+    val insertText: String? = null,
+    val insertTextFormat: Int? = null
 )
 
 @Serializable

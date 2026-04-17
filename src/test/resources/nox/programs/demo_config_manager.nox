@@ -7,13 +7,13 @@ main() {
     } catch (err) {
         // Mocking File.read failure
     }
-    
+
     try {
         json conf = Json.parse(configStr);
         string envName = Env.get("USER");
-        
+
         File.write("dummy_out.json", "{\"updated\": true}");
-        
+
         return "ok";
     } catch (err) {
         return "ok";

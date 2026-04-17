@@ -23,7 +23,7 @@
 
 .func main
   ;
-  ; line 3  json data = { value: 42, str: "hello", arr: [1,2,3] };
+  ; line 3  json data = { value: 42, str: "hello", arr: [1, 2, 3] };
   0000:  NEW_OBJ     r1                                  ; data:r1 = {}
   0001:  LDI         p0, 42                              ; p0 = 42
   0002:  OBJ_SET     SET_INT, r1, "value", p0            ; data:r1.value = p0

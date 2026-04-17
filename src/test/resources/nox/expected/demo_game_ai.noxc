@@ -68,34 +68,34 @@
   0024:  SNE         p7, r1, r3                          ; p7 = end:r1 != r3
   0025:  JIF         p7, @0043                           ; if p7==0 -> @0043
   ;
-  ; line 18  yield start.next;
+  ; line 19  yield start.next;
   0026:  HACC        GET_OBJ, r3, r2, "next"             ; r3 = start:r2.next
   0027:  YIELD       REF, r3                             ; yield r3
   ;
-  ; line 19  yield start.next.score;
+  ; line 20  yield start.next.score;
   0028:  AGET_PATH   r7, r2, "next.score"                ; r7 = start:r2.next.score
   0029:  YIELD       INT, p7                             ; yield p7
   ;
-  ; line 20  if (start.next.score == 100) {
+  ; line 22  if (start.next.score == 100) {
   0030:  AGET_PATH   r2, r2, "next.score"                ; start:r2 = start:r2.next.score
   0031:  IEQ         p7, p2, #100                        ; p7 = dist:p2 == 100
   0032:  JIF         p7, @0038                           ; if p7==0 -> @0038
   ;
-  ; line 21  return "ok";
+  ; line 23  return "ok";
   0033:  LDC         r2, #6                              ; start:r2 = "ok"
   0034:  KILL_REF    r1                                  ; end:r1 = null (GC)
   0035:  KILL_REF    r3                                  ; r3 = null (GC)
   0036:  RET         REF, r2                             ; return start:r2
   0037:  JMP         @0042                               ; -> @0042
   ;
-  ; line 23  return "wrong_score";
+  ; line 25  return "wrong_score";
   0038:  LDC         r2, #7                              ; start:r2 = "wrong_score"
   0039:  KILL_REF    r1                                  ; end:r1 = null (GC)
   0040:  KILL_REF    r3                                  ; r3 = null (GC)
   0041:  RET         REF, r2                             ; return start:r2
   0042:  JMP         @0047                               ; -> @0047
   ;
-  ; line 26  return "no_next";
+  ; line 29  return "no_next";
   0043:  LDC         r2, #8                              ; start:r2 = "no_next"
   0044:  KILL_REF    r1                                  ; end:r1 = null (GC)
   0045:  KILL_REF    r3                                  ; r3 = null (GC)
@@ -103,7 +103,7 @@
   0047:  KILL_REF    r3                                  ; r3 = null (GC)
   0048:  JMP         @0049                               ; -> @0049
   ;
-  ; line 29  return "error";
+  ; line 33  return "error";
   0049:  LDC         r2, #9                              ; start:r2 = "error"
   0050:  KILL_REF    r1                                  ; end:r1 = null (GC)
   0051:  KILL_REF    r3                                  ; r3 = null (GC)

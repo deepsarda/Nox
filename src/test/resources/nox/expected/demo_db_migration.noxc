@@ -116,13 +116,13 @@
   .catch_all:
   0046:  JMP         @0047                               ; -> end
   ;
-  ; line 37  if (query == "CREATE TABLE users (id INT, name VARCHAR);") {
+  ; line 36  if (query == "CREATE TABLE users (id INT, name VARCHAR);") {
   .end:
   0047:  LDC         r4, #17                             ; err:r4 = "CREATE TABLE users (id INT, name VARCHAR);"
   0048:  SEQ         p1, r1, r4                          ; p1 = query:r1 == err:r4
   0049:  JIF         p1, @0059                           ; if p1==0 -> @0059
   ;
-  ; line 38  return "ok";
+  ; line 37  return "ok";
   0050:  LDC         r1, #18                             ; query:r1 = "ok"
   0051:  KILL_REF    r2                                  ; t:r2 = null (GC)
   0052:  KILL_REF    r3                                  ; c:r3 = null (GC)
@@ -133,7 +133,7 @@
   0057:  RET         REF, r1                             ; return query:r1
   0058:  JMP         @0059                               ; -> @0059
   ;
-  ; line 40  return "error";
+  ; line 39  return "error";
   0059:  LDC         r1, #19                             ; query:r1 = "error"
   0060:  KILL_REF    r2                                  ; t:r2 = null (GC)
   0061:  KILL_REF    r3                                  ; c:r3 = null (GC)

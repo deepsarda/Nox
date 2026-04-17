@@ -8,8 +8,6 @@ import nox.compiler.ast.typed.TypedProgram
 import nox.compiler.types.Symbol
 import nox.compiler.types.VarSymbol
 import nox.compiler.types.ParamSymbol
-import nox.compiler.types.GlobalSymbol
-import nox.compiler.types.FuncSymbol
 import nox.lsp.conversions.Positions
 import nox.lsp.protocol.*
 
@@ -72,7 +70,7 @@ object ReferencesProvider {
 
             override fun matchesUsage(expr: TypedExpr): Boolean = expr is TypedIdentifierExpr && expr.name == name && expr.resolvedSymbol == symbol
 
-            override fun findDeclaration(program: TypedProgram): nox.compiler.types.SourceLocation? = null 
+            override fun findDeclaration(program: TypedProgram): nox.compiler.types.SourceLocation? = null
         }
 
         data class ByField(

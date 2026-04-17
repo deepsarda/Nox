@@ -13,7 +13,7 @@ type Table {
 main() {
     json schema = Json.parse("{\"table\": \"users\", \"cols\": [{\"name\": \"id\", \"colType\": \"INT\"}, {\"name\": \"name\", \"colType\": \"VARCHAR\"}]}");
     Table t = schema as Table;
-    
+
     string query = "CREATE TABLE " + t.table + " (";
     yield t;
     int i = 0;
@@ -33,7 +33,6 @@ main() {
     } catch (err) {
         // mock success
     }
-
     if (query == "CREATE TABLE users (id INT, name VARCHAR);") {
         return "ok";
     }

@@ -1,63 +1,39 @@
 package nox.format
 
 import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.shouldBe
+import java.io.File
 
-// TODO: Make this actully good and run on actual files. For now, just a few hardcoded cases to catch the most egregious formatting issues.
-class FormatterSnapshotTest :
-    StringSpec({
-        "reformats ugly input into canonical style" {
-            val ugly =
-                """
-                main(  ){
-                int   x=1;
-                if(x==1){return;}else{x=x+1;}
-                }
-                """.trimIndent()
-            val expected =
-                """
-                main() {
-                    int x = 1;
-                    if (x == 1) {
-                        return;
-                    } else {
-                        x = x + 1;
+class FormatterSnapshotTest : StringSpec({
+    val targetDir = File("src/test/resources/nox").absoluteFile.let {
+        if (it.exists()) it else File("../src/test/resources/nox").absoluteFile
+    }
+
+    if (targetDir.exists()) {
+        targetDir.walkTopDown().filter { it.isFile && it.extension == "nox" }.forEach { file ->
+            "formats ${file.name} to its golden representation" {
+                val content = file.readText()
+                val formatted = Formatter.format(content)
+                if (content != formatted) {
+                    val cLines = content.split('\n')
+                    val fLines = formatted.split('\n')
+                    val diff = mutableListOf<String>()
+                    diff.add("--- a/${file.name}")
+                    diff.add("+++ b/${file.name}")
+                    for (i in 0 until maxOf(cLines.size, fLines.size)) {
+                        val c = cLines.getOrNull(i)
+                        val f = fLines.getOrNull(i)
+                        if (c != f) {
+                            if (c != null) diff.add("- " + c.replace("\r", ""))
+                            if (f != null) diff.add("+ " + f.replace("\r", ""))
+                        } else {
+                            if (c != null) diff.add("  " + c.replace("\r", ""))
+                        }
                     }
+                    val diffStr = diff.joinToString("\n")
+                    println(diffStr)
+                    throw AssertionError("Formatting mismatch for ${file.name}:\n$diffStr")
                 }
-                """.trimIndent() + "\n"
-            Formatter.format(ugly) shouldBe expected
+            }
         }
-
-        "preserves line comments" {
-            val source =
-                """
-                // top-of-file
-                main() {
-                    int x = 1; // trailing
-                    // standalone
-                    return;
-                }
-                """.trimIndent() + "\n"
-            val formatted = Formatter.format(source)
-            formatted.contains("// top-of-file") shouldBe true
-            formatted.contains("// trailing") shouldBe true
-            formatted.contains("// standalone") shouldBe true
-        }
-
-        "formats template literals verbatim" {
-            val source =
-                """
-                main() {
-                    string name = "world";
-                    yield `Hello, ${'$'}{name}!`;
-                }
-                """.trimIndent() + "\n"
-            val formatted = Formatter.format(source)
-            formatted.contains("`Hello, \${name}!`") shouldBe true
-        }
-
-        "leaves syntactically invalid input untouched" {
-            val broken = "main( {"
-            Formatter.format(broken) shouldBe broken
-        }
-    })
+    }
+})

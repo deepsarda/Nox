@@ -9,9 +9,10 @@ type Sensor {
 main() {
     int i = 0;
     while (i < 3) {
+
         json raw = Json.parse("{\"temp\": 45.5, \"battery\": 10}");
         Sensor s = raw as Sensor;
-        
+
         if (s.temp > 40.0) {
             if (s.battery < 20) {
                 if (i == 1) {
@@ -21,6 +22,6 @@ main() {
         }
         i = i + 1;
     }
-    
+
     return "ok";
 }

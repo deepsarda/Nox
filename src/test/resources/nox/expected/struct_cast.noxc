@@ -21,7 +21,7 @@
 
 .func main
   ;
-  ; line 7  json j = {x: 1, y: 2};
+  ; line 7  json j = { x: 1, y: 2 };
   0000:  NEW_OBJ     r1                                  ; j:r1 = {}
   0001:  LDI         p0, 1                               ; p0 = 1
   0002:  OBJ_SET     SET_INT, r1, "x", p0                ; j:r1.x = p0

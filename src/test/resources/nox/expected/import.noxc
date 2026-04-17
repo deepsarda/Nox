@@ -1,0 +1,59 @@
+;  Nox Bytecode Disassembly
+;  Source:   import.nox
+;  Program:  "(unnamed)"
+;  Modules:  2 (demo, main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "add"
+
+
+; Functions
+
+;  Function: add
+;    Entry PC:   0
+;    Params:     2
+;    Frame:      pMem=4  rMem=0
+
+.func add
+  ; params: p1=a  p2=b
+  ;
+  ; line 3
+  0000:  IADD        p3, p1, p2                          ; p3 = a:p1 + b:p2
+  0001:  RET         INT, p3                             ; return p3
+
+;  Function: main
+;    Entry PC:   2
+;    Params:     0
+;    Frame:      pMem=5  rMem=1
+
+.func main
+  ;
+  ; line 5  return demo.add(40, 2) - 41;
+  0002:  LDI         p3, 40                              ; p3 = 40
+  0003:  LDI         p4, 2                               ; p4 = 2
+  0004:  CALL        add, p2, r1                         ; p2 = call add(p3..., r1...)
+  0005:  MOV         p1, p2                              ; p1 = p2
+  0006:  ISUB        p0, p1, #41                         ; p0 = p1 - 41
+  0007:  RET         INT, p0                             ; return p0
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      2
+  init_blocks:  0
+  functions:    2
+  instructions: 8
+  constants:    1
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     64 bytes

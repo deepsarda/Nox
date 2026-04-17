@@ -72,7 +72,7 @@ class GoldenTest :
                 }
 
                 // 1. Snapshot Test (Compiler Disassembly)
-                val compileResult = NoxCompiler.compile(source, noxFile.fileName.toString(), noxFile.parent)
+                val compileResult = NoxCompiler.compile(source, noxFile.fileName.toString(), noxFile.toAbsolutePath())
 
                 val actualNoxc = compileResult.disassembly
 
@@ -103,7 +103,7 @@ class GoldenTest :
                         .builder()
                         .setPermissionHandler { nox.runtime.PermissionResponse.Granted.Unconstrained }
                         .build()
-                val result = runtime.execute(source, noxFile.fileName.toString(), args)
+                val result = runtime.execute(source, noxFile.fileName.toString(), args, basePath = noxFile.toAbsolutePath())
 
                 when (result) {
                     is NoxResult.Success -> {

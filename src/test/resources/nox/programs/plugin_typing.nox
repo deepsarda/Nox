@@ -9,13 +9,13 @@ main() {
     int len = nums.length();
 
     // 2. JSON array methods
-    json data = {ints: [10, 20], strings: ["a", "b"]};
+    json data = { ints: [10, 20], strings: ["a", "b"] };
     int[] ja = data.getIntArray("ints", []);
     string[] sa = data.getStringArray("strings", []);
-    
+
     // 3. Recursive JSON
-    json[] nested = [{x: 1}];
-    json item = {y: 2};
+    json[] nested = [{ x: 1 }];
+    json item = { y: 2 };
     nested.push(item);
     int nested_len = nested.length();
 

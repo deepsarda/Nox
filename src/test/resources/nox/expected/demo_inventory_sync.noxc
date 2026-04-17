@@ -46,13 +46,13 @@
   ; line 13  Item[] remoteItems = remoteData as Item[];
   0007:  CAST_STRUCT r4, r2, #3                          ; remoteItems:r4 = remoteData:r2 as Item[]
   ;
-  ; line 14  yield localItems;
+  ; line 15  yield localItems;
   0008:  YIELD       REF, r3                             ; yield localItems:r3
   ;
-  ; line 15  yield remoteItems;
+  ; line 16  yield remoteItems;
   0009:  YIELD       REF, r4                             ; yield remoteItems:r4
   ;
-  ; line 16  foreach (Item loc in localItems) {
+  ; line 18  foreach (Item loc in localItems) {
   0010:  MOVR        r2, r3                              ; remoteData:r2 = localItems:r3
   0011:  LDI         p0, 0                               ; p0 = 0
   0012:  MOVR        r6, r2                              ; r6 = remoteData:r2
@@ -63,7 +63,7 @@
   0016:  JIF         p2, @0044                           ; if p2==0 -> loop_exit_1
   0017:  AGET_IDX    r5, r2, p0                          ; loc:r5 = remoteData:r2[p0]
   ;
-  ; line 17  foreach (Item rem in remoteItems) {
+  ; line 19  foreach (Item rem in remoteItems) {
   0018:  MOVR        r6, r4                              ; r6 = remoteItems:r4
   0019:  LDI         p3, 0                               ; p3 = 0
   0020:  MOVR        r8, r6                              ; r8 = r6
@@ -74,13 +74,13 @@
   0024:  JIF         p5, @0039                           ; if p5==0 -> loop_exit_2
   0025:  AGET_IDX    r7, r6, p3                          ; rem:r7 = r6[p3]
   ;
-  ; line 18  if (loc.sku == rem.sku) {
+  ; line 20  if (loc.sku == rem.sku) {
   0026:  HACC        GET_STR, r8, r5, "sku"              ; r8 = loc:r5.sku
   0027:  HACC        GET_STR, r9, r7, "sku"              ; r9 = rem:r7.sku
   0028:  SEQ         p6, r8, r9                          ; p6 = r8 == r9
   0029:  JIF         p6, @0036                           ; if p6==0 -> @0036
   ;
-  ; line 19  loc.qty += rem.qty;
+  ; line 21  loc.qty += rem.qty;
   0030:  MOVR        r9, r5                              ; r9 = loc:r5
   0031:  HACC        IMM, r6, r9, "qty"                  ; r6 = r9.qty
   0032:  HACC        IMM, r7, r7, "qty"                  ; rem:r7 = rem:r7.qty
@@ -89,7 +89,7 @@
   0035:  JMP         @0036                               ; -> @0036
   0036:  KILL_REF    r9                                  ; r9 = null (GC)
   ;
-  ; line 17  foreach (Item rem in remoteItems) {
+  ; line 19  foreach (Item rem in remoteItems) {
   .loop_update_2:
   0037:  IINC        p3                                  ; p3 = p3 + 1
   0038:  JMP         @0023                               ; -> loop_start_2
@@ -98,12 +98,12 @@
   0040:  KILL_REF    r8                                  ; r8 = null (GC)
   0041:  KILL_REF    r9                                  ; r9 = null (GC)
   ;
-  ; line 16  foreach (Item loc in localItems) {
+  ; line 18  foreach (Item loc in localItems) {
   .loop_update_1:
   0042:  IINC        p0                                  ; p0 = p0 + 1
   0043:  JMP         @0015                               ; -> loop_start_1
   ;
-  ; line 24  if (localItems[0].qty == 15) {
+  ; line 26  if (localItems[0].qty == 15) {
   .loop_exit_1:
   0044:  LDI         p2, 0                               ; p2 = 0
   0045:  AGET_IDX    r2, r3, p2                          ; remoteData:r2 = localItems:r3[p2]
@@ -111,20 +111,20 @@
   0047:  IEQ         p0, p1, #15                         ; p0 = p1 == 15
   0048:  JIF         p0, @0074                           ; if p0==0 -> @0074
   ;
-  ; line 25  string res = Json.stringify(localData);
+  ; line 27  string res = Json.stringify(localData);
   0049:  MOVR        r11, r1                             ; r11 = localData:r1
   0050:  LDI         p9, 1                               ; p9 = 1
   0051:  SCALL       Json__stringify, p9, r10            ; r10 = scall Json__stringify(p9..., r11...)
   0052:  MOVR        r2, r10                             ; res:r2 = r10
   ;
-  ; line 26  if (res.contains("15")) {
+  ; line 28  if (res.contains("15")) {
   0053:  MOVR        r10, r2                             ; r10 = res:r2
   0054:  LDC         r11, #8                             ; r11 = "15"
   0055:  SCALL       __string_contains, p9, r10          ; p9 = scall __string_contains(p10..., r10...)
   0056:  MOV         p0, p9                              ; p0 = p9
   0057:  JIF         p0, @0071                           ; if p0==0 -> @0071
   ;
-  ; line 27  return "ok";
+  ; line 29  return "ok";
   0058:  LDC         r2, #10                             ; res:r2 = "ok"
   0059:  KILL_REF    r1                                  ; localData:r1 = null (GC)
   0060:  KILL_REF    r3                                  ; localItems:r3 = null (GC)
@@ -142,7 +142,7 @@
   0072:  KILL_REF    r11                                 ; r11 = null (GC)
   0073:  JMP         @0074                               ; -> @0074
   ;
-  ; line 30  return "error";
+  ; line 33  return "error";
   0074:  LDC         r2, #11                             ; res:r2 = "error"
   0075:  KILL_REF    r1                                  ; localData:r1 = null (GC)
   0076:  KILL_REF    r3                                  ; localItems:r3 = null (GC)

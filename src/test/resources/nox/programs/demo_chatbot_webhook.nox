@@ -13,7 +13,6 @@ type Webhook {
 main() {
     json payload = Json.parse("{\"user\": \"U1\", \"message\": {\"id\": \"M1\", \"text\": \"hello\"}}");
     Webhook hook = payload as Webhook;
-    
     if (hook.message.text == "hello") {
         string resp = "Hello " + hook.user + ", your id is " + hook.message.id;
         if (resp == "Hello U1, your id is M1") {

@@ -142,6 +142,7 @@ class NoxTextDocumentService(
             doc.text,
             params.position.line,
             params.position.character,
+            uri = doc.uri,
         )
         return CompletionList(isIncomplete = false, items = items)
     }

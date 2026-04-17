@@ -15,16 +15,20 @@ main() {
 
     if (dist == 13.0) {
         if (start.next != null) {
+
             yield start.next;
             yield start.next.score;
+
             if (start.next.score == 100) {
                 return "ok";
             } else {
                 return "wrong_score";
             }
+
         } else {
             return "no_next";
         }
+
     }
     return "error";
 }

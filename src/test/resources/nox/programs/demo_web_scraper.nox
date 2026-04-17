@@ -2,6 +2,7 @@
 
 main() {
     string html = "<html><body>Some Data</body></html>";
+
     try {
         // mock Http.get
         string url = "http://dummy";
@@ -11,7 +12,7 @@ main() {
     } catch (err) {
         // proceed
     }
-    
+
     string[] parts = html.split("<body>");
     if (parts.length() > 1) {
         string body = parts[1];
@@ -23,6 +24,6 @@ main() {
             }
         }
     }
-    
+
     return "error";
 }

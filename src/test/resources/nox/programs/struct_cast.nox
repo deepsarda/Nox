@@ -4,7 +4,7 @@ type Point {
     int y;
 }
 main() {
-    json j = {x: 1, y: 2};
+    json j = { x: 1, y: 2 };
     Point p = j as Point;
     return p.x;
 }

@@ -25,11 +25,12 @@ class NoxRuntime private constructor(
         fileName: String = "script.nox",
         args: Map<String, Any?> = emptyMap(),
         argProvider: (suspend (String, nox.compiler.types.TypeRef) -> Any?)? = null,
+        basePath: java.nio.file.Path? = null,
     ): NoxResult {
         if (source.isBlank()) {
             return NoxResult.Error(NoxError.CompilationError, "Empty source", emptyList())
         }
-        val result = NoxCompiler.compile(source, fileName, registry = registry)
+        val result = NoxCompiler.compile(source, fileName, basePath = basePath, registry = registry)
         if (result.errors.hasErrors()) {
             return NoxResult.Error(NoxError.CompilationError, result.errors.formatAll(), emptyList())
         }

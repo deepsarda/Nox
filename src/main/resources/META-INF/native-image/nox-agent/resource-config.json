@@ -31,10 +31,6 @@
   }, {
     "pattern":"\\Qio/kotest/assertions/ErrorCollector.class\\E"
   }, {
-    "pattern":"\\Qio/kotest/assertions/eq/DataClassDifference.class\\E"
-  }, {
-    "pattern":"\\Qio/kotest/assertions/eq/PropertyDifference.class\\E"
-  }, {
     "pattern":"\\Qio/kotest/core/annotation/DisplayName.class\\E"
   }, {
     "pattern":"\\Qio/kotest/core/config/AbstractProjectConfig.class\\E"
@@ -76,8 +72,6 @@
     "pattern":"\\Qio/kotest/engine/test/interceptors/BlockedThreadTestTimeoutException.class\\E"
   }, {
     "pattern":"\\Qio/kotest/engine/test/interceptors/TestTimeoutException.class\\E"
-  }, {
-    "pattern":"\\Qio/kotest/matchers/collections/CollectionMatchersKt$matchInOrder$1$MatchInOrderSubsetResult.class\\E"
   }, {
     "pattern":"\\Qjava/io/BufferedReader.class\\E"
   }, {
@@ -303,13 +297,9 @@
   }, {
     "pattern":"\\Qkotlin/coroutines/CoroutineContext.class\\E"
   }, {
-    "pattern":"\\Qkotlin/coroutines/coroutines.kotlin_builtins\\E"
-  }, {
     "pattern":"\\Qkotlin/coroutines/jvm/internal/BaseContinuationImpl.class\\E"
   }, {
     "pattern":"\\Qkotlin/coroutines/jvm/internal/ContinuationImpl.class\\E"
-  }, {
-    "pattern":"\\Qkotlin/coroutines/jvm/internal/internal.kotlin_builtins\\E"
   }, {
     "pattern":"\\Qkotlin/jvm/functions/Function0.class\\E"
   }, {
@@ -326,8 +316,6 @@
     "pattern":"\\Qkotlin/jvm/internal/KotlinGenericDeclaration.class\\E"
   }, {
     "pattern":"\\Qkotlin/jvm/internal/PropertyReference.class\\E"
-  }, {
-    "pattern":"\\Qkotlin/jvm/internal/internal.kotlin_builtins\\E"
   }, {
     "pattern":"\\Qkotlin/jvm/jvm.kotlin_builtins\\E"
   }, {
@@ -354,8 +342,6 @@
     "pattern":"\\Qkotlin/reflect/KTypeParameter.class\\E"
   }, {
     "pattern":"\\Qkotlin/reflect/KTypeProjection.class\\E"
-  }, {
-    "pattern":"\\Qkotlin/reflect/KVariance.class\\E"
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/EmptyContainerForLocal.class\\E"
   }, {
@@ -709,8 +695,6 @@
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/types/model/TypeParameterMarker.class\\E"
   }, {
-    "pattern":"\\Qkotlin/reflect/jvm/internal/impl/types/model/TypeVariance.class\\E"
-  }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/util/AbstractArrayMapOwner.class\\E"
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/impl/util/AttributeArrayOwner.class\\E"
@@ -722,8 +706,6 @@
     "pattern":"\\Qkotlin/reflect/jvm/internal/types/AbstractKType.class\\E"
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/types/CapturedKType.class\\E"
-  }, {
-    "pattern":"\\Qkotlin/reflect/jvm/internal/types/DescriptorKType.class\\E"
   }, {
     "pattern":"\\Qkotlin/reflect/jvm/internal/types/KTypeSubstitutor.class\\E"
   }, {

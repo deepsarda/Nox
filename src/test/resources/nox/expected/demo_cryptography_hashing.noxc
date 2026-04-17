@@ -79,7 +79,7 @@
   0030:  RET         REF, r2                             ; return r2
   0031:  JMP         @0032                               ; -> @0032
   ;
-  ; line 17  return "error";
+  ; line 18  return "error";
   0032:  LDC         r2, #7                              ; r2 = "error"
   0033:  KILL_REF    r1                                  ; c:r1 = null (GC)
   0034:  KILL_REF    r3                                  ; r3 = null (GC)

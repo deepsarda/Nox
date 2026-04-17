@@ -51,22 +51,29 @@ internal class CstWalker(
         tok: Token,
         prev: Token?,
     ) {
-        val hidden = tokens.getHiddenTokensToLeft(tok.tokenIndex) ?: return
-        if (hidden.isEmpty()) return
+        val hidden = tokens.getHiddenTokensToLeft(tok.tokenIndex)
 
-        // Count blank lines between prev visible token and this one in the original source.
-        // Used to preserve at most one blank line between logical groups.
-        val originalBlankLines =
-            if (prev == null) 0 else blankLinesBetween(prev, tok)
+        if (hidden.isNullOrEmpty()) {
+            if (prev != null) {
+                val blanks = blankLinesBetween(prev, tok)
+                if (blanks > 0 && out.isNotEmpty()) {
+                    if (!atLineStart) newline()
+                    out.append('\n')
+                    atLineStart = true
+                }
+            }
+            return
+        }
 
-        var emittedBlank = false
+        var lastTok: Token? = prev
         for (h in hidden) {
             when (h.type) {
                 NoxLexer.LINE_COMMENT, NoxLexer.BLOCK_COMMENT -> {
+                    val blanksBefore = if (lastTok == null) 0 else blankLinesBetween(lastTok, h)
                     if (atLineStart) {
-                        if (!emittedBlank && originalBlankLines > 0 && out.isNotEmpty()) {
+                        if (blanksBefore > 0 && out.isNotEmpty()) {
                             out.append('\n')
-                            emittedBlank = true
+                            atLineStart = true
                         }
                         writeIndent()
                         out.append(h.text.trim())
@@ -77,6 +84,7 @@ internal class CstWalker(
                         out.append(h.text.trim())
                         if (h.type == NoxLexer.LINE_COMMENT) newline()
                     }
+                    lastTok = h
                 }
                 NoxLexer.WS -> {
                     // absorbed since spacing is our responsibility
@@ -84,8 +92,11 @@ internal class CstWalker(
             }
         }
 
-        if (atLineStart && originalBlankLines > 0 && !emittedBlank && out.isNotEmpty()) {
+        val blanksAfter = if (lastTok == null) 0 else blankLinesBetween(lastTok, tok)
+        if (blanksAfter > 0 && out.isNotEmpty()) {
+            if (!atLineStart) newline()
             out.append('\n')
+            atLineStart = true
         }
     }
 
@@ -120,7 +131,6 @@ internal class CstWalker(
         a: Token,
         b: Token,
     ): Int {
-        // Count newline characters in the trivia between tokens; blank line = 2+ newlines.
         val start = a.stopIndex + 1
         val end = b.startIndex
         if (start >= end) return 0
@@ -129,8 +139,41 @@ internal class CstWalker(
                 org.antlr.v4.runtime.misc
                     .Interval(start, end - 1),
             )
-        val nl = input.count { it == '\n' }
-        return (nl - 1).coerceAtLeast(0)
+        var blankLines = 0
+        var inNewline = false
+        for (c in input) {
+            if (c == '\n') {
+                if (inNewline) blankLines++
+                inNewline = true
+            } else if (c != ' ' && c != '\t' && c != '\r') {
+                inNewline = false
+            }
+        }
+        return blankLines
+    }
+
+    private fun hasNewlineBetween(
+        a: Token,
+        b: Token,
+    ): Boolean {
+        val start = a.stopIndex + 1
+        val end = b.startIndex
+        if (start >= end) return false
+        val input =
+            a.inputStream.getText(
+                org.antlr.v4.runtime.misc
+                    .Interval(start, end - 1),
+            )
+        return input.contains('\n')
+    }
+
+    private fun hasTrailingComment(tok: Token): Boolean {
+        val hidden = tokens.getHiddenTokensToRight(tok.tokenIndex) ?: return false
+        for (h in hidden) {
+            if (h.type == NoxLexer.WS && h.text.contains('\n')) return false
+            if (h.type == NoxLexer.LINE_COMMENT || h.type == NoxLexer.BLOCK_COMMENT) return true
+        }
+        return false
     }
 
     private fun emitToken(
@@ -154,7 +197,7 @@ internal class CstWalker(
                 spaceBefore(tok, prev)
                 out.append('{')
                 indent++
-                newline()
+                if (next != null && hasNewlineBetween(tok, next) && !hasTrailingComment(tok)) newline()
             }
             NoxLexer.RBRACE -> {
                 if (inTemplate > 0) {
@@ -163,25 +206,28 @@ internal class CstWalker(
                     atLineStart = false
                 } else {
                     indent = (indent - 1).coerceAtLeast(0)
-                    if (!atLineStart) newline()
+                    if (prev != null && hasNewlineBetween(prev, tok) && !atLineStart) {
+                        newline()
+                    } else if (prev?.type != NoxLexer.LBRACE) {
+                        if (!atLineStart && out.isNotEmpty() && !out.endsWith(" ")) {
+                            out.append(' ')
+                        }
+                    }
                     writeIndent()
                     out.append('}')
                     atLineStart = false
+                    if (next != null && hasNewlineBetween(tok, next) && !hasTrailingComment(tok)) newline()
                 }
             }
             NoxLexer.SEMI -> {
                 out.append(';')
                 atLineStart = false
                 // Don't newline in for-header
-                if (!inForHeader()) newline()
+                if (!inForHeader() && next != null && hasNewlineBetween(tok, next) && !hasTrailingComment(tok)) newline()
             }
             NoxLexer.COMMA -> {
                 out.append(',')
                 atLineStart = false
-                // Single space after comma; no newline in v1 (no auto-wrap)
-                if (next != null && next.type != NoxLexer.RPAREN && next.type != NoxLexer.RBRACK) {
-                    out.append(' ')
-                }
             }
             NoxLexer.LPAREN -> {
                 spaceBefore(tok, prev)
@@ -201,6 +247,7 @@ internal class CstWalker(
                 atLineStart = false
             }
             NoxLexer.LBRACK -> {
+                spaceBefore(tok, prev)
                 out.append('[')
                 atLineStart = false
             }
@@ -220,8 +267,6 @@ internal class CstWalker(
             NoxLexer.COLON -> {
                 out.append(':')
                 atLineStart = false
-                // space after colon in struct literals
-                if (next != null) out.append(' ')
             }
             NoxLexer.BACKTICK -> {
                 spaceBefore(tok, prev)
@@ -335,6 +380,21 @@ internal class CstWalker(
         out.append(tok.text)
     }
 
+    private fun hasSpaceBetween(
+        a: Token,
+        b: Token,
+    ): Boolean {
+        val start = a.stopIndex + 1
+        val end = b.startIndex
+        if (start >= end) return false
+        val input =
+            a.inputStream.getText(
+                org.antlr.v4.runtime.misc
+                    .Interval(start, end - 1),
+            )
+        return input.contains(' ') || input.contains('\t') || input.contains('\n')
+    }
+
     private fun spaceBefore(
         tok: Token,
         prev: Token?,
@@ -344,7 +404,12 @@ internal class CstWalker(
             return
         }
         if (prev == null) return
-        if (needsSpace(prev, tok)) out.append(' ')
+        if (needsSpace(prev, tok)) {
+            if (prev.type == NoxLexer.RPAREN && tok.type == NoxLexer.LBRACE) {
+                if (!hasSpaceBetween(prev, tok)) return
+            }
+            out.append(' ')
+        }
     }
 
     private fun needsSpace(
@@ -384,6 +449,7 @@ internal class CstWalker(
                 NoxLexer.TILDE,
                 NoxLexer.TEMPLATE_EXPR_OPEN,
                 NoxLexer.BACKTICK,
+                NoxLexer.ELLIPSIS,
             )
         private val NO_SPACE_BEFORE =
             setOf(
@@ -404,6 +470,11 @@ internal class CstWalker(
                 NoxLexer.RPAREN,
                 NoxLexer.RBRACK,
                 NoxLexer.MAIN, // main( ... )
+                NoxLexer.INT,
+                NoxLexer.DOUBLE,
+                NoxLexer.BOOLEAN,
+                NoxLexer.STRING,
+                NoxLexer.JSON,
             )
     }
 }

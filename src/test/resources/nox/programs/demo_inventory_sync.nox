@@ -11,8 +11,10 @@ main() {
 
     Item[] localItems = localData as Item[];
     Item[] remoteItems = remoteData as Item[];
+
     yield localItems;
     yield remoteItems;
+
     foreach (Item loc in localItems) {
         foreach (Item rem in remoteItems) {
             if (loc.sku == rem.sku) {
@@ -27,5 +29,6 @@ main() {
             return "ok";
         }
     }
+
     return "error";
 }
