@@ -94,7 +94,7 @@ class ResourceGuardTest :
             result.shouldBeInstanceOf<NoxResult.Error>()
             // The error should bubble up as an unhandled exception, caught by the execute() method.
             // NoxRuntime handles it and wraps it into NoxResult.Error
-            (result as NoxResult.Error).type shouldBe NoxError.QuotaExceededError
+            result.type shouldBe NoxError.QuotaExceededError
         }
 
         test("explicit catch of QuotaExceededError works") {
@@ -204,7 +204,7 @@ class ResourceGuardTest :
 
             val result = runtime.execute(source)
             result.shouldBeInstanceOf<NoxResult.Error>()
-            (result as NoxResult.Error).type shouldBe NoxError.StackOverflowError
+            result.type shouldBe NoxError.StackOverflowError
         }
 
         test("explicit catch of StackOverflowError works") {
@@ -286,7 +286,7 @@ class ResourceGuardTest :
 
             val result = runtime.execute(source)
             result.shouldBeInstanceOf<NoxResult.Error>()
-            (result as NoxResult.Error).type shouldBe NoxError.TimeoutError
+            result.type shouldBe NoxError.TimeoutError
         }
 
         test("explicit catch of TimeoutError works") {

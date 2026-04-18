@@ -60,23 +60,7 @@ class StatementResolver(
                 suggestion = "Use a concrete type: int, double, boolean, string, json, or a struct type",
             )
         }
-        val init = stmt.initializer
-        val typedInit =
-            if (init != null) {
-                exprResolver.resolveExpr(scope, init, stmt.type)
-            } else {
-                // Uninitialized variables get a default value based on their type
-                // Actually, in Nox it's handled by Codegen, but we can emit a null literal or 0
-                if (stmt.type.isPrimitive() && stmt.type == TypeRef.INT) {
-                    TypedIntLiteralExpr(0, stmt.loc, stmt.type)
-                } else if (stmt.type.isPrimitive() && stmt.type == TypeRef.DOUBLE) {
-                    TypedDoubleLiteralExpr(0.0, stmt.loc, stmt.type)
-                } else if (stmt.type.isPrimitive() && stmt.type == TypeRef.BOOLEAN) {
-                    TypedBoolLiteralExpr(false, stmt.loc, stmt.type)
-                } else {
-                    TypedNullLiteralExpr(stmt.loc, stmt.type)
-                }
-            }
+        val typedInit = exprResolver.resolveExpr(scope, stmt.initializer, stmt.type)
 
         if (!stmt.type.isAssignableFrom(typedInit.type)) {
             val note =
@@ -127,7 +111,6 @@ class StatementResolver(
                     AssignOp.MUL_ASSIGN -> BinaryOp.MUL
                     AssignOp.DIV_ASSIGN -> BinaryOp.DIV
                     AssignOp.MOD_ASSIGN -> BinaryOp.MOD
-                    else -> BinaryOp.ADD
                 }
             // check operators compatibility. exprResolver checks it internally if we resolve a binary expr.
             // But we already have the typedTarget and typedValue.
@@ -228,7 +211,7 @@ class StatementResolver(
         val cond = stmt.condition?.let { exprResolver.resolveExpr(forScope, it) }
         if (cond != null && cond.type != TypeRef.BOOLEAN) {
             errors.report(
-                stmt.condition!!.loc,
+                cond.loc,
                 "Condition type mismatch: for condition must be 'boolean', got '${cond.type}'",
             )
         }

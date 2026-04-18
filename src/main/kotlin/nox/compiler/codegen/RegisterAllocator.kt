@@ -153,7 +153,6 @@ class RegisterAllocator(
         when (sym) {
             is VarSymbol -> sym.register = -1
             is ParamSymbol -> sym.register = -1
-            else -> {}
         }
     }
 

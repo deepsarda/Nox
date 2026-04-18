@@ -483,11 +483,11 @@ class LibraryRegistry {
         /** Map a Kotlin/Java type to the corresponding Nox [TypeRef]. */
         fun kotlinTypeToTypeRef(javaType: Class<*>): TypeRef =
             when {
-                javaType == Long::class.java || javaType == java.lang.Long::class.java -> TypeRef.INT
-                javaType == Int::class.java || javaType == java.lang.Integer::class.java -> TypeRef.INT
-                javaType == Double::class.java || javaType == java.lang.Double::class.java -> TypeRef.DOUBLE
-                javaType == Float::class.java || javaType == java.lang.Float::class.java -> TypeRef.DOUBLE
-                javaType == Boolean::class.java || javaType == java.lang.Boolean::class.java -> TypeRef.BOOLEAN
+                javaType == Long::class.java || javaType == Long::class.javaObjectType -> TypeRef.INT
+                javaType == Int::class.java || javaType == Int::class.javaObjectType -> TypeRef.INT
+                javaType == Double::class.java || javaType == Double::class.javaObjectType -> TypeRef.DOUBLE
+                javaType == Float::class.java || javaType == Float::class.javaObjectType -> TypeRef.DOUBLE
+                javaType == Boolean::class.java || javaType == Boolean::class.javaObjectType -> TypeRef.BOOLEAN
                 javaType == String::class.java -> TypeRef.STRING
                 javaType == Void.TYPE || javaType == Unit::class.java -> TypeRef.VOID
                 javaType == List::class.java || javaType.isArray -> TypeRef("string", 1) // default array

@@ -41,7 +41,7 @@
   0011:  KILL_REF    r1                                  ; leaf:r1 = null (GC)
   0012:  OBJ_SET     SET_OBJ, r2, "right", r1            ; root:r2.right = leaf:r1
   ;
-  ; line 10  return root.left.value;
+  ; line 11  return root.left.value;
   0013:  AGET_PATH   r1, r2, "left.value"                ; leaf:r1 = root:r2.left.value
   0014:  KILL_REF    r2                                  ; root:r2 = null (GC)
   0015:  KILL_REF    r3                                  ; r3 = null (GC)

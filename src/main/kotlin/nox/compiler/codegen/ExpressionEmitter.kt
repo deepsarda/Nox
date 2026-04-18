@@ -616,12 +616,6 @@ class ExpressionEmitter(
             TypedMethodCallExpr.Resolution.NAMESPACE -> emitNamespaceCall(expr, dest, line)
             TypedMethodCallExpr.Resolution.TYPE_BOUND -> emitTypeBoundCall(expr, dest, line)
             TypedMethodCallExpr.Resolution.UFCS -> emitUfcsCall(expr, dest, line)
-            null -> {
-                ctx.errors.report(
-                    expr.loc,
-                    "Unresolved method call: ${expr.methodName}",
-                )
-            }
         }
     }
 
@@ -654,7 +648,7 @@ class ExpressionEmitter(
         dest: Int,
         line: Int,
     ) {
-        val target = expr.resolvedTarget ?: return
+        val target = expr.resolvedTarget
         val isImport = ctx.modules.any { m -> m.program.functionsByName.containsKey(target.name) }
         emitCallCommon(expr, dest, line, prependTarget = false) { t ->
             if (isImport || t.astNode != null) Opcode.CALL else Opcode.SCALL
@@ -686,7 +680,7 @@ class ExpressionEmitter(
         prependTarget: Boolean,
         resolveOpcode: (CallTarget) -> Int,
     ) {
-        val target = expr.resolvedTarget ?: return
+        val target = expr.resolvedTarget
 
         val retType = expr.type
         val isVoid = retType == TypeRef.VOID

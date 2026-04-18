@@ -178,13 +178,13 @@ object Linker {
                 mappedType?.name == "int" -> raw.toInt()
                 mappedType?.name == "double" -> java.lang.Double.longBitsToDouble(raw)
                 mappedType?.name == "boolean" -> raw != 0L
-                kotlinType == Long::class.java || kotlinType == java.lang.Long::class.java -> raw
-                kotlinType == Int::class.java || kotlinType == java.lang.Integer::class.java -> raw.toInt()
-                kotlinType == Double::class.java || kotlinType == java.lang.Double::class.java ->
+                kotlinType == Long::class.java || kotlinType == Long::class.javaObjectType -> raw
+                kotlinType == Int::class.java || kotlinType == Int::class.javaObjectType -> raw.toInt()
+                kotlinType == Double::class.java || kotlinType == Double::class.javaObjectType ->
                     java.lang.Double.longBitsToDouble(raw)
-                kotlinType == Float::class.java || kotlinType == java.lang.Float::class.java ->
+                kotlinType == Float::class.java || kotlinType == Float::class.javaObjectType ->
                     java.lang.Float.intBitsToFloat(raw.toInt())
-                kotlinType == Boolean::class.java || kotlinType == java.lang.Boolean::class.java ->
+                kotlinType == Boolean::class.java || kotlinType == Boolean::class.javaObjectType ->
                     raw != 0L
                 else -> throw IllegalStateException(
                     "Cannot extract primitive type: $kotlinType for mapped type $mappedType",
@@ -229,15 +229,15 @@ object Linker {
                 val bank =
                     when {
                         javaType == Long::class.java ||
-                            javaType == java.lang.Long::class.java -> RegisterBank.PRIMITIVE
+                            javaType == Long::class.javaObjectType -> RegisterBank.PRIMITIVE
                         javaType == Int::class.java ||
-                            javaType == java.lang.Integer::class.java -> RegisterBank.PRIMITIVE
+                            javaType == Int::class.javaObjectType -> RegisterBank.PRIMITIVE
                         javaType == Double::class.java ||
-                            javaType == java.lang.Double::class.java -> RegisterBank.PRIMITIVE
+                            javaType == Double::class.javaObjectType -> RegisterBank.PRIMITIVE
                         javaType == Float::class.java ||
-                            javaType == java.lang.Float::class.java -> RegisterBank.PRIMITIVE
+                            javaType == Float::class.javaObjectType -> RegisterBank.PRIMITIVE
                         javaType == Boolean::class.java ||
-                            javaType == java.lang.Boolean::class.java -> RegisterBank.PRIMITIVE
+                            javaType == Boolean::class.javaObjectType -> RegisterBank.PRIMITIVE
                         javaType == String::class.java -> RegisterBank.REFERENCE
                         else -> RegisterBank.REFERENCE // json, structs, arrays
                     }
@@ -264,17 +264,17 @@ object Linker {
                 mappedType?.name == "int" -> (value as Number).toLong()
                 mappedType?.name == "double" -> java.lang.Double.doubleToRawLongBits((value as Number).toDouble())
                 mappedType?.name == "boolean" -> if (value as Boolean) 1L else 0L
-                kotlinType == Long::class.java || kotlinType == java.lang.Long::class.java -> (value as Number).toLong()
-                kotlinType == Int::class.java || kotlinType == java.lang.Integer::class.java ->
+                kotlinType == Long::class.java || kotlinType == Long::class.javaObjectType -> (value as Number).toLong()
+                kotlinType == Int::class.java || kotlinType == Int::class.javaObjectType ->
                     (value as Number)
                         .toLong()
-                kotlinType == Double::class.java || kotlinType == java.lang.Double::class.java ->
+                kotlinType == Double::class.java || kotlinType == Double::class.javaObjectType ->
                     java.lang.Double.doubleToRawLongBits((value as Number).toDouble())
-                kotlinType == Float::class.java || kotlinType == java.lang.Float::class.java ->
+                kotlinType == Float::class.java || kotlinType == Float::class.javaObjectType ->
                     java.lang.Float
                         .floatToRawIntBits((value as Number).toFloat())
                         .toLong()
-                kotlinType == Boolean::class.java || kotlinType == java.lang.Boolean::class.java ->
+                kotlinType == Boolean::class.java || kotlinType == Boolean::class.javaObjectType ->
                     if (value as Boolean) 1L else 0L
                 else -> throw IllegalStateException(
                     "Cannot pack primitive type: $kotlinType for mapped type $mappedType",
@@ -316,15 +316,15 @@ object Linker {
                         returnType == Void.TYPE ||
                             returnType == Unit::class.java -> null
                         returnType == Long::class.java ||
-                            returnType == java.lang.Long::class.java -> RegisterBank.PRIMITIVE
+                            returnType == Long::class.javaObjectType -> RegisterBank.PRIMITIVE
                         returnType == Int::class.java ||
-                            returnType == java.lang.Integer::class.java -> RegisterBank.PRIMITIVE
+                            returnType == Int::class.javaObjectType -> RegisterBank.PRIMITIVE
                         returnType == Double::class.java ||
-                            returnType == java.lang.Double::class.java -> RegisterBank.PRIMITIVE
+                            returnType == Double::class.javaObjectType -> RegisterBank.PRIMITIVE
                         returnType == Float::class.java ||
-                            returnType == java.lang.Float::class.java -> RegisterBank.PRIMITIVE
+                            returnType == Float::class.javaObjectType -> RegisterBank.PRIMITIVE
                         returnType == Boolean::class.java ||
-                            returnType == java.lang.Boolean::class.java -> RegisterBank.PRIMITIVE
+                            returnType == Boolean::class.javaObjectType -> RegisterBank.PRIMITIVE
                         else -> RegisterBank.REFERENCE
                     }
 

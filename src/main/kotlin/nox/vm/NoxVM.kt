@@ -187,7 +187,7 @@ class NoxVM(
                     .NoxJsonWriter(prettyPrint = false)
                     .write(obj)
             } else {
-                obj?.toString() ?: "null"
+                obj ?: "null"
             }
         }
 
@@ -206,7 +206,7 @@ class NoxVM(
                         .NoxJsonWriter(prettyPrint = false)
                         .write(obj)
                 } else {
-                    obj?.toString() ?: "null"
+                    obj ?: "null"
                 }
             }
         }

@@ -140,7 +140,7 @@ class TreeValidator(
             is RawVarDeclStmt -> {
                 if (typed !is TypedVarDeclStmt) return reportMismatch(raw, typed)
                 if (raw.name != typed.name) return reportMismatch(raw, typed)
-                if (raw.initializer != null) validateExpr(raw.initializer, typed.initializer)
+                validateExpr(raw.initializer, typed.initializer)
             }
             is RawAssignStmt -> {
                 if (typed !is TypedAssignStmt) return reportMismatch(raw, typed)
@@ -165,11 +165,7 @@ class TreeValidator(
             }
             is RawYieldStmt -> {
                 if (typed !is TypedYieldStmt) return reportMismatch(raw, typed)
-                if (raw.value != null && typed.value != null) {
-                    validateExpr(raw.value, typed.value)
-                } else if (raw.value != null || typed.value != null) {
-                    return reportMismatch(raw, typed)
-                }
+                validateExpr(raw.value, typed.value)
             }
             is RawThrowStmt -> {
                 if (typed !is TypedThrowStmt) return reportMismatch(raw, typed)

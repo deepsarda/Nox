@@ -136,7 +136,7 @@ class TypeResolver(
         val funcScope = globalScope.child()
         val typedParams = registerParams(funcScope, funcDef.params)
         val typedBody = stmtResolver.resolveBlock(funcScope, funcDef.body, funcDef.returnType)
-        return TypedFuncDef(funcDef.returnType, funcDef.name, typedParams, typedBody as TypedBlock, funcDef.loc)
+        return TypedFuncDef(funcDef.returnType, funcDef.name, typedParams, typedBody, funcDef.loc)
     }
 
     private fun resolveMain(mainDef: RawMainDef): TypedMainDef {
@@ -145,7 +145,7 @@ class TypeResolver(
         stmtResolver.isMainBody = true
         val typedBody = stmtResolver.resolveBlock(mainScope, mainDef.body, TypeRef.VOID)
         stmtResolver.isMainBody = false
-        return TypedMainDef(TypeRef.STRING, typedParams, typedBody as TypedBlock, mainDef.loc)
+        return TypedMainDef(TypeRef.STRING, typedParams, typedBody, mainDef.loc)
     }
 
     private fun registerParams(

@@ -150,7 +150,7 @@ private fun bootServer(): Pair<NoxLanguageServer, FakeClient> {
             client.diagnostics.put(
                 NoxLanguageServer.json.decodeFromJsonElement(
                     PublishDiagnosticsParams.serializer(),
-                    params as kotlinx.serialization.json.JsonElement,
+                    params,
                 ),
             )
         }

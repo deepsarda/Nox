@@ -149,7 +149,7 @@ class ASTBuilderTest :
             val p0 = func.params[0] as RawParamImpl
             p0.defaultValue.shouldNotBeNull()
             p0.defaultValue.shouldBeInstanceOf<RawStringLiteralExpr>()
-            (p0.defaultValue as RawStringLiteralExpr).value shouldBe "World"
+            p0.defaultValue.value shouldBe "World"
         }
 
         test("function with varargs parameter") {

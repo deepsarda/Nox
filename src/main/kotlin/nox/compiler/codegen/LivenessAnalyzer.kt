@@ -43,17 +43,15 @@ class LivenessAnalyzer {
         when (stmt) {
             is TypedVarDeclStmt -> {
                 val sym = stmt.resolvedSymbol
-                if (sym != null && sym !in live) {
-                    if (recordFrees) {
-                        freeAtNode.getOrPut(stmt) { mutableListOf() }.add(sym)
-                    }
+                if (sym !in live && recordFrees) {
+                    freeAtNode.getOrPut(stmt) { mutableListOf() }.add(sym)
                 }
 
                 // Initialize value
                 analyzeExpr(stmt.initializer, stmt)
 
                 // Definition: Variable is killed (born going forward) so it is no longer live going backward.
-                sym?.let { live.remove(it) }
+                live.remove(sym)
             }
 
             is TypedAssignStmt -> {
@@ -240,7 +238,7 @@ class LivenessAnalyzer {
         when (expr) {
             is TypedIdentifierExpr -> {
                 val sym = expr.resolvedSymbol
-                if (sym != null && (sym is VarSymbol || sym is ParamSymbol)) {
+                if (sym is VarSymbol || sym is ParamSymbol) {
                     if (sym !in live) {
                         if (recordFrees) {
                             freeAtNode.getOrPut(expr) { mutableListOf() }.add(sym)

@@ -28,7 +28,7 @@ object EnvModule {
         name: String,
     ): String {
         val grant = requireEnvPermission(ctx, PermissionRequest.Env.ReadVar(name))
-        if (grant?.allowedVarNames != null && name !in grant.allowedVarNames!!) {
+        if (grant?.allowedVarNames != null && name !in grant.allowedVarNames) {
             throw SecurityException(
                 "Permission denied: variable '$name' not in allowed list: ${grant.allowedVarNames}",
             )
