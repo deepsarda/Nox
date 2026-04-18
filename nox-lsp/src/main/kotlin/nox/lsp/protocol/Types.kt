@@ -8,7 +8,7 @@ data class RequestMessage(
     val jsonrpc: String = "2.0",
     val id: JsonElement? = null,
     val method: String,
-    val params: JsonElement? = null
+    val params: JsonElement? = null,
 )
 
 @Serializable
@@ -16,33 +16,33 @@ data class ResponseMessage(
     val jsonrpc: String = "2.0",
     val id: JsonElement? = null,
     val result: JsonElement? = null,
-    val error: ResponseError? = null
+    val error: ResponseError? = null,
 )
 
 @Serializable
 data class NotificationMessage(
     val jsonrpc: String = "2.0",
     val method: String,
-    val params: JsonElement? = null
+    val params: JsonElement? = null,
 )
 
 @Serializable
 data class ResponseError(
     val code: Int,
     val message: String,
-    val data: JsonElement? = null
+    val data: JsonElement? = null,
 )
 
 @Serializable
 data class InitializeParams(
     val processId: Int? = null,
     val rootUri: String? = null,
-    val capabilities: JsonElement? = null
+    val capabilities: JsonElement? = null,
 )
 
 @Serializable
 data class InitializeResult(
-    val capabilities: ServerCapabilities
+    val capabilities: ServerCapabilities,
 )
 
 @Serializable
@@ -60,36 +60,36 @@ data class ServerCapabilities(
     val foldingRangeProvider: Boolean? = null,
     val inlayHintProvider: Boolean? = null,
     val semanticTokensProvider: SemanticTokensOptions? = null,
-    val callHierarchyProvider: Boolean? = null
+    val callHierarchyProvider: Boolean? = null,
 )
 
 @Serializable
 data class CompletionOptions(
     val triggerCharacters: List<String>? = null,
-    val resolveProvider: Boolean? = null
+    val resolveProvider: Boolean? = null,
 )
 
 @Serializable
 data class SignatureHelpOptions(
     val triggerCharacters: List<String>? = null,
-    val retriggerCharacters: List<String>? = null
+    val retriggerCharacters: List<String>? = null,
 )
 
 @Serializable
 data class SemanticTokensOptions(
     val legend: SemanticTokensLegend,
-    val full: Boolean
+    val full: Boolean,
 )
 
 @Serializable
 data class SemanticTokensLegend(
     val tokenTypes: List<String>,
-    val tokenModifiers: List<String>
+    val tokenModifiers: List<String>,
 )
 
 @Serializable
 data class DidOpenTextDocumentParams(
-    val textDocument: TextDocumentItem
+    val textDocument: TextDocumentItem,
 )
 
 @Serializable
@@ -97,53 +97,53 @@ data class TextDocumentItem(
     val uri: String,
     val languageId: String,
     val version: Int,
-    val text: String
+    val text: String,
 )
 
 @Serializable
 data class DidChangeTextDocumentParams(
     val textDocument: VersionedTextDocumentIdentifier,
-    val contentChanges: List<TextDocumentContentChangeEvent>
+    val contentChanges: List<TextDocumentContentChangeEvent>,
 )
 
 @Serializable
 data class VersionedTextDocumentIdentifier(
     val uri: String,
-    val version: Int? = null
+    val version: Int? = null,
 )
 
 @Serializable
 data class TextDocumentIdentifier(
-    val uri: String
+    val uri: String,
 )
 
 @Serializable
 data class TextDocumentContentChangeEvent(
     val text: String,
-    val range: Range? = null
+    val range: Range? = null,
 )
 
 @Serializable
 data class DidCloseTextDocumentParams(
-    val textDocument: TextDocumentIdentifier
+    val textDocument: TextDocumentIdentifier,
 )
 
 @Serializable
 data class Position(
     val line: Int,
-    val character: Int
+    val character: Int,
 )
 
 @Serializable
 data class Range(
     val start: Position,
-    val end: Position
+    val end: Position,
 )
 
 @Serializable
 data class Location(
     val uri: String,
-    val range: Range
+    val range: Range,
 )
 
 @Serializable
@@ -151,18 +151,18 @@ data class Diagnostic(
     val range: Range,
     val severity: Int? = null, // 1 = Error, 2 = Warning
     val source: String? = null,
-    val message: String
+    val message: String,
 )
 
 @Serializable
 data class PublishDiagnosticsParams(
     val uri: String,
-    val diagnostics: List<Diagnostic>
+    val diagnostics: List<Diagnostic>,
 )
 
 @Serializable
 data class DocumentSymbolParams(
-    val textDocument: TextDocumentIdentifier
+    val textDocument: TextDocumentIdentifier,
 )
 
 @Serializable
@@ -171,12 +171,12 @@ data class DocumentSymbol(
     val kind: Int,
     val range: Range,
     val selectionRange: Range,
-    var children: List<DocumentSymbol>? = null
+    var children: List<DocumentSymbol>? = null,
 )
 
 @Serializable
 data class FoldingRangeRequestParams(
-    val textDocument: TextDocumentIdentifier
+    val textDocument: TextDocumentIdentifier,
 )
 
 @Serializable
@@ -185,23 +185,23 @@ data class FoldingRange(
     val endLine: Int,
     val startCharacter: Int? = null,
     val endCharacter: Int? = null,
-    val kind: String? = null
+    val kind: String? = null,
 )
 
 @Serializable
 data class SemanticTokensParams(
-    val textDocument: TextDocumentIdentifier
+    val textDocument: TextDocumentIdentifier,
 )
 
 @Serializable
 data class SemanticTokens(
-    val data: List<Int>
+    val data: List<Int>,
 )
 
 @Serializable
 data class InlayHintParams(
     val textDocument: TextDocumentIdentifier,
-    val range: Range
+    val range: Range,
 )
 
 @Serializable
@@ -210,78 +210,78 @@ data class InlayHint(
     val label: String,
     val kind: Int? = null, // 1 = Type, 2 = Parameter
     val paddingLeft: Boolean? = null,
-    val paddingRight: Boolean? = null
+    val paddingRight: Boolean? = null,
 )
 
 @Serializable
 data class DocumentFormattingParams(
     val textDocument: TextDocumentIdentifier,
-    val options: FormattingOptions
+    val options: FormattingOptions,
 )
 
 @Serializable
 data class FormattingOptions(
     val tabSize: Int,
-    val insertSpaces: Boolean
+    val insertSpaces: Boolean,
 )
 
 @Serializable
 data class TextEdit(
     val range: Range,
-    val newText: String
+    val newText: String,
 )
 
 @Serializable
 data class HoverParams(
     val textDocument: TextDocumentIdentifier,
-    val position: Position
+    val position: Position,
 )
 
 @Serializable
 data class Hover(
     val contents: MarkupContent,
-    val range: Range? = null
+    val range: Range? = null,
 )
 
 @Serializable
 data class MarkupContent(
     val kind: String, // "plaintext" | "markdown"
-    val value: String
+    val value: String,
 )
 
 @Serializable
 data class DefinitionParams(
     val textDocument: TextDocumentIdentifier,
-    val position: Position
+    val position: Position,
 )
 
 @Serializable
 data class ReferenceParams(
     val textDocument: TextDocumentIdentifier,
     val position: Position,
-    val context: ReferenceContext
+    val context: ReferenceContext,
 )
 
 @Serializable
 data class ReferenceContext(
-    val includeDeclaration: Boolean
+    val includeDeclaration: Boolean,
 )
 
 @Serializable
 data class RenameParams(
     val textDocument: TextDocumentIdentifier,
     val position: Position,
-    val newName: String
+    val newName: String,
 )
 
 @Serializable
 data class WorkspaceEdit(
-    val changes: Map<String, List<TextEdit>>? = null
+    val changes: Map<String, List<TextEdit>>? = null,
 )
 
 @Serializable
 data class WorkspaceSymbolParams(
-    val query: String
+    val query: String,
 )
 
 @Serializable
@@ -289,19 +289,19 @@ data class SymbolInformation(
     val name: String,
     val kind: Int,
     val location: Location,
-    val containerName: String? = null
+    val containerName: String? = null,
 )
 
 @Serializable
 data class CompletionParams(
     val textDocument: TextDocumentIdentifier,
-    val position: Position
+    val position: Position,
 )
 
 @Serializable
 data class CompletionList(
     val isIncomplete: Boolean,
-    val items: List<CompletionItem>
+    val items: List<CompletionItem>,
 )
 
 @Serializable
@@ -312,45 +312,45 @@ data class CompletionItem(
     val documentation: MarkupContent? = null,
     val textEdit: TextEdit? = null,
     val insertText: String? = null,
-    val insertTextFormat: Int? = null
+    val insertTextFormat: Int? = null,
 )
 
 @Serializable
 data class SignatureHelpParams(
     val textDocument: TextDocumentIdentifier,
-    val position: Position
+    val position: Position,
 )
 
 @Serializable
 data class SignatureHelp(
     val signatures: List<SignatureInformation>,
     val activeSignature: Int,
-    val activeParameter: Int
+    val activeParameter: Int,
 )
 
 @Serializable
 data class SignatureInformation(
     val label: String,
     val documentation: MarkupContent? = null,
-    val parameters: List<ParameterInformation>
+    val parameters: List<ParameterInformation>,
 )
 
 @Serializable
 data class ParameterInformation(
     val label: String,
-    val documentation: MarkupContent? = null
+    val documentation: MarkupContent? = null,
 )
 
 @Serializable
 data class CodeActionParams(
     val textDocument: TextDocumentIdentifier,
     val range: Range,
-    val context: CodeActionContext
+    val context: CodeActionContext,
 )
 
 @Serializable
 data class CodeActionContext(
-    val diagnostics: List<Diagnostic>
+    val diagnostics: List<Diagnostic>,
 )
 
 @Serializable
@@ -360,20 +360,20 @@ data class CodeAction(
     val diagnostics: List<Diagnostic>? = null,
     val isPreferred: Boolean? = null,
     val edit: WorkspaceEdit? = null,
-    val command: Command? = null
+    val command: Command? = null,
 )
 
 @Serializable
 data class Command(
     val title: String,
     val command: String,
-    val arguments: List<JsonElement>? = null
+    val arguments: List<JsonElement>? = null,
 )
 
 @Serializable
 data class CallHierarchyPrepareParams(
     val textDocument: TextDocumentIdentifier,
-    val position: Position
+    val position: Position,
 )
 
 @Serializable
@@ -383,43 +383,44 @@ data class CallHierarchyItem(
     val uri: String,
     val range: Range,
     val selectionRange: Range,
-    val detail: String? = null
+    val detail: String? = null,
 )
 
 @Serializable
 data class CallHierarchyIncomingCallsParams(
-    val item: CallHierarchyItem
+    val item: CallHierarchyItem,
 )
 
 @Serializable
 data class CallHierarchyIncomingCall(
     val from: CallHierarchyItem,
-    val fromRanges: List<Range>
+    val fromRanges: List<Range>,
 )
 
 @Serializable
 data class CallHierarchyOutgoingCallsParams(
-    val item: CallHierarchyItem
+    val item: CallHierarchyItem,
 )
 
 @Serializable
 data class CallHierarchyOutgoingCall(
     val to: CallHierarchyItem,
-    val fromRanges: List<Range>
+    val fromRanges: List<Range>,
 )
 
 @Serializable
 data class MessageParams(
     val type: Int, // 1 Error, 2 Warning, 3 Info, 4 Log
-    val message: String
+    val message: String,
 )
 
 @Serializable
 data class LogMessageParams(
     val type: Int,
-    val message: String
+    val message: String,
 )
 
+@Suppress("ktlint:standard:property-naming")
 object SymbolKind {
     const val File = 1
     const val Module = 2
@@ -449,6 +450,7 @@ object SymbolKind {
     const val TypeParameter = 26
 }
 
+@Suppress("ktlint:standard:property-naming")
 object CompletionItemKind {
     const val Text = 1
     const val Method = 2
@@ -477,6 +479,7 @@ object CompletionItemKind {
     const val TypeParameter = 25
 }
 
+@Suppress("ktlint:standard:property-naming")
 object DiagnosticSeverity {
     const val Error = 1
     const val Warning = 2
@@ -484,6 +487,7 @@ object DiagnosticSeverity {
     const val Hint = 4
 }
 
+@Suppress("ktlint:standard:property-naming")
 object CodeActionKind {
     const val QuickFix = "quickfix"
     const val Refactor = "refactor"
@@ -496,35 +500,35 @@ object CodeActionKind {
 }
 
 object FoldingRangeKind {
-    const val Comment = "comment"
-    const val Imports = "imports"
-    const val Region = "region"
+    const val COMMENT = "comment"
+    const val IMPORTS = "imports"
+    const val REGION = "region"
 }
 
 object MarkupKind {
-    const val PlainText = "plaintext"
-    const val Markdown = "markdown"
+    const val PLAIN_TEXT = "plaintext"
+    const val MARKDOWN = "markdown"
 }
 
 object InlayHintKind {
-    const val Type = 1
-    const val Parameter = 2
+    const val TYPE = 1
+    const val PARAMETER = 2
 }
 
 @Serializable
 data class TypeHierarchyPrepareParams(
     val textDocument: TextDocumentIdentifier,
-    val position: Position
+    val position: Position,
 )
 
 @Serializable
 data class TypeHierarchySupertypesParams(
-    val item: TypeHierarchyItem
+    val item: TypeHierarchyItem,
 )
 
 @Serializable
 data class TypeHierarchySubtypesParams(
-    val item: TypeHierarchyItem
+    val item: TypeHierarchyItem,
 )
 
 @Serializable
@@ -536,17 +540,17 @@ data class TypeHierarchyItem(
     val uri: String,
     val range: Range,
     val selectionRange: Range,
-    val data: JsonElement? = null
+    val data: JsonElement? = null,
 )
 
 @Serializable
 data class PrepareRenameParams(
     val textDocument: TextDocumentIdentifier,
-    val position: Position
+    val position: Position,
 )
 
 @Serializable
 data class PrepareRenameResult(
     val range: Range,
-    val placeholder: String
+    val placeholder: String,
 )

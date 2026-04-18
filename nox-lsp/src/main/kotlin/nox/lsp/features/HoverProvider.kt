@@ -16,7 +16,7 @@ object HoverProvider {
     ): Hover? {
         val expr = ExprAtPosition.find(program, lspLine, lspColumn) ?: return null
         val body = renderBody(expr) ?: return null
-        return Hover(MarkupContent(MarkupKind.Markdown, body))
+        return Hover(MarkupContent(MarkupKind.MARKDOWN, body))
     }
 
     private fun renderBody(expr: TypedExpr): String? {

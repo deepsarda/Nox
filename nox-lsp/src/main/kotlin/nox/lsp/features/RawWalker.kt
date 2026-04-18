@@ -17,7 +17,7 @@ internal object RawWalker {
         }
     }
 
-    private fun walkBlock(
+    fun walkBlock(
         block: RawBlock,
         visit: (RawStmt) -> Unit,
     ) {

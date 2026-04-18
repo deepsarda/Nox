@@ -18,7 +18,10 @@ class AnalysisCache {
 
     private val cache = ConcurrentHashMap<Key, NoxCompiler.CompilationResult>()
 
-    fun analyze(docs: DocumentManager, doc: DocumentManager.Document): NoxCompiler.CompilationResult {
+    fun analyze(
+        docs: DocumentManager,
+        doc: DocumentManager.Document,
+    ): NoxCompiler.CompilationResult {
         val key = Key(doc.uri, doc.version)
         cache[key]?.let { return it }
 
@@ -33,7 +36,7 @@ class AnalysisCache {
                 fileReader = { path ->
                     val uri = path.toUri().toString()
                     docs.get(uri)?.text ?: path.toFile().readText()
-                }
+                },
             )
         cache[key] = result
         // Evict stale versions for this URI to keep memory bounded.

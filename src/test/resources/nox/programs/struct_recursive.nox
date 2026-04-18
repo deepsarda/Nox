@@ -7,5 +7,6 @@ type Node {
 main() {
     Node leaf = { value: "leaf", left: null, right: null };
     Node root = { value: "root", left: leaf, right: null };
+
     return root.left.value;
 }

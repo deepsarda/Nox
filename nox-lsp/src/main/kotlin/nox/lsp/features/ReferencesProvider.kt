@@ -5,9 +5,10 @@ import nox.compiler.ast.typed.TypedExpr
 import nox.compiler.ast.typed.TypedFieldAccessExpr
 import nox.compiler.ast.typed.TypedIdentifierExpr
 import nox.compiler.ast.typed.TypedProgram
-import nox.compiler.types.Symbol
-import nox.compiler.types.VarSymbol
 import nox.compiler.types.ParamSymbol
+import nox.compiler.types.Symbol
+import nox.compiler.types.TypeRef
+import nox.compiler.types.VarSymbol
 import nox.lsp.conversions.Positions
 import nox.lsp.protocol.*
 
@@ -68,15 +69,18 @@ object ReferencesProvider {
         ) : Matcher() {
             enum class Scope { LOCAL, GLOBAL, FUNC }
 
-            override fun matchesUsage(expr: TypedExpr): Boolean = expr is TypedIdentifierExpr && expr.name == name && expr.resolvedSymbol == symbol
+            override fun matchesUsage(expr: TypedExpr): Boolean =
+                expr is TypedIdentifierExpr && expr.name == name && expr.resolvedSymbol == symbol
 
             override fun findDeclaration(program: TypedProgram): nox.compiler.types.SourceLocation? = null
         }
 
         data class ByField(
             override val name: String,
+            val targetType: TypeRef,
         ) : Matcher() {
-            override fun matchesUsage(expr: TypedExpr): Boolean = expr is TypedFieldAccessExpr && expr.fieldName == name
+            override fun matchesUsage(expr: TypedExpr): Boolean =
+                expr is TypedFieldAccessExpr && expr.fieldName == name && expr.target.type == targetType
 
             override fun findDeclaration(program: TypedProgram): nox.compiler.types.SourceLocation? = null
         }
@@ -84,8 +88,11 @@ object ReferencesProvider {
         data class ByFunc(
             override val name: String,
         ) : Matcher() {
-            override fun matchesUsage(expr: TypedExpr): Boolean = expr is nox.compiler.ast.typed.TypedFuncCallExpr && expr.name == name
-            override fun findDeclaration(program: TypedProgram): nox.compiler.types.SourceLocation? = program.functionsByName[name]?.loc
+            override fun matchesUsage(expr: TypedExpr): Boolean =
+                expr is nox.compiler.ast.typed.TypedFuncCallExpr && expr.name == name
+
+            override fun findDeclaration(program: TypedProgram): nox.compiler.types.SourceLocation? =
+                program.functionsByName[name]?.loc
         }
 
         companion object {
@@ -93,11 +100,18 @@ object ReferencesProvider {
                 when (expr) {
                     is TypedIdentifierExpr -> {
                         val symbol = expr.resolvedSymbol
-                        val scope = if (symbol is ParamSymbol || symbol is VarSymbol) ByName.Scope.LOCAL else ByName.Scope.GLOBAL
+                        val scope =
+                            if (symbol is ParamSymbol ||
+                                symbol is VarSymbol
+                            ) {
+                                ByName.Scope.LOCAL
+                            } else {
+                                ByName.Scope.GLOBAL
+                            }
                         ByName(expr.name, symbol, scope)
                     }
                     is TypedFieldAccessExpr -> {
-                        ByField(expr.fieldName)
+                        ByField(expr.fieldName, expr.target.type)
                     }
                     is nox.compiler.ast.typed.TypedFuncCallExpr -> {
                         ByFunc(expr.name)

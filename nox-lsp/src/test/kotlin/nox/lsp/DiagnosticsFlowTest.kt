@@ -108,8 +108,8 @@ class DiagnosticsFlowTest :
             val uri = "file:///tmp/close.nox"
             server.textService.didOpen(
                 DidOpenTextDocumentParams(
-                    TextDocumentItem(uri, "nox", 1, "main() { int x = \"bad\"; }")
-                )
+                    TextDocumentItem(uri, "nox", 1, "main() { int x = \"bad\"; }"),
+                ),
             )
             client.diagnostics.poll(2, TimeUnit.SECONDS) // wait for open diagnostics
 
@@ -130,7 +130,10 @@ class DiagnosticsFlowTest :
             defs.shouldNotBeNull()
 
             // Test references
-            val refs = server.textService.references(ReferenceParams(TextDocumentIdentifier(uri), Position(0, 20), ReferenceContext(true)))
+            val refs =
+                server.textService.references(
+                    ReferenceParams(TextDocumentIdentifier(uri), Position(0, 20), ReferenceContext(true)),
+                )
             refs.shouldNotBeNull()
 
             // Test rename
@@ -144,7 +147,12 @@ private fun bootServer(): Pair<NoxLanguageServer, FakeClient> {
     val client = FakeClient()
     server.textService.notifyClient = { method, params ->
         if (method == "textDocument/publishDiagnostics") {
-            client.diagnostics.put(NoxLanguageServer.json.decodeFromJsonElement(PublishDiagnosticsParams.serializer(), params as kotlinx.serialization.json.JsonElement))
+            client.diagnostics.put(
+                NoxLanguageServer.json.decodeFromJsonElement(
+                    PublishDiagnosticsParams.serializer(),
+                    params as kotlinx.serialization.json.JsonElement,
+                ),
+            )
         }
     }
     return server to client

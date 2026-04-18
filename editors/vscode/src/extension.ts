@@ -142,11 +142,7 @@ async function ensureLspBinary(
 			`Downloading Nox LSP for ${platform}-${arch}...`,
 		);
 
-		// Mock download logic
-		fs.writeFileSync(binaryPath, "#!/bin/sh\necho 'Mock Nox LSP'");
-		if (platform !== "win32") {
-			fs.chmodSync(binaryPath, 0o755);
-		}
+		// TODO: Implement downloading the binary from GitHub releases.
 
 		vscode.window.showInformationMessage("Download complete!");
 	}

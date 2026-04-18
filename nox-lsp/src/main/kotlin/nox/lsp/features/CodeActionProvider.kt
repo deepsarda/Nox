@@ -36,13 +36,14 @@ object CodeActionProvider {
                         errRange.start.character + guessTokenLen(result, err.loc.line, err.loc.column),
                     ),
                 )
-            val action = CodeAction(
-                title = "Replace with '$replacement'",
-                kind = CodeActionKind.QuickFix,
-                diagnostics = listOf(diagnosticFrom(err, errRange)),
-                edit = WorkspaceEdit(mapOf(uri to listOf(TextEdit(tokenRange, replacement)))),
-                isPreferred = true
-            )
+            val action =
+                CodeAction(
+                    title = "Replace with '$replacement'",
+                    kind = CodeActionKind.QuickFix,
+                    diagnostics = listOf(diagnosticFrom(err, errRange)),
+                    edit = WorkspaceEdit(mapOf(uri to listOf(TextEdit(tokenRange, replacement)))),
+                    isPreferred = true,
+                )
             out.add(action)
         }
         return out
@@ -56,7 +57,7 @@ object CodeActionProvider {
             range = range,
             severity = nox.lsp.protocol.DiagnosticSeverity.Error,
             message = err.message,
-            source = "nox"
+            source = "nox",
         )
 
     private fun guessTokenLen(

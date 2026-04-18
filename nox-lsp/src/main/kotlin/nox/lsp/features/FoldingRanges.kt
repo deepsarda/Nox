@@ -71,7 +71,7 @@ object FoldingRanges {
         if (endLine > startLine) {
             // LSP folds hide lines strictly between start and end; end on the `}` line so
             // it collapses to `{ … }` on a single logical block header.
-            val fr = FoldingRange(startLine, endLine - 1, kind = FoldingRangeKind.Region)
+            val fr = FoldingRange(startLine, endLine - 1, kind = FoldingRangeKind.REGION)
             out.add(fr)
         }
         block.statements.forEach { visitStmt(it, src, offsets, out) }

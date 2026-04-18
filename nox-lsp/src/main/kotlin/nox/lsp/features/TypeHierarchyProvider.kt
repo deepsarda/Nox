@@ -10,10 +10,13 @@ object TypeHierarchyProvider {
         uri: String,
         position: Position,
     ): List<TypeHierarchyItem> {
-        val typeDef = raw.typesByName.values.find {
-            val loc = it.loc
-            loc.line == position.line + 1 && position.character >= loc.column && position.character <= loc.column + it.name.length
-        } ?: return emptyList()
+        val typeDef =
+            raw.typesByName.values.find {
+                val loc = it.loc
+                loc.line == position.line + 1 &&
+                    position.character >= loc.column &&
+                    position.character <= loc.column + it.name.length
+            } ?: return emptyList()
 
         val range = Positions.toLspRange(typeDef.loc, length = typeDef.name.length)
         return listOf(
@@ -28,5 +31,6 @@ object TypeHierarchyProvider {
     }
 
     fun supertypes(item: TypeHierarchyItem): List<TypeHierarchyItem> = emptyList()
+
     fun subtypes(item: TypeHierarchyItem): List<TypeHierarchyItem> = emptyList()
 }

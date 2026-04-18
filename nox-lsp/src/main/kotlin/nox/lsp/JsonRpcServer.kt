@@ -13,16 +13,22 @@ import java.io.OutputStream
 class JsonRpcServer(
     private val input: InputStream,
     private val output: OutputStream,
-    private val languageServer: NoxLanguageServer
+    private val languageServer: NoxLanguageServer,
 ) {
-    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
-
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
 
     init {
-        System.err.println("Starting Nox LSP Server");
+        System.err.println("Starting Nox LSP Server")
     }
 
-    private fun log(dir: String, msg: String) {
+    private fun log(
+        dir: String,
+        msg: String,
+    ) {
         System.err.println("[$dir] $msg")
     }
 
@@ -118,7 +124,10 @@ class JsonRpcServer(
         }
     }
 
-    fun notify(method: String, params: JsonElement) {
+    fun notify(
+        method: String,
+        params: JsonElement,
+    ) {
         val notif = NotificationMessage(method = method, params = params)
         send(json.encodeToString(notif))
     }

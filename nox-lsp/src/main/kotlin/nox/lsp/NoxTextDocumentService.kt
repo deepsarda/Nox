@@ -13,7 +13,6 @@ import java.util.concurrent.ConcurrentHashMap
 class NoxTextDocumentService(
     private val docs: DocumentManager,
     private val cache: AnalysisCache,
-
 ) {
     @Volatile
     var notifyClient: ((String, kotlinx.serialization.json.JsonElement) -> Unit)? = null
@@ -41,10 +40,11 @@ class NoxTextDocumentService(
     }
 
     fun didClose(params: DidCloseTextDocumentParams) {
-        docs.close(params.textDocument.uri)
-        cache.invalidate(params.textDocument.uri)
-        debounceJobs.remove(params.textDocument.uri)?.cancel()
-        notifyClient?.invoke("textDocument/publishDiagnostics", NoxLanguageServer.json.encodeToJsonElement(PublishDiagnosticsParams.serializer(), PublishDiagnosticsParams(params.textDocument.uri, emptyList())))
+        val uri = params.textDocument.uri
+        docs.close(uri)
+        cache.invalidate(uri)
+        debounceJobs.remove(uri)?.cancel()
+        sendDiagnostics(uri, emptyList())
     }
 
     fun didSave(params: Any) = Unit
@@ -58,7 +58,13 @@ class NoxTextDocumentService(
         val doc = docs.get(params.textDocument.uri) ?: return emptyList()
         val result = cache.analyze(docs, doc)
         val typed = result.typedProgram ?: return emptyList()
-        return DefinitionProvider.definition(typed, result.program, doc.uri, params.position.line, params.position.character)
+        return DefinitionProvider.definition(
+            typed,
+            result.program,
+            doc.uri,
+            params.position.line,
+            params.position.character,
+        )
     }
 
     fun references(params: ReferenceParams): List<Location> {
@@ -93,14 +99,21 @@ class NoxTextDocumentService(
         val doc = docs.get(params.textDocument.uri) ?: return null
         val result = cache.analyze(docs, doc)
         val typed = result.typedProgram ?: return null
-        val expr = nox.lsp.features.ExprAtPosition.find(typed, params.position.line, params.position.character) ?: return null
-        val name = when (expr) {
-            is nox.compiler.ast.typed.TypedIdentifierExpr -> expr.name
-            is nox.compiler.ast.typed.TypedFuncCallExpr -> expr.name
-            is nox.compiler.ast.typed.TypedFieldAccessExpr -> expr.fieldName
-            else -> return null
-        }
-        return PrepareRenameResult(nox.lsp.conversions.Positions.toLspRange(expr.loc, length = name.length), name)
+        val expr =
+            nox.lsp.features.ExprAtPosition
+                .find(typed, params.position.line, params.position.character) ?: return null
+        val name =
+            when (expr) {
+                is nox.compiler.ast.typed.TypedIdentifierExpr -> expr.name
+                is nox.compiler.ast.typed.TypedFuncCallExpr -> expr.name
+                is nox.compiler.ast.typed.TypedFieldAccessExpr -> expr.fieldName
+                else -> return null
+            }
+        return PrepareRenameResult(
+            nox.lsp.conversions.Positions
+                .toLspRange(expr.loc, length = name.length),
+            name,
+        )
     }
 
     fun documentSymbol(params: DocumentSymbolParams): List<DocumentSymbol> {
@@ -137,13 +150,14 @@ class NoxTextDocumentService(
     fun completion(params: CompletionParams): CompletionList {
         val doc = docs.get(params.textDocument.uri) ?: return CompletionList(false, emptyList())
         val result = cache.analyze(docs, doc)
-        val items = CompletionProvider.complete(
-            result,
-            doc.text,
-            params.position.line,
-            params.position.character,
-            uri = doc.uri,
-        )
+        val items =
+            CompletionProvider.complete(
+                result,
+                doc.text,
+                params.position.line,
+                params.position.character,
+                uri = doc.uri,
+            )
         return CompletionList(isIncomplete = false, items = items)
     }
 
@@ -154,15 +168,9 @@ class NoxTextDocumentService(
     }
 
     fun codeAction(params: CodeActionParams): List<CodeAction> {
-        try {
-            val doc = docs.get(params.textDocument.uri) ?: return emptyList()
-            val result = cache.analyze(docs, doc)
-            return CodeActionProvider.actions(result, doc.uri, params.range)
-        } catch (e: Throwable) {
-            System.err.println("CODE ACTION FAILED: " + e.message)
-            e.printStackTrace(System.err)
-            return emptyList()
-        }
+        val doc = docs.get(params.textDocument.uri) ?: return emptyList()
+        val result = cache.analyze(docs, doc)
+        return CodeActionProvider.actions(result, doc.uri, params.range)
     }
 
     fun prepareTypeHierarchy(params: TypeHierarchyPrepareParams): List<TypeHierarchyItem> {
@@ -171,13 +179,11 @@ class NoxTextDocumentService(
         return TypeHierarchyProvider.prepare(result.program, doc.uri, params.position)
     }
 
-    fun typeHierarchySupertypes(params: TypeHierarchySupertypesParams): List<TypeHierarchyItem> {
-        return TypeHierarchyProvider.supertypes(params.item)
-    }
+    fun typeHierarchySupertypes(params: TypeHierarchySupertypesParams): List<TypeHierarchyItem> =
+        TypeHierarchyProvider.supertypes(params.item)
 
-    fun typeHierarchySubtypes(params: TypeHierarchySubtypesParams): List<TypeHierarchyItem> {
-        return TypeHierarchyProvider.subtypes(params.item)
-    }
+    fun typeHierarchySubtypes(params: TypeHierarchySubtypesParams): List<TypeHierarchyItem> =
+        TypeHierarchyProvider.subtypes(params.item)
 
     fun callHierarchyPrepare(params: CallHierarchyPrepareParams): List<CallHierarchyItem> {
         val doc = docs.get(params.textDocument.uri) ?: return emptyList()
@@ -186,7 +192,9 @@ class NoxTextDocumentService(
     }
 
     fun callHierarchyIncomingCalls(params: CallHierarchyIncomingCallsParams): List<CallHierarchyIncomingCall> {
-        return CallHierarchyProvider.incomingCalls(params.item)
+        val doc = docs.get(params.item.uri) ?: return emptyList()
+        val result = cache.analyze(docs, doc)
+        return CallHierarchyProvider.incomingCalls(params.item, result.typedProgram)
     }
 
     fun callHierarchyOutgoingCalls(params: CallHierarchyOutgoingCallsParams): List<CallHierarchyOutgoingCall> {
@@ -204,6 +212,19 @@ class NoxTextDocumentService(
         val doc = docs.get(uri) ?: return
         val result = cache.analyze(docs, doc)
         val diags = Diagnostics.fromCompilation(result)
-        notifyClient?.invoke("textDocument/publishDiagnostics", NoxLanguageServer.json.encodeToJsonElement(PublishDiagnosticsParams.serializer(), PublishDiagnosticsParams(uri, diags)))
+        sendDiagnostics(uri, diags)
+    }
+
+    private fun sendDiagnostics(
+        uri: String,
+        diagnostics: List<Diagnostic>,
+    ) {
+        notifyClient?.invoke(
+            "textDocument/publishDiagnostics",
+            NoxLanguageServer.json.encodeToJsonElement(
+                PublishDiagnosticsParams.serializer(),
+                PublishDiagnosticsParams(uri, diagnostics),
+            ),
+        )
     }
 }

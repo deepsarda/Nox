@@ -14,6 +14,7 @@ import nox.lsp.features.DefinitionProvider
 import nox.lsp.features.DocumentSymbols
 import nox.lsp.features.FoldingRanges
 import nox.lsp.features.FormattingProvider
+import nox.lsp.features.HoverProvider
 import nox.lsp.features.InlayHintsProvider
 import nox.lsp.features.ReferencesProvider
 import nox.lsp.features.RenameProvider
@@ -186,12 +187,12 @@ class FeaturesTest :
                     root.
                 }
                 """.trimIndent()
-            
+
             val result = compile(src)
             val lines = src.split('\n')
             val lineIdx = lines.indexOfFirst { it.contains("root.") }
             val colIdx = lines[lineIdx].indexOf("root.") + 5
-            
+
             val items = CompletionProvider.complete(result, src, lineIdx, colIdx)
             val names = items.map { it.label }.toSet()
             names shouldContainAll setOf("value", "left", "right", "doSomething")
@@ -227,9 +228,127 @@ class FeaturesTest :
             val result = compile(src)
             val range = Range(Position(1, 9), Position(1, 14))
             val actions = CodeActionProvider.actions(result, "file:///x.nox", range)
-            // Compiler may or may not have a suggestion for this typo depending on heuristics,
-            // so assert only that the API doesn't crash and returns a list.
-            actions shouldHaveSize actions.size
+            if (actions.isNotEmpty()) {
+                actions[0].title shouldContain "helper"
+                actions[0].kind shouldBe "quickfix"
+                actions[0].edit shouldNotBe null
+            }
+        }
+
+        "go-to-definition on a function call jumps to its declaration" {
+            val src =
+                """
+                int add(int a, int b) { return a + b; }
+                main() { add(1, 2); }
+                """.trimIndent()
+            val result = compile(src)
+            val typed = result.typedProgram!!
+            val defs = DefinitionProvider.definition(typed, result.program, "file:///x.nox", 1, 9)
+            defs shouldHaveSize 1
+            defs[0].range.start.line shouldBe 0
+        }
+
+        "go-to-definition on a field access target jumps to the variable" {
+            val src =
+                """
+                type Point {
+                    int x;
+                    int y;
+                }
+                main() {
+                    Point p = { x: 10, y: 20 };
+                    p.x;
+                }
+                """.trimIndent()
+            val result = compile(src)
+            val typed = result.typedProgram!!
+            val defs = DefinitionProvider.definition(typed, result.program, "file:///x.nox", 6, 4)
+            defs shouldHaveSize 1
+            defs[0].range.start.line shouldBe 5
+        }
+
+        "references of a field are type-scoped (different structs don't cross)" {
+            val src =
+                """
+                type A { int x; }
+                type B { int x; }
+                main() {
+                    A a = { x: 1 };
+                    B b = { x: 2 };
+                    a.x;
+                    b.x;
+                }
+                """.trimIndent()
+            val result = compile(src)
+            val typed = result.typedProgram!!
+            val refs = ReferencesProvider.references(typed, result.program, "file:///x.nox", 5, 6, false)
+            refs shouldHaveSize 1
+        }
+
+        "hover on a variable shows its type" {
+            val src =
+                """
+                main() {
+                    string name = "hello";
+                    name;
+                }
+                """.trimIndent()
+            val result = compile(src)
+            val hover = HoverProvider.hover(result.typedProgram!!, 2, 4)
+            hover shouldNotBe null
+            hover!!.contents.value shouldContain "string"
+        }
+
+        "hover on a field access shows the field type" {
+            val src =
+                """
+                type Point { int x; int y; }
+                main() {
+                    Point p = { x: 10, y: 20 };
+                    p.x;
+                }
+                """.trimIndent()
+            val result = compile(src)
+            val hover = HoverProvider.hover(result.typedProgram!!, 3, 6)
+            hover shouldNotBe null
+            hover!!.contents.value shouldContain "int"
+        }
+
+        "prepare rename returns the range and placeholder" {
+            val src =
+                """
+                main() {
+                    int counter = 0;
+                    counter;
+                }
+                """.trimIndent()
+            val server = NoxLanguageServer()
+            val uri = "file:///test.nox"
+            server.textService.didOpen(
+                nox.lsp.protocol.DidOpenTextDocumentParams(nox.lsp.protocol.TextDocumentItem(uri, "nox", 1, src)),
+            )
+            val result =
+                server.textService.prepareRename(
+                    nox.lsp.protocol.PrepareRenameParams(
+                        nox.lsp.protocol.TextDocumentIdentifier(uri),
+                        Position(2, 4),
+                    ),
+                )
+            result shouldNotBe null
+            result!!.placeholder shouldBe "counter"
+        }
+
+        "completion includes local variables in scope" {
+            val src =
+                """
+                main() {
+                    int myVar = 42;
+                    myVar;
+                }
+                """.trimIndent()
+            val result = compile(src)
+            val items = CompletionProvider.complete(result, src, lspLine = 2, lspColumn = 4)
+            items.any { it.label == "myVar" } shouldBe true
         }
     })
 
@@ -237,4 +356,3 @@ private infix fun <T> Collection<T>.shouldContainAll(expected: Set<T>) {
     val missing = expected - this.toSet()
     if (missing.isNotEmpty()) throw AssertionError("missing: $missing")
 }
-

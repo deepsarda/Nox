@@ -81,9 +81,9 @@ object SemanticTokensProvider {
                 if (stmt is TypedVarDeclStmt) {
                     out.emit(stmt.loc, stmt.name.length, TokenType.VARIABLE)
                 }
-                //TODO: Improve this stuff
+                // TODO: Improve this stuff
             },
-            onExpr = { expr -> classify(expr, out) }
+            onExpr = { expr -> classify(expr, out) },
         )
     }
 
@@ -108,10 +108,18 @@ object SemanticTokensProvider {
                 // Approximate method name position: target + '.'
                 // We'll just push it 1 column past the dot for now, better than target start.
                 // In a perfect world, AST would have the methodName loc.
-                out.emit(SourceLocation(expr.loc.file, expr.loc.line, expr.loc.column + 1), expr.methodName.length, TokenType.METHOD)
+                out.emit(
+                    SourceLocation(expr.loc.file, expr.loc.line, expr.loc.column + 1),
+                    expr.methodName.length,
+                    TokenType.METHOD,
+                )
             }
             is TypedFieldAccessExpr -> {
-                out.emit(SourceLocation(expr.loc.file, expr.loc.line, expr.loc.column + 1), expr.fieldName.length, TokenType.PROPERTY)
+                out.emit(
+                    SourceLocation(expr.loc.file, expr.loc.line, expr.loc.column + 1),
+                    expr.fieldName.length,
+                    TokenType.PROPERTY,
+                )
             }
             is TypedStringLiteralExpr -> out.emit(expr.loc, expr.value.length + 2, TokenType.STRING)
             is TypedIntLiteralExpr -> out.emit(expr.loc, expr.value.toString().length, TokenType.NUMBER)

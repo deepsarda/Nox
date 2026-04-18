@@ -3,8 +3,8 @@ package nox.lsp.features
 import nox.compiler.ast.*
 import nox.compiler.types.CallTarget
 import nox.compiler.types.NoxParam
-import nox.plugin.LibraryRegistry
 import nox.lsp.protocol.*
+import nox.plugin.LibraryRegistry
 
 /**
  * Signature help during argument typing. Given the open paren position, we scan the source
@@ -34,7 +34,11 @@ object SignatureHelpProvider {
         val target = resolve(callName, raw, registry) ?: return null
         val activeParam = commaDepthAt(prefix, openParen)
 
-        val sig = SignatureInformation(renderSignature(callName.substringAfterLast('.'), target), parameters = target.params.map { p -> ParameterInformation(renderParam(p)) })
+        val sig =
+            SignatureInformation(
+                renderSignature(callName.substringAfterLast('.'), target),
+                parameters = target.params.map { p -> ParameterInformation(renderParam(p)) },
+            )
 
         return SignatureHelp(listOf(sig), 0, activeParam)
     }

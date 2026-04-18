@@ -1,33 +1,47 @@
 package nox.lsp
 
-import kotlinx.serialization.encodeToString
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.encodeToJsonElement
 import nox.lsp.protocol.*
-import nox.lsp.features.SemanticTokensProvider
 
-fun main() {
-    val caps = ServerCapabilities(
-        textDocumentSync = 1,
-        hoverProvider = true,
-        definitionProvider = true,
-        referencesProvider = true,
-        documentSymbolProvider = true,
-        documentFormattingProvider = true,
-        foldingRangeProvider = true,
-        inlayHintProvider = true,
-        completionProvider = CompletionOptions(triggerCharacters = listOf(".")),
-        signatureHelpProvider = SignatureHelpOptions(triggerCharacters = listOf("(", ",")),
-        codeActionProvider = true,
-        renameProvider = true,
-        callHierarchyProvider = true,
-        semanticTokensProvider = SemanticTokensOptions(
-            legend = SemanticTokensLegend(
-                tokenTypes = SemanticTokensProvider.LEGEND.tokenTypes,
-                tokenModifiers = SemanticTokensProvider.LEGEND.tokenModifiers
-            ),
-            full = true
-        )
-    )
-    val res = InitializeResult(caps)
-    val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; encodeDefaults = true; explicitNulls = false }
-    println(json.encodeToString(res))
-}
+class InitTest :
+    StringSpec({
+        "initialize returns all registered capabilities" {
+            val server = NoxLanguageServer()
+            val params = Json.encodeToJsonElement(InitializeParams(processId = 1, rootUri = "file:///tmp"))
+            val result = server.handleRequest("initialize", params)
+            result shouldNotBe null
+            val initResult = NoxLanguageServer.json.decodeFromJsonElement<InitializeResult>(result!!)
+            val caps = initResult.capabilities
+            caps.textDocumentSync shouldBe 1
+            caps.hoverProvider shouldBe true
+            caps.definitionProvider shouldBe true
+            caps.referencesProvider shouldBe true
+            caps.documentSymbolProvider shouldBe true
+            caps.documentFormattingProvider shouldBe true
+            caps.foldingRangeProvider shouldBe true
+            caps.inlayHintProvider shouldBe true
+            caps.completionProvider shouldNotBe null
+            caps.signatureHelpProvider shouldNotBe null
+            caps.codeActionProvider shouldBe true
+            caps.renameProvider shouldBe true
+            caps.callHierarchyProvider shouldBe true
+            caps.semanticTokensProvider shouldNotBe null
+        }
+
+        "shutdown returns null" {
+            val server = NoxLanguageServer()
+            val result = server.handleRequest("shutdown", null)
+            result shouldBe null
+        }
+
+        "unknown method returns null" {
+            val server = NoxLanguageServer()
+            val result = server.handleRequest("nonexistent/method", null)
+            result shouldBe null
+        }
+    })

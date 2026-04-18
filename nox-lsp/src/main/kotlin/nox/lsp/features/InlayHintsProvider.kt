@@ -33,11 +33,12 @@ object InlayHintsProvider {
             val name = paramNames.getOrNull(i) ?: continue
             if (!shouldHint(arg)) continue
             val hint =
-                InlayHint(position = 
-                    Positions.toLspPosition(arg.loc),
+                InlayHint(
+                    position =
+                        Positions.toLspPosition(arg.loc),
                     label = "$name:",
-                    kind = InlayHintKind.Parameter,
-                    paddingRight = true
+                    kind = InlayHintKind.PARAMETER,
+                    paddingRight = true,
                 )
             out.add(hint)
         }

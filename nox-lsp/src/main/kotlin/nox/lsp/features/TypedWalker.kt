@@ -15,6 +15,13 @@ internal object TypedWalker {
         program.declarations.forEach { walkDecl(it, onDecl, onStmt, onExpr) }
     }
 
+    fun walkDecls(
+        decls: List<TypedDecl>,
+        onExpr: (TypedExpr) -> Unit,
+    ) {
+        decls.forEach { walkDecl(it, onDecl = null, onStmt = null, onExpr = onExpr) }
+    }
+
     private fun walkDecl(
         decl: TypedDecl,
         onDecl: ((TypedDecl) -> Unit)?,

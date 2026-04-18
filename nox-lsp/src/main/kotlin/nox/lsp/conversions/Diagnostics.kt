@@ -4,7 +4,6 @@ import nox.compiler.CompilerError
 import nox.compiler.CompilerWarning
 import nox.lsp.protocol.*
 
-
 /**
  * Maps compiler errors and warnings to LSP diagnostics. Nox's compiler keeps the suggestion
  * as a free-form string on the error itself, we append it to the message so users see
@@ -18,7 +17,7 @@ object Diagnostics {
             range = Positions.toLspRange(err.loc),
             severity = DiagnosticSeverity.Error,
             source = SOURCE,
-            message = buildMessage(err.message, err.suggestion)
+            message = buildMessage(err.message, err.suggestion),
         )
 
     fun fromWarning(warn: CompilerWarning): Diagnostic =
@@ -26,7 +25,7 @@ object Diagnostics {
             range = Positions.toLspRange(warn.location),
             severity = DiagnosticSeverity.Warning,
             source = SOURCE,
-            message = buildMessage(warn.message, warn.suggestion)
+            message = buildMessage(warn.message, warn.suggestion),
         )
 
     fun fromCompilation(result: nox.compiler.NoxCompiler.CompilationResult): List<Diagnostic> {
