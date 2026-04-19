@@ -1,0 +1,185 @@
+name: Release dry-run
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/release-*.yml'
+      - '.github/workflows/release-dry-run.yml'
+      - 'editors/vscode/package.json'
+      - 'editors/intellij/**'
+      - 'nox-format/**'
+      - 'nox-lsp/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle/libs.versions.toml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  nox-release-build:
+    name: release-nox dry build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset: linux-x64
+          - os: macos-latest
+            asset: macos-arm64
+          - os: windows-latest
+            asset: windows-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Generate ANTLR sources
+        run: ./gradlew generateGrammarSource
+
+      - name: Native compile all four binaries
+        shell: bash
+        run: |
+          ./gradlew nativeCompile nativeNoxcCompile \
+                    :nox-lsp:nativeCompile :nox-format:nativeCompile
+
+      - name: Stage distribution
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage="nox-dryrun-${{ matrix.asset }}"
+          mkdir -p "$stage/bin"
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp build/native/nativeCompile/nox.exe                 "$stage/bin/"
+            cp build/native/nativeNoxcCompile/noxc.exe            "$stage/bin/"
+            cp nox-lsp/build/native/nativeCompile/nox-lsp.exe     "$stage/bin/"
+            cp nox-format/build/native/nativeCompile/noxfmt.exe   "$stage/bin/"
+          else
+            cp build/native/nativeCompile/nox                 "$stage/bin/"
+            cp build/native/nativeNoxcCompile/noxc            "$stage/bin/"
+            cp nox-lsp/build/native/nativeCompile/nox-lsp     "$stage/bin/"
+            cp nox-format/build/native/nativeCompile/noxfmt   "$stage/bin/"
+            chmod +x "$stage"/bin/*
+          fi
+          for b in "$stage"/bin/*; do
+            echo "$b --version"
+            "$b" --version
+          done
+
+  nox-release-jar:
+    name: release-nox dry JAR build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Attempt shadow JAR
+        id: shadow
+        run: |
+          if ./gradlew tasks --all 2>&1 | grep -qE '^(:)?shadowJar\b'; then
+            ./gradlew shadowJar
+            echo "built=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::shadowJar task not configured"
+            echo "built=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: List JAR
+        if: steps.shadow.outputs.built == 'true'
+        run: ls -la build/libs/
+
+  vscode-release-build:
+    name: release-vscode dry build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps
+        working-directory: editors/vscode
+        run: npm ci || npm install
+
+      - name: Compile
+        working-directory: editors/vscode
+        run: npm run compile
+
+      - name: Package VSIX (no publish)
+        working-directory: editors/vscode
+        run: npx --yes @vscode/vsce package --no-dependencies
+
+      - name: Verify VSIX shape
+        working-directory: editors/vscode
+        shell: bash
+        run: |
+          set -euo pipefail
+          vsix=$(ls *.vsix | head -n1)
+          test -n "$vsix"
+          unzip -l "$vsix" | grep -q 'extension/package.json'
+          unzip -l "$vsix" | grep -q 'extension/out/extension.js'
+          echo "VSIX ok: $vsix"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dry-run-vsix
+          path: editors/vscode/*.vsix
+          if-no-files-found: error
+
+  intellij-release-build:
+    name: release-intellij dry build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Generate ANTLR sources
+        run: ./gradlew generateGrammarSource
+
+      - name: buildPlugin
+        run: ./gradlew :editors:intellij:buildPlugin
+
+      - name: verifyPlugin (binary compatibility)
+        run: ./gradlew :editors:intellij:verifyPlugin
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dry-run-intellij-plugin
+          path: editors/intellij/build/distributions/*.zip
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dry-run-intellij-verifier-report
+          path: editors/intellij/build/reports/pluginVerifier/**
+
+  actionlint:
+    name: Lint workflow YAML
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run actionlint
+        uses: raven-actions/actionlint@v2
+        with:
+          files: '.github/workflows/*.yml'

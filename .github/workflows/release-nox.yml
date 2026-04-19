@@ -1,0 +1,219 @@
+name: Release Nox (language core)
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Promote draft release to public'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-nox-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: resolve
+        run: |
+          tag="${GITHUB_REF##*/}"
+          version="${tag#v}"
+          gradle_version=$(grep '^version' gradle.properties 2>/dev/null | cut -d'=' -f2 | tr -d ' ' || true)
+          if [ -n "$gradle_version" ] && [ "$gradle_version" != "$version" ]; then
+            echo "::error::Tag $tag does not match gradle.properties version $gradle_version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  build-native:
+    name: Native binaries (${{ matrix.os }})
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset: linux-x64
+            archive: tar.gz
+          - os: macos-latest
+            asset: macos-arm64
+            archive: tar.gz
+          - os: macos-13
+            asset: macos-x64
+            archive: tar.gz
+          - os: windows-latest
+            asset: windows-x64
+            archive: zip
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Generate ANTLR sources
+        run: ./gradlew generateGrammarSource
+
+      - name: Native compile nox (main runtime)
+        run: ./gradlew nativeCompile
+        shell: bash
+
+      - name: Native compile noxc (compiler CLI)
+        run: ./gradlew nativeNoxcCompile
+        shell: bash
+
+      - name: Native compile nox-lsp (language server)
+        run: ./gradlew :nox-lsp:nativeCompile
+        shell: bash
+
+      - name: Native compile noxfmt (formatter CLI)
+        run: ./gradlew :nox-format:nativeCompile
+        shell: bash
+
+      - name: Assemble distribution (unix)
+        if: matrix.archive == 'tar.gz'
+        shell: bash
+        run: |
+          set -euo pipefail
+          ver="${{ needs.prepare.outputs.version }}"
+          stage="nox-${ver}-${{ matrix.asset }}"
+          mkdir -p "$stage/bin"
+
+          # Every binary lives under its own nativeCompile variant output dir.
+          cp build/native/nativeCompile/nox                 "$stage/bin/"
+          cp build/native/nativeNoxcCompile/noxc            "$stage/bin/"
+          cp nox-lsp/build/native/nativeCompile/nox-lsp     "$stage/bin/"
+          cp nox-format/build/native/nativeCompile/noxfmt   "$stage/bin/"
+          chmod +x "$stage"/bin/*
+
+          cp README.md "$stage/" 2>/dev/null || true
+          cp LICENSE* "$stage/" 2>/dev/null || true
+
+          # Sanity: each binary must respond to --version before we ship it.
+          for b in "$stage"/bin/*; do
+            echo "--- $b --version"
+            "$b" --version
+          done
+
+          tar -czf "$stage.tar.gz" "$stage"
+          shasum -a 256 "$stage.tar.gz" > "$stage.tar.gz.sha256"
+
+      - name: Assemble distribution (windows)
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: |
+          $ver = "${{ needs.prepare.outputs.version }}"
+          $stage = "nox-$ver-${{ matrix.asset }}"
+          New-Item -ItemType Directory -Force -Path "$stage\bin" | Out-Null
+
+          Copy-Item "build\native\nativeCompile\nox.exe"               "$stage\bin\"
+          Copy-Item "build\native\nativeNoxcCompile\noxc.exe"          "$stage\bin\"
+          Copy-Item "nox-lsp\build\native\nativeCompile\nox-lsp.exe"   "$stage\bin\"
+          Copy-Item "nox-format\build\native\nativeCompile\noxfmt.exe" "$stage\bin\"
+
+          if (Test-Path "README.md") { Copy-Item "README.md" -Destination $stage }
+
+          Get-ChildItem "$stage\bin" -Filter *.exe | ForEach-Object {
+            Write-Host "--- $($_.FullName) --version"
+            & $_.FullName --version
+          }
+
+          Compress-Archive -Path $stage -DestinationPath "$stage.zip"
+          (Get-FileHash "$stage.zip" -Algorithm SHA256).Hash | Out-File "$stage.zip.sha256"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nox-${{ matrix.asset }}
+          path: |
+            nox-*.tar.gz
+            nox-*.tar.gz.sha256
+            nox-*.zip
+            nox-*.zip.sha256
+          if-no-files-found: error
+
+  build-jar:
+    name: Fat JAR
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build shadow JAR
+        run: ./gradlew shadowJar
+
+      - name: Rename
+        run: |
+          set -euo pipefail
+          ver="${{ needs.prepare.outputs.version }}"
+          src=$(find build/libs -maxdepth 1 -type f -name '*-all.jar' | head -n1)
+          cp "$src" "nox-tools-${ver}.jar"
+          shasum -a 256 "nox-tools-${ver}.jar" > "nox-tools-${ver}.jar.sha256"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nox-tools-jar
+          path: |
+            nox-tools-*.jar
+            nox-tools-*.jar.sha256
+
+  release:
+    name: Draft GitHub release
+    needs: [prepare, build-native, build-jar]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Compose release notes
+        run: |
+          ver="${{ needs.prepare.outputs.version }}"
+          if [ -f CHANGELOG.md ]; then
+            awk -v v="$ver" '
+              /^## / { if (found) exit; if (index($0, v) > 0) { found=1; next } }
+              found { print }
+            ' CHANGELOG.md > RELEASE_NOTES.md
+          fi
+          [ -s RELEASE_NOTES.md ] || echo "Release ${ver}." > RELEASE_NOTES.md
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ver="${{ needs.prepare.outputs.version }}"
+          publish="${{ github.event.inputs.publish }}"
+          flags="--draft"
+          [ "$publish" = "true" ] && flags=""
+          gh release create "v${ver}" $flags \
+            --title "Nox v${ver}" \
+            --notes-file RELEASE_NOTES.md \
+            dist/*

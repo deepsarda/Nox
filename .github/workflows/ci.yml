@@ -63,3 +63,91 @@ jobs:
 
       - name: ktlint check
         run: ./gradlew ktlintCheck
+
+  lsp-test:
+    name: LSP integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew :nox-lsp:test
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lsp-test-report
+          path: nox-lsp/build/reports/tests/test/
+
+  fmt-test:
+    name: Formatter golden tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew :nox-format:test
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fmt-test-report
+          path: nox-format/build/reports/tests/test/
+
+  vscode-test:
+    name: VSCode extension test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - name: Install deps
+        working-directory: editors/vscode
+        run: npm ci || npm install
+      - name: Compile
+        working-directory: editors/vscode
+        run: npm run compile
+      - name: Run tests (headless)
+        working-directory: editors/vscode
+        run: xvfb-run -a npm test --if-present
+
+  check-ai-reference:
+    name: AI reference up-to-date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Regenerate AI reference
+        run: ./gradlew generateAiReference
+      - name: Fail if stale
+        run: |
+          if ! git diff --exit-code -- ai-cli/shared/NOX_LANGUAGE_REFERENCE.md; then
+            echo "::error::ai-cli/shared/NOX_LANGUAGE_REFERENCE.md is stale. Run ./gradlew generateAiReference and commit."
+            exit 1
+          fi
+
+  compat-check:
+    name: LSP and extension capability check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Boot nox-lsp and assert initialize
+        run: ./gradlew :nox-lsp:test --tests '*CompatCheck*'

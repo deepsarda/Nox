@@ -1,0 +1,112 @@
+name: Release IntelliJ plugin
+
+on:
+  push:
+    tags:
+      - 'intellij-v*.*.*'
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: 'Marketplace channel (default | eap | stable)'
+        type: string
+        default: 'default'
+      publish:
+        description: 'Publish to JetBrains Marketplace'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-intellij-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build & verify
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: ver
+        run: |
+          tag="${GITHUB_REF##*/}"
+          version="${tag#intellij-v}"
+          gradle_version=$(grep '^pluginVersion' editors/intellij/gradle.properties | cut -d'=' -f2 | tr -d ' ')
+          if [ "$gradle_version" != "$version" ]; then
+            echo "::error::Tag $tag does not match editors/intellij/gradle.properties pluginVersion $gradle_version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Generate ANTLR sources
+        run: ./gradlew generateGrammarSource
+
+      - name: Build plugin
+        run: ./gradlew :editors:intellij:buildPlugin
+
+      - name: Run plugin verifier
+        run: ./gradlew :editors:intellij:verifyPlugin
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: intellij-plugin
+          path: editors/intellij/build/distributions/*.zip
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: intellij-verifier-report
+          path: editors/intellij/build/reports/pluginVerifier/**
+
+  publish:
+    name: Publish
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.inputs.publish == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Generate ANTLR sources
+        run: ./gradlew generateGrammarSource
+
+      - name: Publish to JetBrains Marketplace
+        env:
+          JETBRAINS_MARKETPLACE_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
+          PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
+        run: |
+          if [ -z "${JETBRAINS_MARKETPLACE_TOKEN:-}" ]; then
+            echo "::warning::JETBRAINS_MARKETPLACE_TOKEN not set — skipping publish"
+            exit 0
+          fi
+          ./gradlew :editors:intellij:publishPlugin \
+            -PpluginChannel=${{ github.event.inputs.channel || 'default' }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: intellij-plugin
+          path: dist
+
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "intellij-v${{ needs.build.outputs.version }}" \
+            --title "Nox IntelliJ v${{ needs.build.outputs.version }}" \
+            --notes "IntelliJ plugin release v${{ needs.build.outputs.version }}." \
+            dist/*

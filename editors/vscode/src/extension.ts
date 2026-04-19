@@ -1,6 +1,10 @@
 import * as os from "node:os";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
 
 import {
 	LanguageClient,
@@ -86,7 +90,19 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand("nox.version", async () => {
-			vscode.window.showInformationMessage("Nox Compiler & LSP Version 0.1.0");
+			const extensionVersion =
+				context.extension.packageJSON.version ?? "unknown";
+			let lspVersion = "not installed";
+			try {
+				const serverPath = await ensureLspBinary(context);
+				const { stdout } = await execFileAsync(serverPath, ["--version"]);
+				lspVersion = stdout.trim();
+			} catch (err) {
+				lspVersion = `error: ${(err as Error).message}`;
+			}
+			vscode.window.showInformationMessage(
+				`Nox VS Code extension ${extensionVersion} — ${lspVersion}`,
+			);
 		}),
 	);
 

@@ -6,13 +6,19 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.versionOption
 import com.github.ajalt.clikt.parameters.types.path
+import nox.BuildInfo
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.readText
 import kotlin.system.exitProcess
 
 class NoxFmtCli : CliktCommand(name = "noxfmt") {
+    init {
+        versionOption(BuildInfo.VERSION, names = setOf("--version"), message = { "noxfmt $it" })
+    }
+
     private val check by option(
         "--check",
         help = "Exit non-zero if any file needs formatting. Do not write changes.",

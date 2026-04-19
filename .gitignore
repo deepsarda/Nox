@@ -39,3 +39,4 @@ bin/
 PLAN.md
 dummy_out.json
 migration.sql
+.intellijPlatform/

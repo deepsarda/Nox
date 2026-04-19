@@ -1,0 +1,26 @@
+{
+  "name": "nox",
+  "version": "0.1.0-alpha",
+  "description": "Nox language support for Gemini CLI. Load NOX_LANGUAGE_REFERENCE.md before writing .nox code; self-check via `noxc --json`; format via `noxfmt`.",
+  "contextFiles": [
+    "NOX_LANGUAGE_REFERENCE.md"
+  ],
+  "commands": [
+    {
+      "name": "nox-check",
+      "path": "commands/nox-check.md"
+    },
+    {
+      "name": "nox-format",
+      "path": "commands/nox-format.md"
+    },
+    {
+      "name": "nox-ref",
+      "path": "commands/nox-ref.md"
+    },
+    {
+      "name": "nox-run",
+      "path": "commands/nox-run.md"
+    }
+  ]
+}

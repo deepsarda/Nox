@@ -4,7 +4,9 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.versionOption
 import com.github.ajalt.clikt.parameters.types.int
+import nox.BuildInfo
 import nox.lsp.protocol.*
 import java.io.InputStream
 import java.io.OutputStream
@@ -16,15 +18,14 @@ import java.net.ServerSocket
  * corrupt the JSON-RPC stream, so every log goes to stderr.
  */
 class NoxLspCli : CliktCommand(name = "nox-lsp") {
+    init {
+        versionOption(BuildInfo.VERSION, names = setOf("--version"), message = { "nox-lsp $it" })
+    }
+
     private val socket by option("--socket", help = "Listen for LSP on this TCP port instead of stdio").int()
-    private val version by option("--version", help = "Print version and exit").flag()
     private val stdio by option("--stdio", help = "Use stdio for LSP (default)").flag()
 
     override fun run() {
-        if (version) {
-            println("nox-lsp ${BuildInfo.VERSION}")
-            return
-        }
         if (socket != null) {
             runSocket(socket!!)
         } else {

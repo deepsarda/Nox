@@ -1,0 +1,28 @@
+<idea-plugin>
+    <id>com.nox.lang</id>
+    <name>Nox Language</name>
+    <vendor url="https://github.com/nox-lang/nox">Nox Language</vendor>
+
+    <description><![CDATA[
+        Nox language support for IntelliJ IDEA. Powered by <code>nox-lsp</code>.
+        Provides diagnostics, hover, completion, go-to-definition, find usages,
+        rename, semantic highlighting, inlay hints, quick-fixes, and code formatting.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lsp</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <fileType
+            name="Nox"
+            implementationClass="nox.intellij.NoxFileType"
+            fieldName="INSTANCE"
+            language="Nox"
+            extensions="nox"/>
+
+        <platform.lsp.serverSupportProvider
+            implementation="nox.intellij.NoxLspServerSupportProvider"/>
+
+        <configurationType implementation="nox.intellij.run.NoxRunConfigurationType"/>
+    </extensions>
+</idea-plugin>

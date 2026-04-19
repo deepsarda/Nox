@@ -10,6 +10,7 @@ import com.github.ajalt.clikt.parameters.types.path
 import com.github.ajalt.mordant.rendering.TextColors
 import com.github.ajalt.mordant.terminal.Terminal
 import kotlinx.coroutines.runBlocking
+import nox.BuildInfo
 import nox.cli.policy.PermissionPolicy
 import nox.compiler.NoxCompiler
 import nox.plugin.LibraryRegistry
@@ -24,6 +25,10 @@ import kotlin.system.exitProcess
  * permission/resource prompts, plugin loading, and real-time yield output.
  */
 class NoxCli : CliktCommand(name = "nox") {
+    init {
+        versionOption(BuildInfo.VERSION, names = setOf("--version"), message = { "nox $it" })
+    }
+
     private val file by argument(help = "Nox source file to run").path(mustExist = true, canBeDir = false)
 
     private val args by option("-a", "--arg", help = "Pass an argument to main() (format: name=value)").associate()

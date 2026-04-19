@@ -1,0 +1,119 @@
+name: Release VSCode extension
+
+on:
+  push:
+    tags:
+      - 'vscode-v*.*.*'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish to marketplaces'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-vscode-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build & test
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      vsix: ${{ steps.package.outputs.vsix }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: ver
+        run: |
+          tag="${GITHUB_REF##*/}"
+          version="${tag#vscode-v}"
+          pkg=$(node -p "require('./editors/vscode/package.json').version")
+          if [ "$pkg" != "$version" ]; then
+            echo "::error::Tag $tag does not match editors/vscode/package.json version $pkg"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps
+        working-directory: editors/vscode
+        run: npm ci || npm install
+
+      - name: Compile
+        working-directory: editors/vscode
+        run: npm run compile
+
+      - name: Test
+        working-directory: editors/vscode
+        run: xvfb-run -a npm test --if-present
+
+      - name: Package VSIX
+        id: package
+        working-directory: editors/vscode
+        run: |
+          npx --yes @vscode/vsce package --no-dependencies
+          vsix=$(ls *.vsix | head -n1)
+          echo "vsix=$vsix" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vscode-vsix
+          path: editors/vscode/*.vsix
+          if-no-files-found: error
+
+  publish:
+    name: Publish
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.inputs.publish == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: vscode-vsix
+          path: editors/vscode
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Publish to VSCode Marketplace
+        working-directory: editors/vscode
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          if [ -z "${VSCE_PAT:-}" ]; then
+            echo "::warning::VSCE_PAT not set, so skipping Marketplace publish"
+            exit 0
+          fi
+          vsix=$(ls *.vsix | head -n1)
+          npx --yes @vscode/vsce publish --packagePath "$vsix" --pat "$VSCE_PAT"
+
+      - name: Publish to Open VSX
+        working-directory: editors/vscode
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          if [ -z "${OVSX_PAT:-}" ]; then
+            echo "::warning::OVSX_PAT not set, so skipping Open VSX publish"
+            exit 0
+          fi
+          vsix=$(ls *.vsix | head -n1)
+          npx --yes ovsx publish "$vsix" --pat "$OVSX_PAT"
+
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "vscode-v${{ needs.build.outputs.version }}" \
+            --title "Nox VSCode v${{ needs.build.outputs.version }}" \
+            --notes "VSCode extension release v${{ needs.build.outputs.version }}." \
+            editors/vscode/*.vsix

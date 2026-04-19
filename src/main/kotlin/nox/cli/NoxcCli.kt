@@ -6,8 +6,10 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.versionOption
 import com.github.ajalt.clikt.parameters.types.path
 import com.github.ajalt.mordant.terminal.Terminal
+import nox.BuildInfo
 import nox.compiler.NoxCompiler
 import nox.plugin.LibraryRegistry
 import java.io.File
@@ -19,6 +21,10 @@ import kotlin.system.exitProcess
  * Replaces the old `NoxcApp`.
  */
 class NoxcCli : CliktCommand(name = "noxc") {
+    init {
+        versionOption(BuildInfo.VERSION, names = setOf("--version"), message = { "noxc $it" })
+    }
+
     private val file by argument(help = "Nox source file to compile").path(mustExist = true, canBeDir = false)
     private val output by option("-o", "--output", help = "Output path for .noxc file").path()
     private val plugins by option("--plugin", help = "Load a C plugin for type resolution").multiple()

@@ -1,0 +1,34 @@
+# Nox project — agent guide
+
+## Before writing any `.nox` code
+
+Read `./NOX_LANGUAGE_REFERENCE.md` (bundled next to this file). Nox looks like
+C/Java but has no classes, no generics, no closures, uses UFCS, and gates all
+I/O through capabilities. Do not guess syntax.
+
+## Self-check loop
+
+After every edit to a `.nox` file:
+
+1. `noxc --json <file.nox>` gives typecheck. Non-zero exit = errors on stderr as JSON.
+2. `noxfmt <file.nox>` does format. Must be clean before finalizing.
+3. Only `nox <file.nox>` when the user asks. Nox may prompt for permissions.
+
+## Error schema
+
+`noxc --json` emits `stderr` as:
+
+```json
+[
+  {
+    "file": "path/to/file.nox",
+    "line": 12,
+    "column": 8,
+    "severity": "error" | "warning",
+    "message": "unknown type `strng`",
+    "suggestion": "did you mean `string`?"
+  }
+]
+```
+
+When present, `suggestion` is almost always the correct fix.
