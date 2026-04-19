@@ -75,11 +75,11 @@ class TreeValidatorTest :
             val rawBlock = RawBlock(emptyList(), loc1)
             val typedBlock = TypedBlock(emptyList(), loc1, 0)
 
-            val rawParam = RawParamImpl(TypeRef.INT, "x", null, false, loc1)
-            val typedParam = TypedParam(TypeRef.INT, "x", null, false, loc1, VarSymbol("x", TypeRef.INT, 0))
+            val rawParam = RawParamImpl(TypeRef.INT, "x", loc1, null, false, loc1)
+            val typedParam = TypedParam(TypeRef.INT, "x", loc1, null, false, loc1, VarSymbol("x", TypeRef.INT, 0))
 
-            val raw = RawFuncDef(TypeRef.VOID, "f", listOf(rawParam), rawBlock, loc1)
-            val typed = TypedFuncDef(TypeRef.VOID, "f", listOf(typedParam), typedBlock, loc1, 0, 0)
+            val raw = RawFuncDef(TypeRef.VOID, "f", loc1, listOf(rawParam), rawBlock, loc1)
+            val typed = TypedFuncDef(TypeRef.VOID, "f", loc1, listOf(typedParam), typedBlock, loc1, 0, 0)
 
             validator.validate(
                 RawProgram("", emptyList(), emptyList(), listOf(raw)),
@@ -111,8 +111,8 @@ class TreeValidatorTest :
             val errors = CompilerErrors()
             val validator = TreeValidator(errors)
 
-            val raw = RawGlobalVarDecl(TypeRef.INT, "g", RawIntLiteralExpr(1, loc1), loc1)
-            val typed = TypedGlobalVarDecl(TypeRef.INT, "g", TypedIntLiteralExpr(1, loc1, TypeRef.INT), loc1, 0)
+            val raw = RawGlobalVarDecl(TypeRef.INT, "g", loc1, RawIntLiteralExpr(1, loc1), loc1)
+            val typed = TypedGlobalVarDecl(TypeRef.INT, "g", loc1, TypedIntLiteralExpr(1, loc1, TypeRef.INT), loc1, 0)
 
             validator.validate(
                 RawProgram("", emptyList(), emptyList(), listOf(raw)),
@@ -126,8 +126,8 @@ class TreeValidatorTest :
             val errors = CompilerErrors()
             val validator = TreeValidator(errors)
 
-            val raw = RawTypeDef("T", listOf(RawFieldDeclImpl(TypeRef.INT, "f", loc1)), loc1)
-            val typed = TypedTypeDef("T", listOf(TypedFieldDecl(TypeRef.INT, "f", loc1)), loc1)
+            val raw = RawTypeDef("T", loc1, listOf(RawFieldDeclImpl(TypeRef.INT, "f", loc1, loc1)), loc1)
+            val typed = TypedTypeDef("T", loc1, listOf(TypedFieldDecl(TypeRef.INT, "f", loc1, loc1)), loc1)
 
             validator.validate(
                 RawProgram("", emptyList(), emptyList(), listOf(raw)),
@@ -161,7 +161,7 @@ class TreeValidatorTest :
 
             val rawStmts =
                 listOf(
-                    RawVarDeclStmt(TypeRef.INT, "v", RawIntLiteralExpr(1, loc1), loc1),
+                    RawVarDeclStmt(TypeRef.INT, "v", loc1, RawIntLiteralExpr(1, loc1), loc1),
                     RawAssignStmt(RawIdentifierExpr("v", loc1), AssignOp.ASSIGN, RawIntLiteralExpr(2, loc1), loc1),
                     RawIncrementStmt(RawIdentifierExpr("v", loc1), PostfixOp.INCREMENT, loc1),
                     RawReturnStmt(RawIntLiteralExpr(3, loc1), loc1),
@@ -187,6 +187,7 @@ class TreeValidatorTest :
                     TypedVarDeclStmt(
                         TypeRef.INT,
                         "v",
+                        loc1,
                         TypedIntLiteralExpr(1, loc1, TypeRef.INT),
                         loc1,
                         VarSymbol("v", TypeRef.INT, 0),
@@ -274,10 +275,10 @@ class TreeValidatorTest :
                     RawTemplateLiteralExpr(emptyList(), loc1),
                     RawArrayLiteralExpr(emptyList(), loc1),
                     RawStructLiteralExpr(emptyList(), loc1),
-                    RawFieldAccessExpr(RawIdentifierExpr("t", loc1), "f", loc1),
+                    RawFieldAccessExpr(RawIdentifierExpr("t", loc1), "f", loc1, loc1),
                     RawIndexAccessExpr(RawIdentifierExpr("t", loc1), RawIntLiteralExpr(0, loc1), loc1),
                     RawFuncCallExpr("f", emptyList(), loc1),
-                    RawMethodCallExpr(RawIdentifierExpr("t", loc1), "m", emptyList(), loc1),
+                    RawMethodCallExpr(RawIdentifierExpr("t", loc1), "m", loc1, emptyList(), loc1),
                     RawBinaryExpr(RawIntLiteralExpr(1, loc1), BinaryOp.ADD, RawIntLiteralExpr(2, loc1), loc1),
                     RawUnaryExpr(UnaryOp.NEG, RawIntLiteralExpr(1, loc1), loc1),
                     RawPostfixExpr(RawIdentifierExpr("i", loc1), PostfixOp.INCREMENT, loc1),
@@ -300,6 +301,7 @@ class TreeValidatorTest :
                         TypedIdentifierExpr("t", loc1, TypeRef("S"), VarSymbol("t", TypeRef("S"), 0)),
                         "f",
                         loc1,
+                        loc1,
                         TypeRef.INT,
                     ),
                     TypedIndexAccessExpr(
@@ -317,12 +319,13 @@ class TreeValidatorTest :
                             "f",
                             TypeRef.VOID,
                             emptyList(),
-                            RawFuncDef(TypeRef.VOID, "f", emptyList(), RawBlock(emptyList(), loc1), loc1),
+                            RawFuncDef(TypeRef.VOID, "f", loc1, emptyList(), RawBlock(emptyList(), loc1), loc1),
                         ),
                     ),
                     TypedMethodCallExpr(
                         TypedIdentifierExpr("t", loc1, TypeRef("S"), VarSymbol("t", TypeRef("S"), 0)),
                         "m",
+                        loc1,
                         emptyList(),
                         loc1,
                         TypeRef.VOID,
@@ -331,7 +334,7 @@ class TreeValidatorTest :
                             "m",
                             emptyList(),
                             TypeRef.VOID,
-                            RawFuncDef(TypeRef.VOID, "f", emptyList(), RawBlock(emptyList(), loc1), loc1),
+                            RawFuncDef(TypeRef.VOID, "f", loc1, emptyList(), RawBlock(emptyList(), loc1), loc1),
                         ),
                     ),
                     TypedBinaryExpr(

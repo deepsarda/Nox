@@ -83,13 +83,12 @@ object NoxCompiler {
         importResolver.resolveImports(program)
         val modules = importResolver.modules.toList()
 
-
         val globalScope = SymbolTable()
         DeclarationCollector(globalScope, errors).collect(program)
 
         val (typedProgram, typedModules) = TypeResolver(globalScope, errors, modules, registry).resolve(program)
         TreeValidator(errors).validate(program, typedProgram)
-        ControlFlowValidator(errors, warnings).validate(typedProgram)   
+        ControlFlowValidator(errors, warnings).validate(typedProgram)
 
         return CompilationResult(program, typedProgram, errors, warnings, modules)
     }
@@ -168,7 +167,11 @@ object NoxCompiler {
         val compiledProgram = CodeGenerator(errors, typedModules, registry).generate(foldedProgram)
 
         // Phase 7: Disassembly
-        val programName = program.headers.filterIsInstance<RawHeaderImpl>().firstOrNull { it.key == "name" }?.value ?: "(unnamed)"
+        val programName =
+            program.headers
+                .filterIsInstance<RawHeaderImpl>()
+                .firstOrNull { it.key == "name" }
+                ?.value ?: "(unnamed)"
         val disassembly = NoxcEmitter().emit(compiledProgram, fileName, programName, program.sourceLines)
 
         return CompilationResult(program, typedProgram, errors, warnings, modules, compiledProgram, disassembly)

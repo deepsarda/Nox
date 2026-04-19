@@ -146,6 +146,10 @@ gradle test
 gradle generateGrammarSource
 ```
 
+## Demo Programs
+
+See the files at [src/test/resources/nox/programs](src/test/resources/nox/programs) for some demo programs.
+
 ## Tech Stack
 
 | Component    | Technology                        |

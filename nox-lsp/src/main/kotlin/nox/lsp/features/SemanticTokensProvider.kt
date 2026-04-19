@@ -65,23 +65,25 @@ object SemanticTokensProvider {
             onDecl = { decl ->
                 when (decl) {
                     is TypedTypeDef -> {
-                        out.emit(decl.loc, decl.name.length, TokenType.TYPE)
-                        decl.fields.forEach { f -> out.emit(f.loc, f.name.length, TokenType.PROPERTY) }
+                        out.emit(decl.nameLoc, decl.name.length, TokenType.TYPE)
+                        decl.fields.forEach { f -> out.emit(f.nameLoc, f.name.length, TokenType.PROPERTY) }
                     }
                     is TypedFuncDef -> {
-                        out.emit(decl.loc, decl.name.length, TokenType.FUNCTION)
-                        decl.params.forEach { p -> out.emit(p.loc, p.name.length, TokenType.PARAMETER) }
+                        out.emit(decl.nameLoc, decl.name.length, TokenType.FUNCTION)
+                        decl.params.forEach { p -> out.emit(p.nameLoc, p.name.length, TokenType.PARAMETER) }
                     }
-                    is TypedMainDef -> decl.params.forEach { p -> out.emit(p.loc, p.name.length, TokenType.PARAMETER) }
-                    is TypedGlobalVarDecl -> out.emit(decl.loc, decl.name.length, TokenType.VARIABLE)
+                    is TypedMainDef ->
+                        decl.params.forEach { p ->
+                            out.emit(p.nameLoc, p.name.length, TokenType.PARAMETER)
+                        }
+                    is TypedGlobalVarDecl -> out.emit(decl.nameLoc, decl.name.length, TokenType.VARIABLE)
                     else -> Unit
                 }
             },
             onStmt = { stmt ->
                 if (stmt is TypedVarDeclStmt) {
-                    out.emit(stmt.loc, stmt.name.length, TokenType.VARIABLE)
+                    out.emit(stmt.nameLoc, stmt.name.length, TokenType.VARIABLE)
                 }
-                // TODO: Improve this stuff
             },
             onExpr = { expr -> classify(expr, out) },
         )
@@ -104,23 +106,8 @@ object SemanticTokensProvider {
                 // If it's a global call, color the identifier as function
                 out.emit(expr.loc, expr.name.length, TokenType.FUNCTION)
             }
-            is TypedMethodCallExpr -> {
-                // Approximate method name position: target + '.'
-                // We'll just push it 1 column past the dot for now, better than target start.
-                // In a perfect world, AST would have the methodName loc.
-                out.emit(
-                    SourceLocation(expr.loc.file, expr.loc.line, expr.loc.column + 1),
-                    expr.methodName.length,
-                    TokenType.METHOD,
-                )
-            }
-            is TypedFieldAccessExpr -> {
-                out.emit(
-                    SourceLocation(expr.loc.file, expr.loc.line, expr.loc.column + 1),
-                    expr.fieldName.length,
-                    TokenType.PROPERTY,
-                )
-            }
+            is TypedMethodCallExpr -> out.emit(expr.methodNameLoc, expr.methodName.length, TokenType.METHOD)
+            is TypedFieldAccessExpr -> out.emit(expr.fieldNameLoc, expr.fieldName.length, TokenType.PROPERTY)
             is TypedStringLiteralExpr -> out.emit(expr.loc, expr.value.length + 2, TokenType.STRING)
             is TypedIntLiteralExpr -> out.emit(expr.loc, expr.value.toString().length, TokenType.NUMBER)
             is TypedDoubleLiteralExpr -> out.emit(expr.loc, expr.value.toString().length, TokenType.NUMBER)

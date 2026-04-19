@@ -37,7 +37,7 @@ object ConstantFolder {
                 if (newBody === decl.body) {
                     decl
                 } else {
-                    TypedFuncDef(decl.returnType, decl.name, decl.params, newBody, decl.loc).also {
+                    TypedFuncDef(decl.returnType, decl.name, decl.nameLoc, decl.params, newBody, decl.loc).also {
                         it.maxPrimitiveRegisters = decl.maxPrimitiveRegisters
                         it.maxReferenceRegisters = decl.maxReferenceRegisters
                     }
@@ -60,7 +60,7 @@ object ConstantFolder {
                 if (folded === init) {
                     decl
                 } else {
-                    TypedGlobalVarDecl(decl.type, decl.name, folded, decl.loc).also {
+                    TypedGlobalVarDecl(decl.type, decl.name, decl.nameLoc, folded, decl.loc).also {
                         it.globalSlot = decl.globalSlot
                     }
                 }
@@ -148,7 +148,17 @@ object ConstantFolder {
                 if (init === stmt.initializer) {
                     listOf(stmt)
                 } else {
-                    listOf(TypedVarDeclStmt(stmt.type, stmt.name, init, stmt.loc, stmt.resolvedSymbol, stmt.register))
+                    listOf(
+                        TypedVarDeclStmt(
+                            stmt.type,
+                            stmt.name,
+                            stmt.nameLoc,
+                            init,
+                            stmt.loc,
+                            stmt.resolvedSymbol,
+                            stmt.register,
+                        ),
+                    )
                 }
             }
             is TypedAssignStmt -> {

@@ -51,16 +51,18 @@ class TypeResolver(
             }
         }
 
-        val typedImports = program.imports.map {
-            when (it) {
-                is RawImportDecl -> resolveImportDecl(it)
-                else -> TypedErrorDecl(it.loc)
+        val typedImports =
+            program.imports.map {
+                when (it) {
+                    is RawImportDecl -> resolveImportDecl(it)
+                    else -> TypedErrorDecl(it.loc)
+                }
             }
-        }
 
-        val typedHeaders = program.headers.mapNotNull { h ->
-            if (h is RawHeaderImpl) TypedHeader(h.key, h.value, h.loc) else null
-        }
+        val typedHeaders =
+            program.headers.mapNotNull { h ->
+                if (h is RawHeaderImpl) TypedHeader(h.key, h.value, h.loc) else null
+            }
 
         val typedProgram =
             TypedProgram(
@@ -120,10 +122,10 @@ class TypeResolver(
             }
 
             typeSym?.fields?.put(f.name, f.type)
-            typedFields.add(TypedFieldDecl(f.type, f.name, f.loc))
+            typedFields.add(TypedFieldDecl(f.type, f.name, f.nameLoc, f.loc))
         }
 
-        return TypedTypeDef(typeDef.name, typedFields, typeDef.loc)
+        return TypedTypeDef(typeDef.name, typeDef.nameLoc, typedFields, typeDef.loc)
     }
 
     private fun isKnownType(type: TypeRef): Boolean {
@@ -136,7 +138,7 @@ class TypeResolver(
         val funcScope = globalScope.child()
         val typedParams = registerParams(funcScope, funcDef.params)
         val typedBody = stmtResolver.resolveBlock(funcScope, funcDef.body, funcDef.returnType)
-        return TypedFuncDef(funcDef.returnType, funcDef.name, typedParams, typedBody, funcDef.loc)
+        return TypedFuncDef(funcDef.returnType, funcDef.name, funcDef.nameLoc, typedParams, typedBody, funcDef.loc)
     }
 
     private fun resolveMain(mainDef: RawMainDef): TypedMainDef {
@@ -197,7 +199,7 @@ class TypeResolver(
                 )
             }
 
-            typedParams.add(TypedParam(p.type, p.name, typedDefaultValue, p.isVarargs, p.loc, symbol))
+            typedParams.add(TypedParam(p.type, p.name, p.nameLoc, typedDefaultValue, p.isVarargs, p.loc, symbol))
         }
         return typedParams
     }
@@ -222,7 +224,7 @@ class TypeResolver(
                 )
             }
         }
-        return TypedGlobalVarDecl(decl.type, decl.name, typedInit, decl.loc)
+        return TypedGlobalVarDecl(decl.type, decl.name, decl.nameLoc, typedInit, decl.loc)
     }
 
     private fun resolveImportDecl(decl: RawImportDecl): TypedImportDecl {

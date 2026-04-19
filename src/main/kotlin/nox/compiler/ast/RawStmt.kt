@@ -23,6 +23,7 @@ sealed class RawStmt(
 class RawVarDeclStmt(
     val type: TypeRef,
     val name: String,
+    val nameLoc: SourceLocation,
     val initializer: RawExpr,
     loc: SourceLocation,
 ) : RawStmt(loc)

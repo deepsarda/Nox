@@ -19,6 +19,7 @@ class NoxLspServerSupportProvider : LspServerSupportProvider {
         serverStarter: LspServerSupportProvider.LspServerStarter,
     ) {
         if (file.extension != "nox") return
+        if (!NoxSettings.instance().shouldActivate(NoxSettings.LspBackend.JETBRAINS)) return
         serverStarter.ensureServerStarted(NoxLspServerDescriptor(project))
     }
 }

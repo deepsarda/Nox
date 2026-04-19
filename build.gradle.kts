@@ -270,14 +270,16 @@ tasks.register("syncAiCliVersions") {
     val aiCliDir = file("ai-cli")
     inputs.property("version", rootVersion)
     doLast {
-        aiCliDir.walkTopDown()
+        aiCliDir
+            .walkTopDown()
             .filter { it.isFile && it.name.endsWith("-extension.json") }
             .forEach { f ->
                 val text = f.readText()
-                val updated = text.replace(
-                    Regex("\"version\"\\s*:\\s*\"[^\"]*\""),
-                    "\"version\": \"$rootVersion\"",
-                )
+                val updated =
+                    text.replace(
+                        Regex("\"version\"\\s*:\\s*\"[^\"]*\""),
+                        "\"version\": \"$rootVersion\"",
+                    )
                 if (updated != text) f.writeText(updated)
             }
     }

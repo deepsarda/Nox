@@ -1,0 +1,16 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="com.redhat.devtools.lsp4ij">
+        <server id="nox"
+                name="Nox Language Server"
+                factoryClass="nox.intellij.NoxLsp4ijServerFactory">
+            <description><![CDATA[
+                Routes <code>.nox</code> files through the bundled
+                <code>nox-lsp</code> binary for diagnostics, hover, completion,
+                go-to-definition, find usages, rename, semantic highlighting,
+                inlay hints, quick-fixes, and code formatting.
+            ]]></description>
+        </server>
+
+        <languageMapping language="Nox" serverId="nox"/>
+    </extensions>
+</idea-plugin>

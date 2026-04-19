@@ -23,6 +23,7 @@ sealed class TypedStmt(
 class TypedVarDeclStmt(
     val type: TypeRef,
     val name: String,
+    val nameLoc: SourceLocation,
     val initializer: TypedExpr,
     loc: SourceLocation,
     val resolvedSymbol: Symbol,

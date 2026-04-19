@@ -11,7 +11,9 @@ type Table {
 }
 
 main() {
-    json schema = Json.parse("{\"table\": \"users\", \"cols\": [{\"name\": \"id\", \"colType\": \"INT\"}, {\"name\": \"name\", \"colType\": \"VARCHAR\"}]}");
+    json schema = Json.parse(
+        "{\"table\": \"users\", \"cols\": [{\"name\": \"id\", \"colType\": \"INT\"}, {\"name\": \"name\", \"colType\": \"VARCHAR\"}]}"
+    );
     Table t = schema as Table;
 
     string query = "CREATE TABLE " + t.table + " (";

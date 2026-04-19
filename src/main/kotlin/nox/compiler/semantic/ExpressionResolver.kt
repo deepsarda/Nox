@@ -238,13 +238,17 @@ class ExpressionResolver(
         val target = resolveExpr(scope, expr.target)
         val targetType = target.type
 
-        if (targetType == TypeRef.JSON) return TypedFieldAccessExpr(target, expr.fieldName, expr.loc, TypeRef.JSON)
+        if (targetType == TypeRef.JSON) {
+            return TypedFieldAccessExpr(target, expr.fieldName, expr.fieldNameLoc, expr.loc, TypeRef.JSON)
+        }
 
         if (targetType.isStructType() && !targetType.isArray) {
             val structSym = globalScope.lookup(targetType.name)
             if (structSym is TypeSymbol) {
                 val fieldType = structSym.fields[expr.fieldName]
-                if (fieldType != null) return TypedFieldAccessExpr(target, expr.fieldName, expr.loc, fieldType)
+                if (fieldType != null) {
+                    return TypedFieldAccessExpr(target, expr.fieldName, expr.fieldNameLoc, expr.loc, fieldType)
+                }
 
                 val suggestion =
                     DiagnosticHelpers.didYouMeanMsg(expr.fieldName, structSym.fields.keys)
@@ -360,6 +364,7 @@ class ExpressionResolver(
                         TypedMethodCallExpr(
                             typedTarget,
                             call.methodName,
+                            call.methodNameLoc,
                             typedArgs,
                             call.loc,
                             importedFunc.returnType,
@@ -397,6 +402,7 @@ class ExpressionResolver(
                         TypedMethodCallExpr(
                             typedTarget,
                             call.methodName,
+                            call.methodNameLoc,
                             typedArgs,
                             call.loc,
                             builtin.returnType,
@@ -422,6 +428,7 @@ class ExpressionResolver(
                         TypedMethodCallExpr(
                             typedTarget,
                             call.methodName,
+                            call.methodNameLoc,
                             typedArgs,
                             call.loc,
                             builtin.returnType,
@@ -455,6 +462,7 @@ class ExpressionResolver(
                 TypedMethodCallExpr(
                     typedTarget,
                     call.methodName,
+                    call.methodNameLoc,
                     typedArgs,
                     call.loc,
                     typeBoundMethod.returnType,
@@ -487,6 +495,7 @@ class ExpressionResolver(
                 TypedMethodCallExpr(
                     typedTarget,
                     call.methodName,
+                    call.methodNameLoc,
                     typedArgs,
                     call.loc,
                     ufcsFunc.returnType,

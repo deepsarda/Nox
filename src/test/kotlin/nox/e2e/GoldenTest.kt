@@ -103,7 +103,13 @@ class GoldenTest :
                         .builder()
                         .setPermissionHandler { nox.runtime.PermissionResponse.Granted.Unconstrained }
                         .build()
-                val result = runtime.execute(source, noxFile.fileName.toString(), args, basePath = noxFile.toAbsolutePath())
+                val result =
+                    runtime.execute(
+                        source,
+                        noxFile.fileName.toString(),
+                        args,
+                        basePath = noxFile.toAbsolutePath(),
+                    )
 
                 when (result) {
                     is NoxResult.Success -> {

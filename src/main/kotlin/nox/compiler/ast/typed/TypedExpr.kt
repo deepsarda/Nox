@@ -186,6 +186,7 @@ class TypedFuncCallExpr(
 class TypedMethodCallExpr(
     val target: TypedExpr,
     val methodName: String,
+    val methodNameLoc: SourceLocation,
     val args: List<TypedExpr>,
     loc: SourceLocation,
     type: TypeRef,
@@ -204,6 +205,7 @@ class TypedMethodCallExpr(
 class TypedFieldAccessExpr(
     val target: TypedExpr,
     val fieldName: String,
+    val fieldNameLoc: SourceLocation,
     loc: SourceLocation,
     type: TypeRef,
 ) : TypedExpr(loc, type)

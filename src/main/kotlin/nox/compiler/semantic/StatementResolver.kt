@@ -86,7 +86,7 @@ class StatementResolver(
             )
         }
 
-        return TypedVarDeclStmt(stmt.type, stmt.name, typedInit, stmt.loc, symbol)
+        return TypedVarDeclStmt(stmt.type, stmt.name, stmt.nameLoc, typedInit, stmt.loc, symbol)
     }
 
     private fun resolveAssign(

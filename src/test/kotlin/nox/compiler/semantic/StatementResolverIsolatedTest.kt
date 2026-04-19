@@ -30,7 +30,7 @@ class StatementResolverIsolatedTest :
                 val (_, resolver) = createResolvers(scope, errors)
 
                 val initExpr = RawIntLiteralExpr(42, loc)
-                val rawDecl = RawVarDeclStmt(TypeRef.INT, "x", initExpr, loc)
+                val rawDecl = RawVarDeclStmt(TypeRef.INT, "x", loc, initExpr, loc)
 
                 val typed = resolver.resolveStmt(scope, rawDecl, TypeRef.VOID)
 
@@ -53,7 +53,7 @@ class StatementResolverIsolatedTest :
                 val (_, resolver) = createResolvers(scope, errors)
 
                 val initExpr = RawStringLiteralExpr("hello", loc)
-                val rawDecl = RawVarDeclStmt(TypeRef.INT, "x", initExpr, loc)
+                val rawDecl = RawVarDeclStmt(TypeRef.INT, "x", loc, initExpr, loc)
 
                 resolver.resolveStmt(scope, rawDecl, TypeRef.VOID)
 
@@ -71,7 +71,7 @@ class StatementResolverIsolatedTest :
                 val scope = SymbolTable()
                 val (_, resolver) = createResolvers(scope, errors)
 
-                val rawDecl = RawVarDeclStmt(TypeRef.VOID, "x", RawNullLiteralExpr(loc), loc)
+                val rawDecl = RawVarDeclStmt(TypeRef.VOID, "x", loc, RawNullLiteralExpr(loc), loc)
                 resolver.resolveStmt(scope, rawDecl, TypeRef.VOID)
                 errors.hasErrors() shouldBe true
                 errors.all().any { it.message.contains("Cannot declare variable 'x' with type 'void'") } shouldBe true
@@ -196,7 +196,7 @@ class StatementResolverIsolatedTest :
 
                 val rawFor =
                     RawForStmt(
-                        init = RawVarDeclStmt(TypeRef.INT, "i", RawIntLiteralExpr(0, loc), loc),
+                        init = RawVarDeclStmt(TypeRef.INT, "i", loc, RawIntLiteralExpr(0, loc), loc),
                         condition = RawBoolLiteralExpr(true, loc),
                         update = RawIncrementStmt(RawIdentifierExpr("i", loc), PostfixOp.INCREMENT, loc),
                         body = RawBlock(emptyList(), loc),
@@ -347,7 +347,7 @@ class StatementResolverIsolatedTest :
                 val rawBlock =
                     RawBlock(
                         listOf(
-                            RawVarDeclStmt(TypeRef.INT, "x", RawIntLiteralExpr(1, loc), loc),
+                            RawVarDeclStmt(TypeRef.INT, "x", loc, RawIntLiteralExpr(1, loc), loc),
                         ),
                         loc,
                     )

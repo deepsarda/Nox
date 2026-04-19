@@ -176,6 +176,7 @@ class RawFuncCallExpr(
 class RawMethodCallExpr(
     val target: RawExpr,
     val methodName: String,
+    val methodNameLoc: SourceLocation,
     val args: List<RawExpr>,
     loc: SourceLocation,
 ) : RawExpr(loc) {
@@ -191,6 +192,7 @@ class RawMethodCallExpr(
 class RawFieldAccessExpr(
     val target: RawExpr,
     val fieldName: String,
+    val fieldNameLoc: SourceLocation,
     loc: SourceLocation,
 ) : RawExpr(loc)
 

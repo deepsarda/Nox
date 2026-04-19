@@ -26,6 +26,7 @@ sealed class RawDecl(
  */
 class RawTypeDef(
     val name: String,
+    val nameLoc: SourceLocation,
     val fields: List<RawFieldDecl>,
     loc: SourceLocation,
 ) : RawDecl(loc)
@@ -40,6 +41,7 @@ sealed class RawFieldDecl(
 class RawFieldDeclImpl(
     val type: TypeRef,
     val name: String,
+    val nameLoc: SourceLocation,
     loc: SourceLocation,
 ) : RawFieldDecl(loc)
 
@@ -59,6 +61,7 @@ class RawErrorFieldDecl(
 class RawFuncDef(
     val returnType: TypeRef,
     val name: String,
+    val nameLoc: SourceLocation,
     val params: List<RawParam>,
     val body: RawBlock,
     loc: SourceLocation,
@@ -87,6 +90,7 @@ class RawMainDef(
 class RawGlobalVarDecl(
     val type: TypeRef,
     val name: String,
+    val nameLoc: SourceLocation,
     val initializer: RawExpr?,
     loc: SourceLocation,
 ) : RawDecl(loc)
@@ -111,7 +115,7 @@ sealed class RawParam(
     val loc: SourceLocation,
 )
 
-/** 
+/**
  * A well-formed parameter with type, name, and optional default value.
  *
  * @property type        the declared type
@@ -122,6 +126,7 @@ sealed class RawParam(
 class RawParamImpl(
     val type: TypeRef,
     val name: String,
+    val nameLoc: SourceLocation,
     val defaultValue: RawExpr?,
     val isVarargs: Boolean,
     loc: SourceLocation,

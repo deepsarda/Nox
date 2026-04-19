@@ -7,10 +7,21 @@
         Nox language support for IntelliJ IDEA. Powered by <code>nox-lsp</code>.
         Provides diagnostics, hover, completion, go-to-definition, find usages,
         rename, semantic highlighting, inlay hints, quick-fixes, and code formatting.
+        <br/><br/>
+        LSP wiring is supplied by either the IDE's built-in LSP module
+        (Ultimate, PyCharm Pro, GoLand, etc.) or the
+        <a href="https://plugins.jetbrains.com/plugin/23257-lsp4ij">LSP4IJ</a>
+        plugin (Community and other editions). Install LSP4IJ if you do not
+        have an Ultimate-tier IDE.
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
-    <depends>com.intellij.modules.lsp</depends>
+
+    <depends>org.jetbrains.plugins.textmate</depends>
+
+    
+    <depends optional="true" config-file="lsp-jetbrains.xml">com.intellij.modules.lsp</depends>
+    <depends optional="true" config-file="lsp-lsp4ij.xml">com.redhat.devtools.lsp4ij</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <fileType
@@ -20,9 +31,21 @@
             language="Nox"
             extensions="nox"/>
 
-        <platform.lsp.serverSupportProvider
-            implementation="nox.intellij.NoxLspServerSupportProvider"/>
-
         <configurationType implementation="nox.intellij.run.NoxRunConfigurationType"/>
+
+        <applicationConfigurable
+            parentId="tools"
+            instance="nox.intellij.NoxConfigurable"
+            id="nox.intellij.settings"
+            displayName="Nox"/>
+
+        <textmate.bundleProvider implementation="nox.intellij.NoxTextMateBundleProvider"/>
+
+        <lang.syntaxHighlighterFactory
+            language="Nox"
+            implementationClass="org.jetbrains.plugins.textmate.language.syntax.highlighting.TextMateSyntaxHighlighterFactory"/>
+        <editorHighlighterProvider
+            filetype="Nox"
+            implementationClass="org.jetbrains.plugins.textmate.language.syntax.highlighting.TextMateEditorHighlighterProvider"/>
     </extensions>
 </idea-plugin>

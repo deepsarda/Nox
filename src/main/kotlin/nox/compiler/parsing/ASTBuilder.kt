@@ -6,6 +6,7 @@ import nox.compiler.types.*
 import nox.parser.NoxParser
 import nox.parser.NoxParserBaseVisitor
 import org.antlr.v4.runtime.ParserRuleContext
+import org.antlr.v4.runtime.tree.TerminalNode
 
 /**
  * Converts the ANTLR parse tree into the Nox AST.
@@ -75,7 +76,7 @@ class ASTBuilder(
     override fun visitHeader(ctx: NoxParser.HeaderContext): RawHeader {
         val keyToken = ctx.HEADER_KEY()
         val valToken = ctx.StringLiteral()
-        
+
         return if (keyToken == null || valToken == null) {
             RawErrorHeader(locOf(ctx))
         } else {
@@ -90,7 +91,7 @@ class ASTBuilder(
     override fun visitImportDeclaration(ctx: NoxParser.ImportDeclarationContext): RawDecl {
         val pathToken = ctx.StringLiteral()
         val idToken = ctx.Identifier()
-        
+
         return if (pathToken == null || idToken == null) {
             RawErrorDecl(locOf(ctx))
         } else {
@@ -108,10 +109,11 @@ class ASTBuilder(
                 val varDecl = ctx.variableDeclaration()
                 val type = visitTypeRef(varDecl?.typeRef())
                 val id = varDecl?.Identifier()
-                if (varDecl == null || type == null || id == null) RawErrorDecl(locOf(ctx))
-                else {
+                if (varDecl == null || type == null || id == null) {
+                    RawErrorDecl(locOf(ctx))
+                } else {
                     val init = visitExpression(varDecl.expression())
-                    RawGlobalVarDecl(type, id.text, init, locOf(varDecl))
+                    RawGlobalVarDecl(type, id.text, locOf(id), init, locOf(varDecl))
                 }
             }
             else -> RawErrorDecl(locOf(ctx))
@@ -130,11 +132,12 @@ class ASTBuilder(
                     RawFieldDeclImpl(
                         type = fieldType,
                         name = fieldId.text,
+                        nameLoc = locOf(fieldId),
                         loc = locOf(fd),
                     )
                 }
             }
-        return RawTypeDef(id.text, fields, locOf(ctx))
+        return RawTypeDef(id.text, locOf(id), fields, locOf(ctx))
     }
 
     // Function definitions
@@ -144,7 +147,7 @@ class ASTBuilder(
         val params = buildParamList(ctx.parameterList())
         val blockCtx = ctx.block()
         val body = visitBlock(blockCtx)
-        return RawFuncDef(returnType, id.text, params, body, locOf(ctx))
+        return RawFuncDef(returnType, id.text, locOf(id), params, body, locOf(ctx))
     }
 
     // Main definition
@@ -163,12 +166,12 @@ class ASTBuilder(
         val type = visitTypeRef(ctx.typeRef())
         val id = ctx.Identifier()
         if (type == null || id == null) return RawErrorParam(locOf(ctx))
-        
+
         val isVarargs = ctx.ELLIPSIS() != null
         val defaultValue = ctx.expression()?.let { visitExpression(it) }
 
         val actualType = if (isVarargs) type.arrayOf() else type
-        return RawParamImpl(actualType, id.text, defaultValue, isVarargs, locOf(ctx))
+        return RawParamImpl(actualType, id.text, locOf(id), defaultValue, isVarargs, locOf(ctx))
     }
 
     // Type references
@@ -205,13 +208,17 @@ class ASTBuilder(
                 val vd = ctx.variableDeclaration()
                 val type = visitTypeRef(vd?.typeRef())
                 val id = vd?.Identifier()
-                if (vd == null || type == null || id == null) RawErrorStmt(locOf(ctx))
-                else RawVarDeclStmt(
-                    type = type,
-                    name = id.text,
-                    initializer = visitExpression(vd.expression()),
-                    loc = locOf(vd),
-                )
+                if (vd == null || type == null || id == null) {
+                    RawErrorStmt(locOf(ctx))
+                } else {
+                    RawVarDeclStmt(
+                        type = type,
+                        name = id.text,
+                        nameLoc = locOf(id),
+                        initializer = visitExpression(vd.expression()),
+                        loc = locOf(vd),
+                    )
+                }
             }
             is NoxParser.AssignStmtContext -> {
                 val target = visitExpression(ctx.expression(0))
@@ -262,7 +269,9 @@ class ASTBuilder(
                         body = visitBlock(blocks[i + 1]),
                         loc = locOf(expressions[i + 1]),
                     )
-                } else null
+                } else {
+                    null
+                }
             }
 
         val elseBlock = if (hasElse && blocks.isNotEmpty()) visitBlock(blocks.last()) else null
@@ -289,13 +298,17 @@ class ASTBuilder(
                 val vd = ctx.variableDeclaration()
                 val type = visitTypeRef(vd?.typeRef())
                 val id = vd?.Identifier()
-                if (vd == null || type == null || id == null) RawErrorStmt(locOf(ctx))
-                else RawVarDeclStmt(
-                    type = type,
-                    name = id.text,
-                    initializer = visitExpression(vd.expression()),
-                    loc = locOf(vd),
-                )
+                if (vd == null || type == null || id == null) {
+                    RawErrorStmt(locOf(ctx))
+                } else {
+                    RawVarDeclStmt(
+                        type = type,
+                        name = id.text,
+                        nameLoc = locOf(id),
+                        initializer = visitExpression(vd.expression()),
+                        loc = locOf(vd),
+                    )
+                }
             }
             else -> {
                 val target = visitExpression(ctx.expression(0))
@@ -344,7 +357,7 @@ class ASTBuilder(
     override fun visitCatchClause(ctx: NoxParser.CatchClauseContext): RawCatchClause? {
         val identifiers = ctx.Identifier()
         val block = ctx.block() ?: return null
-        
+
         return if (identifiers.size == 2) {
             // Typed catch: catch (ExceptionType varName) { ... }
             RawCatchClause(
@@ -404,8 +417,11 @@ class ASTBuilder(
             is NoxParser.BoolLiteralExprContext -> RawBoolLiteralExpr(ctx.TRUE() != null, locOf(ctx))
             is NoxParser.StringLiteralExprContext -> {
                 val token = ctx.StringLiteral()
-                if (token == null) RawErrorExpr(locOf(ctx))
-                else RawStringLiteralExpr(resolveEscapes(unquote(token.text)), locOf(ctx))
+                if (token == null) {
+                    RawErrorExpr(locOf(ctx))
+                } else {
+                    RawStringLiteralExpr(resolveEscapes(unquote(token.text)), locOf(ctx))
+                }
             }
             is NoxParser.TemplateLiteralExprContext -> buildTemplateLiteral(ctx.templateLiteral())
             is NoxParser.NullLiteralExprContext -> RawNullLiteralExpr(locOf(ctx))
@@ -413,16 +429,22 @@ class ASTBuilder(
             is NoxParser.StructLiteralExprContext -> buildStructLiteral(ctx.structLiteral())
             is NoxParser.IdentifierExprContext -> {
                 val id = ctx.Identifier()
-                if (id == null) RawErrorExpr(locOf(ctx))
-                else RawIdentifierExpr(id.text, locOf(ctx))
+                if (id == null) {
+                    RawErrorExpr(locOf(ctx))
+                } else {
+                    RawIdentifierExpr(id.text, locOf(ctx))
+                }
             }
 
             // Suffix operators
             is NoxParser.MethodCallExprContext -> buildMethodCallExpr(ctx)
             is NoxParser.FieldAccessExprContext -> {
                 val id = ctx.Identifier()
-                if (id == null) RawErrorExpr(locOf(ctx))
-                else RawFieldAccessExpr(visitExpression(ctx.expression()), id.text, locOf(ctx))
+                if (id == null) {
+                    RawErrorExpr(locOf(ctx))
+                } else {
+                    RawFieldAccessExpr(visitExpression(ctx.expression()), id.text, locOf(id), locOf(ctx))
+                }
             }
             is NoxParser.IndexAccessExprContext ->
                 RawIndexAccessExpr(visitExpression(ctx.expression(0)), visitExpression(ctx.expression(1)), locOf(ctx))
@@ -450,8 +472,11 @@ class ASTBuilder(
             // Cast
             is NoxParser.CastExprContext -> {
                 val type = visitTypeRef(ctx.typeRef())
-                if (type == null) RawErrorExpr(locOf(ctx))
-                else RawCastExpr(visitExpression(ctx.expression()), type, locOf(ctx))
+                if (type == null) {
+                    RawErrorExpr(locOf(ctx))
+                } else {
+                    RawCastExpr(visitExpression(ctx.expression()), type, locOf(ctx))
+                }
             }
 
             // Binary operators
@@ -482,7 +507,7 @@ class ASTBuilder(
         val target = visitExpression(ctx.expression())
         val id = ctx.Identifier() ?: return RawErrorExpr(locOf(ctx))
         val args = ctx.argumentList()?.expression()?.map { visitExpression(it) } ?: emptyList()
-        return RawMethodCallExpr(target, id.text, args, locOf(ctx))
+        return RawMethodCallExpr(target, id.text, locOf(id), args, locOf(ctx))
     }
 
     // Template literal
@@ -598,6 +623,13 @@ class ASTBuilder(
             file = fileName,
             line = ctx.start.line,
             column = ctx.start.charPositionInLine,
+        )
+
+    private fun locOf(node: TerminalNode) =
+        SourceLocation(
+            file = fileName,
+            line = node.symbol.line,
+            column = node.symbol.charPositionInLine,
         )
 
     // String utilities

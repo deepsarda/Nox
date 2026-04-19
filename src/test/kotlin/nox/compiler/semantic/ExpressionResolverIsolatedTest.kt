@@ -104,7 +104,7 @@ class ExpressionResolverIsolatedTest :
                 val resolver = createResolver(scope, errors)
 
                 val sType = TypeRef("S")
-                val sDef = RawTypeDef("S", listOf(RawFieldDeclImpl(TypeRef.INT, "a", loc)), loc)
+                val sDef = RawTypeDef("S", loc, listOf(RawFieldDeclImpl(TypeRef.INT, "a", loc, loc)), loc)
                 scope.define("S", TypeSymbol("S", linkedMapOf("a" to TypeRef.INT), sDef))
 
                 val expr = RawStructLiteralExpr(listOf(RawFieldInitImpl("a", RawIntLiteralExpr(1, loc), loc)), loc)
@@ -119,7 +119,7 @@ class ExpressionResolverIsolatedTest :
                 val resolver = createResolver(scope, errors)
 
                 val sType = TypeRef("S")
-                val sDef = RawTypeDef("S", listOf(RawFieldDeclImpl(TypeRef.INT, "a", loc)), loc)
+                val sDef = RawTypeDef("S", loc, listOf(RawFieldDeclImpl(TypeRef.INT, "a", loc, loc)), loc)
                 scope.define("S", TypeSymbol("S", linkedMapOf("a" to TypeRef.INT), sDef))
 
                 val expr = RawStructLiteralExpr(emptyList(), loc)
@@ -133,11 +133,11 @@ class ExpressionResolverIsolatedTest :
                 val resolver = createResolver(scope, errors)
 
                 val sType = TypeRef("S")
-                val sDef = RawTypeDef("S", listOf(RawFieldDeclImpl(TypeRef.INT, "a", loc)), loc)
+                val sDef = RawTypeDef("S", loc, listOf(RawFieldDeclImpl(TypeRef.INT, "a", loc, loc)), loc)
                 scope.define("S", TypeSymbol("S", linkedMapOf("a" to TypeRef.INT), sDef))
                 scope.define("obj", VarSymbol("obj", sType, 0))
 
-                val expr = RawFieldAccessExpr(RawIdentifierExpr("obj", loc), "a", loc)
+                val expr = RawFieldAccessExpr(RawIdentifierExpr("obj", loc), "a", loc, loc)
                 resolver.resolveExpr(scope, expr).type shouldBe TypeRef.INT
             }
         }
@@ -218,7 +218,7 @@ class ExpressionResolverIsolatedTest :
                 val resolver = createResolver(scope, errors)
 
                 val sType = TypeRef("S")
-                val sDef = RawTypeDef("S", listOf(RawFieldDeclImpl(TypeRef.INT, "a", loc)), loc)
+                val sDef = RawTypeDef("S", loc, listOf(RawFieldDeclImpl(TypeRef.INT, "a", loc, loc)), loc)
                 scope.define("S", TypeSymbol("S", linkedMapOf("a" to TypeRef.INT), sDef))
                 scope.define("obj", VarSymbol("obj", TypeRef.JSON, 0))
 
@@ -234,7 +234,7 @@ class ExpressionResolverIsolatedTest :
                 val scope = SymbolTable()
                 val resolver = createResolver(scope, errors)
 
-                val funcDef = RawFuncDef(TypeRef.INT, "myFunc", emptyList(), RawBlock(emptyList(), loc), loc)
+                val funcDef = RawFuncDef(TypeRef.INT, "myFunc", loc, emptyList(), RawBlock(emptyList(), loc), loc)
                 scope.define("myFunc", FuncSymbol("myFunc", TypeRef.INT, emptyList(), funcDef))
 
                 val call = RawFuncCallExpr("myFunc", emptyList(), loc)
@@ -251,6 +251,7 @@ class ExpressionResolverIsolatedTest :
                     RawMethodCallExpr(
                         RawIdentifierExpr("Math", loc),
                         "abs",
+                        loc,
                         listOf(RawDoubleLiteralExpr(-1.0, loc)),
                         loc,
                     )
@@ -265,7 +266,7 @@ class ExpressionResolverIsolatedTest :
                 val resolver = createResolver(scope, errors)
 
                 // "hello".length()
-                val call = RawMethodCallExpr(RawStringLiteralExpr("hello", loc), "length", emptyList(), loc)
+                val call = RawMethodCallExpr(RawStringLiteralExpr("hello", loc), "length", loc, emptyList(), loc)
                 val typed = resolver.resolveExpr(scope, call)
                 typed.type shouldBe TypeRef.INT
                 typed.shouldBeInstanceOf<TypedMethodCallExpr>()

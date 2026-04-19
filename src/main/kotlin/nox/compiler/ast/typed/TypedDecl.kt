@@ -27,6 +27,7 @@ sealed class TypedDecl(
  */
 class TypedTypeDef(
     val name: String,
+    val nameLoc: SourceLocation,
     val fields: List<TypedFieldDecl>,
     loc: SourceLocation,
 ) : TypedDecl(loc)
@@ -37,6 +38,7 @@ class TypedTypeDef(
 data class TypedFieldDecl(
     val type: TypeRef,
     val name: String,
+    val nameLoc: SourceLocation,
     val loc: SourceLocation,
 )
 
@@ -52,6 +54,7 @@ data class TypedFieldDecl(
 class TypedFuncDef(
     val returnType: TypeRef,
     val name: String,
+    val nameLoc: SourceLocation,
     val params: List<TypedParam>,
     val body: TypedBlock,
     loc: SourceLocation,
@@ -85,6 +88,7 @@ class TypedMainDef(
 class TypedGlobalVarDecl(
     val type: TypeRef,
     val name: String,
+    val nameLoc: SourceLocation,
     val initializer: TypedExpr?,
     loc: SourceLocation,
     var globalSlot: Int = -1,
@@ -114,6 +118,7 @@ class TypedImportDecl(
 data class TypedParam(
     val type: TypeRef,
     val name: String,
+    val nameLoc: SourceLocation,
     val defaultValue: TypedExpr?,
     val isVarargs: Boolean,
     val loc: SourceLocation,
