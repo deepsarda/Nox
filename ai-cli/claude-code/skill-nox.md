@@ -19,7 +19,7 @@ read the bundled reference:
 ```
 
 It is shipped alongside this skill and contains the authoritative grammar,
-type system, and standard-library surface. Do not guess syntax from memory —
+type system, and standard-library surface. Do not guess syntax from memory,
 Nox looks like C/Java but differs in important ways (no classes, no generics,
 no closures, UFCS, capability-based I/O).
 

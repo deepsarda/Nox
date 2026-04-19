@@ -206,7 +206,7 @@ class FeaturesTest :
                 main() { add(1, 2); }
                 """.trimIndent()
             val result = compile(compileSrc)
-            // Source the user is looking at — the actual position where they're typing.
+            // Source the user is looking at, the actual position where they're typing.
             val editorSrc =
                 """
                 int add(int a, int b) { return a + b; }

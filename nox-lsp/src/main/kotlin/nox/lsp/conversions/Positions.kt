@@ -6,9 +6,6 @@ import nox.lsp.protocol.*
 /**
  * Converts between Nox's [SourceLocation] (1-based line, 0-based column) and LSP [Position]
  * (0-based line, 0-based column).
- *
- * Off-by-one bugs here ripple into every feature — diagnostics land on the wrong row, hover
- * finds the wrong token, quick-fixes edit the wrong range. Kept tiny and tested directly.
  */
 object Positions {
     fun toLspPosition(loc: SourceLocation): Position = Position((loc.line - 1).coerceAtLeast(0), loc.column)

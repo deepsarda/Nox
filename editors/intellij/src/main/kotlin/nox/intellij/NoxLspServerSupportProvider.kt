@@ -10,8 +10,7 @@ import com.intellij.platform.lsp.api.LspServerSupportProvider
  *   2. `NOX_LSP` environment variable.
  *   3. `nox-lsp` on `PATH`.
  *
- * When none resolve, the platform surfaces "server not started" — users see the reason
- * in the LSP tool window rather than via a silent feature regression.
+ * When none resolve, the platform surfaces "server not started".
  */
 class NoxLspServerSupportProvider : LspServerSupportProvider {
     override fun fileOpened(

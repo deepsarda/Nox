@@ -39,3 +39,13 @@ NSL is a strict, statically-typed, sandbox-safe capability language executed by 
 When dealing with `json` types, always use safe accessors with defaults:
 - `.getString(key, def)`, `.getInt(key, def)`, `.getDouble(key, def)`, `.getBool(key, def)`
 - `.getJSON(key, def)`, `.getArray(key, StructType, def)`
+
+## CLI Tooling
+Four binaries ship together and share one version (`--version` on each).
+
+- **`nox <file.nox>`** runs a script in a deny-by-default sandbox. Every filesystem, network, env, sysinfo, or plugin call requires an explicit `--allow-*` flag (or interactive confirmation, unavailable in non-interactive contexts). Args to `main()` go through `-a name=value`. Resource caps default to 500 000 instructions, 60 s, depth 1024 (`0` = unlimited). Full flag reference: `docs/cli/nox.md`.
+- **`noxc <file.nox>`** compiles to `.noxc` disassembly. `-o <out>`, `--stdout`, `--plugin <path>`. Full flag reference: `docs/cli/noxc.md`.
+- **`noxfmt <files…>`** formats `.nox` files in place. `--check` (exit 1 on drift, no writes), `--stdout` (print formatted), `--stdin` (read source, write to stdout). Directories are walked for `*.nox`.
+- **`nox-lsp`** language server over stdio (default) or `--socket <port>`. Used by editor integrations; not invoked directly by scripts.
+
+When suggesting a `nox` invocation, always prefer `--no-prompt` plus the narrowest `--allow-*` flags the script actually needs. Only suggest `--allow-all` when the user explicitly asks.

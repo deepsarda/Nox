@@ -1,7 +1,7 @@
 # AI CLI integrations for Nox
 
 Config files that teach Claude Code, Gemini CLI, and Codex CLI to work with `.nox`
-files fluently. These tools do **not** speak LSP — they read files and shell out to
+files fluently. These tools do **not** speak LSP, they read files and shell out to
 binaries. So instead of handing them a language server, we give them:
 
 1. A consolidated language reference (`shared/NOX_LANGUAGE_REFERENCE.md`) the agent
@@ -40,4 +40,4 @@ alongside `NOX_LANGUAGE_REFERENCE.md`. Codex picks these up automatically.
 ## Editor use
 
 CLI agents do not need `nox-lsp`. For editor use, install the VSCode extension or
-IntelliJ plugin — each bundles its own LSP wiring.
+IntelliJ plugin, each bundles its own LSP wiring.
