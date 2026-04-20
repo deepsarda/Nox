@@ -42,8 +42,8 @@ java {
 }
 
 dependencies {
-    implementation(project(":"))
-    implementation(project(":nox-format"))
+    implementation(project(":core"))
+    implementation(project(":tools:format"))
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.clikt)
     implementation(libs.coroutines.core)

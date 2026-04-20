@@ -1,6 +1,8 @@
 rootProject.name = "nox"
-include("nox-ksp")
-include("nox-format")
-include("nox-lsp")
+include("core")
+include("tools:cli")
+include("tools:ksp")
+include("tools:format")
+include("tools:lsp")
 include("editors:intellij")
 project(":editors:intellij").name = "intellij"

@@ -39,7 +39,7 @@ java {
 }
 
 dependencies {
-    implementation(project(":"))
+    implementation(project(":core"))
     implementation(libs.antlr4.runtime)
     implementation(libs.clikt)
     implementation(libs.mordant)

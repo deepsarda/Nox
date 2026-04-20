@@ -4,8 +4,8 @@ package nox.compiler.codegen
  * Sub-opcode constants used by the Nox VM's super-instructions.
  *
  * Sub-opcodes occupy bits 55–48 of the 64-bit instruction layout.
- * They are meaningful for [Opcode.HACC], [Opcode.HMOD], [Opcode.AGET_KEY],
- * [Opcode.AGET_IDX], [Opcode.AGET_PATH], [Opcode.ASET_KEY], [Opcode.ASET_IDX],
+ * They are meaningful for [Opcode.HACC], [Opcode.HMOD], [Opcode.AGET_IDX],
+ * [Opcode.AGET_PATH], [Opcode.ASET_IDX],
  * and [Opcode.CAST_STRUCT].
  *
  * See docs/vm/super-instructions.md for the full reference.

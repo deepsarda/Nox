@@ -81,10 +81,8 @@ object Opcode {
     const val HACC = 0x50 // Host Access  (read property)
     const val HMOD = 0x51 // Host Modify  (write property)
     const val SCONCAT = 0x52 // String Concatenation: rMem[A] = rMem[B] + rMem[C]
-    const val AGET_KEY = 0x53
     const val AGET_IDX = 0x54
     const val AGET_PATH = 0x55
-    const val ASET_KEY = 0x56
     const val ASET_IDX = 0x57
 
     // Streaming
@@ -182,10 +180,8 @@ object Opcode {
             put(SCALL, "SCALL")
             put(HACC, "HACC")
             put(HMOD, "HMOD")
-            put(AGET_KEY, "AGET_KEY")
             put(AGET_IDX, "AGET_IDX")
             put(AGET_PATH, "AGET_PATH")
-            put(ASET_KEY, "ASET_KEY")
             put(ASET_IDX, "ASET_IDX")
             put(SCONCAT, "SCONCAT")
             put(YIELD, "YIELD")

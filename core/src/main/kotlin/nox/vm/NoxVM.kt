@@ -850,18 +850,6 @@ class NoxVM(
 
                 // Access Instructions
 
-                Opcode.AGET_KEY -> {
-                    val a = Instruction.opA(inst)
-                    val b = Instruction.opB(inst)
-                    val c = Instruction.opC(inst)
-                    val subOp = Instruction.subOp(inst)
-                    val obj =
-                        readR(b) as? Map<*, *>
-                            ?: throw NoxException(NoxError.NullAccessError, "Cannot access property of null", pc - 1)
-                    val key = pool[c] as String
-                    readSubOpGet(subOp, a, obj[key])
-                }
-
                 Opcode.AGET_IDX -> {
                     val a = Instruction.opA(inst)
                     val b = Instruction.opB(inst)
@@ -922,20 +910,6 @@ class NoxVM(
                             }
                     }
                     readSubOpGet(subOp, a, current)
-                }
-
-                Opcode.ASET_KEY -> {
-                    val a = Instruction.opA(inst)
-                    val b = Instruction.opB(inst)
-                    val c = Instruction.opC(inst)
-
-                    @Suppress("UNCHECKED_CAST")
-                    val obj =
-                        readR(a) as? MutableMap<String, Any?>
-                            ?: throw NoxException(NoxError.NullAccessError, "Cannot set property of null", pc - 1)
-                    val key = pool[b] as String
-                    val subOp = Instruction.subOp(inst)
-                    obj[key] = readValueBySubOp(subOp, c)
                 }
 
                 Opcode.ASET_IDX -> {

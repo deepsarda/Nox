@@ -158,26 +158,14 @@ This instruction is **polymorphic**, it checks the type at runtime and then appl
 | `List` / `ArrayList` | `list.get((int) pMem[R_index])` then cast via `SubOp` |
 | `Map` / `Struct` | `map.get(String.valueOf(rMem[R_index]))` then cast via `SubOp` |
 
-### `AGET_KEY` -- Named Property Access
-
-For a single named property lookup:
-
-```
-AGET_KEY [SubOp] R_result, R_object, "name"
-
-// VM execution:
-Object value = ((NoxObject) rMem[bp + R_object]).get("name");
-// Cast and store in pMem/rMem based on SubOp
-```
-
 ### Chaining Accessors
 
 To resolve `data.rows[i].value` into an integer, the compiler emits a chain. Intermediate steps use `GET_OBJ` (which stores the intermediate reference in `rMem`), and the final step uses `GET_INT` (which stores the final primitive in `pMem`):
 
 ```
-AGET_KEY [GET_OBJ] R1, R_data, "rows"       // R1 = data.rows (the array reference)
+HACC     [GET_OBJ] R1, R_data, "rows"       // R1 = data.rows (the array reference)
 AGET_IDX [GET_OBJ] R2, R1, R_i              // R2 = rows[i] (one element reference)
-AGET_KEY [GET_INT] R3, R2, "value"          // pMem[R3] = element.value (integer)
+HACC     [GET_INT] R3, R2, "value"          // pMem[R3] = element.value (integer)
 ```
 
 Three clean, linear instructions. No recursion. No complex resolution logic. The VM simply executes them in sequence.

@@ -212,7 +212,7 @@ These are thrown by VM operations during normal execution. All are **catchable**
 | `DivisionByZeroError` | Division by zero | Integer division or modulo division by zero |
 | `TypeError` | Type mismatch during extraction or conversion | `json.getInt("key")` on a string value |
 | `IndexOutOfBoundsError` | Array index is negative or ≥ array length | `arr[arr.length()]`, `arr[-1]` |
-| `KeyNotFoundError` | Accessing a missing key on `json` without a default | `data.missingKey` via `AGET_KEY` on a non-existent key |
+| `KeyNotFoundError` | Accessing a missing key on `json` without a default | `data.missingKey` via `HACC` on a non-existent key |
 | `CastError` | An `as` cast fails structural validation | `rawJson as ApiConfig` when fields are missing or mistyped |
 | `TypeError` | Runtime type mismatch in a dynamic context | `json` value is a string but code expects int |
 | `ArithmeticError` | Numeric overflow or invalid arithmetic operation | Integer overflow on multiplication |

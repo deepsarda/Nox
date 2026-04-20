@@ -137,10 +137,8 @@ For double-precision operations, only `REG_POOL` is used (doubles don't fit in 1
 |---|---|---|
 | `HMOD` | `HMOD [SubOp] A, key, val` | Host Modify: modify a property on a host object |
 | `HACC` | `HACC [SubOp] A, B, key` | Host Access: read a property from a host object |
-| `AGET_KEY` | `AGET_KEY [SubOp] A, B, key` | Get a named property from object `B`, store in `A` |
 | `AGET_IDX` | `AGET_IDX [SubOp] A, B, C` | Get element at index `C` from collection `B`, store in `A` |
 | `AGET_PATH` | `AGET_PATH [SubOp] A, B, path` | Traverse a cached static path on object `B`, store in `A` |
-| `ASET_KEY` | `ASET_KEY [SubOp] A, key, val` | Set a named property on object `A` |
 | `ASET_IDX` | `ASET_IDX [SubOp] A, B, C` | Set element at index `B` in collection `A` to value `C` |
 | `SCONCAT` | `SCONCAT A, B, C` | String concat: `rMem[A] = rMem[B] + rMem[C]` |
 
