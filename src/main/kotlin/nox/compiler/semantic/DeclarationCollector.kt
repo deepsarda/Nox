@@ -59,7 +59,7 @@ class DeclarationCollector(
             // Grammar requires fieldDeclaration+ but ANTLR error recovery
             // can still produce a TypeDef with zero fields. Skip it.
             errors.report(
-                decl.loc,
+                decl.nameLoc,
                 "Struct '${decl.name}' has no fields! Structs must have at least one field declaration",
                 suggestion = "Add a field: 'type ${decl.name} { string name; }'",
             )
@@ -70,7 +70,7 @@ class DeclarationCollector(
         val symbol = TypeSymbol(decl.name, linkedMapOf(), decl)
         if (!globalScope.define(decl.name, symbol)) {
             errors.report(
-                decl.loc,
+                decl.nameLoc,
                 "Type '${decl.name}' is already defined",
                 suggestion = "Rename one of the type definitions or remove the duplicate",
             )
@@ -96,7 +96,7 @@ class DeclarationCollector(
                     optionalSeen = true
                 } else if (!param.isVarargs && optionalSeen) {
                     errors.report(
-                        param.loc,
+                        param.nameLoc,
                         "Required parameter '${param.name}' must come before optional parameters",
                         suggestion = "Reorder parameters: put all required params before any with default values",
                     )
@@ -106,21 +106,21 @@ class DeclarationCollector(
                 if (param.isVarargs) {
                     if (varargsSeen) {
                         errors.report(
-                            param.loc,
+                            param.nameLoc,
                             "A function can only have one varargs parameter ('...')",
                             suggestion = "Remove extra '...' markers",
                         )
                     }
                     if (index != decl.params.size - 1) {
                         errors.report(
-                            param.loc,
+                            param.nameLoc,
                             "Varargs parameter '${param.name}' must be the last parameter in the function signature",
                             suggestion = "Move '${param.name}' to the end of the parameter list",
                         )
                     }
                     if (param.defaultValue != null) {
                         errors.report(
-                            param.loc,
+                            param.nameLoc,
                             "Varargs parameter '${param.name}' cannot have a default value",
                             suggestion = "Remove the '= ...' default from '${param.name}'",
                         )
@@ -134,7 +134,7 @@ class DeclarationCollector(
         val symbol = FuncSymbol(decl.name, decl.returnType, params, decl)
         if (!globalScope.define(decl.name, symbol)) {
             errors.report(
-                decl.loc,
+                decl.nameLoc,
                 "Function '${decl.name}' is already defined",
                 suggestion = "Rename one of the functions or remove the duplicate definition",
             )
@@ -171,7 +171,7 @@ class DeclarationCollector(
         val symbol = GlobalSymbol(decl.name, decl.type, globalSlotCounter)
         if (!globalScope.define(decl.name, symbol)) {
             errors.report(
-                decl.loc,
+                decl.nameLoc,
                 "Global variable '${decl.name}' is already declared",
                 suggestion = "Rename the variable or remove the duplicate declaration",
             )

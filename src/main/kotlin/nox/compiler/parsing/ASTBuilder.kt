@@ -43,7 +43,7 @@ class ASTBuilder(
                 is RawTypeDef -> {
                     if (program.typesByName.containsKey(decl.name)) {
                         errors.report(
-                            decl.loc,
+                            decl.nameLoc,
                             "Duplicate type declaration: '${decl.name}'",
                             suggestion = "Rename one of the type definitions or remove the duplicate",
                         )
@@ -54,7 +54,7 @@ class ASTBuilder(
                 is RawFuncDef -> {
                     if (program.functionsByName.containsKey(decl.name)) {
                         errors.report(
-                            decl.loc,
+                            decl.nameLoc,
                             "Duplicate function declaration: '${decl.name}'",
                             suggestion = "Rename one of the functions or remove the duplicate",
                         )

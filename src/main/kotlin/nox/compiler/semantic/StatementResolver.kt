@@ -55,7 +55,7 @@ class StatementResolver(
     ): TypedVarDeclStmt? {
         if (!stmt.type.isValidAsVariable()) {
             errors.report(
-                stmt.loc,
+                stmt.nameLoc,
                 "Cannot declare variable '${stmt.name}' with type '${stmt.type}'. 'void' is not a valid variable type",
                 suggestion = "Use a concrete type: int, double, boolean, string, json, or a struct type",
             )
@@ -72,7 +72,7 @@ class StatementResolver(
                     ""
                 }
             errors.report(
-                stmt.loc,
+                stmt.nameLoc,
                 "Variable type mismatch: variable '${stmt.name}' is declared as '${stmt.type}' but initializer has type '${typedInit.type}'$note",
                 suggestion = DiagnosticHelpers.conversionHint(typedInit.type, stmt.type),
             )
@@ -81,7 +81,7 @@ class StatementResolver(
         val symbol = VarSymbol(stmt.name, stmt.type, scope.depth)
         if (!scope.define(stmt.name, symbol)) {
             errors.report(
-                stmt.loc,
+                stmt.nameLoc,
                 "Variable '${stmt.name}' is already declared in this scope",
             )
         }

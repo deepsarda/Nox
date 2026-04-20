@@ -90,7 +90,7 @@ class TypeResolver(
 
             if (f.name in seenFields) {
                 errors.report(
-                    f.loc,
+                    f.nameLoc,
                     "Field '${f.name}' is declared more than once in struct '${typeDef.name}'",
                     suggestion = "Remove or rename the duplicate field",
                 )
@@ -107,7 +107,7 @@ class TypeResolver(
                                 "or use a built-in type (int, double, boolean, string, json)"
                         )
                 errors.report(
-                    f.loc,
+                    f.nameLoc,
                     "Unknown type '${f.type}' for field '${f.name}' in struct '${typeDef.name}'",
                     suggestion = suggestion,
                 )
@@ -115,7 +115,7 @@ class TypeResolver(
             }
             if (!f.type.isValidAsVariable()) {
                 errors.report(
-                    f.loc,
+                    f.nameLoc,
                     "Field '${f.name}' cannot have type '${f.type}' since 'void' is not allowed for struct fields",
                 )
                 continue
@@ -165,14 +165,14 @@ class TypeResolver(
                     DiagnosticHelpers.didYouMeanMsg(p.type.name, candidates)
                         ?: "Supported types: int, double, boolean, string, json, or a declared struct type"
                 errors.report(
-                    p.loc,
+                    p.nameLoc,
                     "Parameter '${p.name}' has unknown type '${p.type}'",
                     suggestion = suggestion,
                 )
             }
             if (!p.type.isValidAsVariable()) {
                 errors.report(
-                    p.loc,
+                    p.nameLoc,
                     "Parameter '${p.name}' cannot have type 'void'",
                     suggestion = "Use a concrete type: int, double, boolean, string, json, or a struct type",
                 )
@@ -193,7 +193,7 @@ class TypeResolver(
             val symbol = ParamSymbol(p.name, p.type, p.defaultValue, p.isVarargs)
             if (!scope.define(p.name, symbol)) {
                 errors.report(
-                    p.loc,
+                    p.nameLoc,
                     "Parameter '${p.name}' is declared more than once",
                     suggestion = "Rename one of the parameters",
                 )
@@ -207,7 +207,7 @@ class TypeResolver(
     private fun resolveGlobalInit(decl: RawGlobalVarDecl): TypedGlobalVarDecl {
         if (!decl.type.isValidAsVariable()) {
             errors.report(
-                decl.loc,
+                decl.nameLoc,
                 "Global variable '${decl.name}' cannot have type 'void'",
                 suggestion = "Use a concrete type: int, double, boolean, string, json, or a struct type",
             )
@@ -218,7 +218,7 @@ class TypeResolver(
             typedInit = exprResolver.resolveExpr(globalScope, decl.initializer)
             if (!decl.type.isAssignableFrom(typedInit.type)) {
                 errors.report(
-                    decl.loc,
+                    decl.nameLoc,
                     "Global '${decl.name}': initializer has type '${typedInit.type}', but variable is declared as '${decl.type}'",
                     suggestion = DiagnosticHelpers.conversionHint(typedInit.type, decl.type),
                 )
@@ -228,9 +228,6 @@ class TypeResolver(
     }
 
     private fun resolveImportDecl(decl: RawImportDecl): TypedImportDecl {
-        // ImportResolver resolved paths into RawImportDecl? Or the path is not available?
-        // We'll just put an empty string for resolvedPath for now if it wasn't mutated,
-        // or we should fetch it from modules.
         val resolvedPath = modules.find { it.program.fileName.endsWith(decl.path) }?.sourcePath ?: decl.path
         return TypedImportDecl(decl.path, decl.namespace, decl.loc, resolvedPath)
     }
