@@ -17,7 +17,13 @@ class FormatterRoundTripTest :
         val programs =
             if (Files.isDirectory(programsDir)) {
                 Files.walk(programsDir).use { s ->
-                    s.filter { Files.isRegularFile(it) && it.toString().endsWith(".nox") }.sorted().toList()
+                    s
+                        .filter {
+                            Files.isRegularFile(it) &&
+                                it.toString().endsWith(".nox") &&
+                                !it.toString().contains("/format/")
+                        }.sorted()
+                        .toList()
                 }
             } else {
                 emptyList()

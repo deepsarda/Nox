@@ -1,0 +1,15 @@
+// top comment
+main() {
+    int a = 1; // trailing comment
+    // leading comment
+    int b = 2; /* block comment */
+    /*
+     * multi-line block
+     */
+    try {
+        
+    } // between catch
+    catch (err) {
+        
+    }
+} // end comment

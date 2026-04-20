@@ -21,7 +21,7 @@
 .func main
   ; params: r1=point
   ;
-  ; line 7  return point.x.toString();
+  ; line 10  return point.x.toString();
   0000:  HACC        IMM, r0, r1, "x"                    ; r0 = point:r1.x
   0001:  SCALL       __int_toString, p0, r3              ; r3 = scall __int_toString(p0..., r4...)
   0002:  MOVR        r2, r3                              ; r2 = r3

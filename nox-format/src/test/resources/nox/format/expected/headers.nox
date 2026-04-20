@@ -1,0 +1,6 @@
+@tool:name "Headers"
+@tool:description "Test tool headers"
+
+main() {
+    return "ok";
+}

@@ -1,4 +1,4 @@
-// @test:result "255"
+// @test:result "1785"
 main() {
     int a = 15;
     int b = 240;
@@ -9,5 +9,5 @@ main() {
     int g = 1 << 8;
     int h = 510 >> 1;
     int i = 510 >>> 1;
-    return c;
+    return a + b + c + d + e + f + g + h + i;
 }

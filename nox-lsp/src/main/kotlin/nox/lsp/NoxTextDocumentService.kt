@@ -144,7 +144,7 @@ class NoxTextDocumentService(
 
     fun formatting(params: DocumentFormattingParams): List<TextEdit> {
         val doc = docs.get(params.textDocument.uri) ?: return emptyList()
-        return FormattingProvider.format(doc.text)
+        return FormattingProvider.format(doc.text, doc.uri)
     }
 
     fun completion(params: CompletionParams): CompletionList {

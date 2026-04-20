@@ -1,0 +1,11 @@
+main() {
+    try {} catch (err) {}
+
+    try {
+        // proceed
+    } catch (err) {}
+
+    while (false) {
+        // empty loop
+    }
+}

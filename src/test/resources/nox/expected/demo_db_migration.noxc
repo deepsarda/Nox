@@ -38,28 +38,30 @@
 
 .func main
   ;
-  ; line 14  json schema = Json.parse("{\"table\": \"users\", \"cols\": [{\"name\": \"id\", \"colType\": \"INT\"}, {\"name\": \"name\", \"colType\": \"VARCHAR\"}]}");
+  ; line 15  "{\"table\": \"users\", \"cols\": [{\"name\": \"id\", \"colType\": \"INT\"}, {\"name\": \"name\", \"colType\": \"VARCHAR\"}]}"
   0000:  LDC         r3, #0                              ; r3 = "{\"table\": \"users\", \"cols\": [{\"name\": \"id\", \"colType\": \"INT\"}, {\"name\": \"name\", \"colType\": \"VARCHAR\"}]}"
+  ;
+  ; line 14  json schema = Json.parse(
   0001:  SCALL       Json__parse, p0, r2                 ; r2 = scall Json__parse(p0..., r3...)
   0002:  MOVR        r1, r2                              ; schema:r1 = r2
   ;
-  ; line 15  Table t = schema as Table;
+  ; line 17  Table t = schema as Table;
   0003:  CAST_STRUCT r2, r1, #2                          ; t:r2 = schema:r1 as Table
   ;
-  ; line 17  string query = "CREATE TABLE " + t.table + " (";
+  ; line 19  string query = "CREATE TABLE " + t.table + " (";
   0004:  LDC         r4, #4                              ; r4 = "CREATE TABLE "
   0005:  HACC        GET_STR, r3, r2, "table"            ; r3 = t:r2.table
   0006:  SCONCAT     r3, r4, r3                          ; r3 = r4 + r3
   0007:  LDC         r1, #6                              ; query:r1 = " ("
   0008:  SCONCAT     r1, r3, r1                          ; query:r1 = r3 + query:r1
   ;
-  ; line 18  yield t;
+  ; line 20  yield t;
   0009:  YIELD       REF, r2                             ; yield t:r2
   ;
-  ; line 19  int i = 0;
+  ; line 21  int i = 0;
   0010:  LDI         p0, 0                               ; i:p0 = 0
   ;
-  ; line 20  while (i < t.cols.length()) {
+  ; line 22  while (i < t.cols.length()) {
   .loop_start_1:
   0011:  HACC        GET_OBJ, r5, r2, "cols"             ; r5 = t:r2.cols
   0012:  SCALL       __T[]_length!Column, p3, r5         ; p3 = scall __T[]_length!Column(p4..., r5...)
@@ -67,11 +69,11 @@
   0014:  ILT         p1, p0, p2                          ; p1 = i:p0 < p2
   0015:  JIF         p1, @0036                           ; if p1==0 -> loop_exit_1
   ;
-  ; line 21  Column c = t.cols[i];
+  ; line 23  Column c = t.cols[i];
   0016:  HACC        GET_OBJ, r4, r2, "cols"             ; r4 = t:r2.cols
   0017:  AGET_IDX    r3, r4, p0                          ; c:r3 = r4[i:p0]
   ;
-  ; line 22  query = query + c.name + " " + c.colType;
+  ; line 24  query = query + c.name + " " + c.colType;
   0018:  HACC        GET_STR, r5, r3, "name"             ; r5 = c:r3.name
   0019:  SCONCAT     r5, r1, r5                          ; r5 = query:r1 + r5
   0020:  LDC         r4, #10                             ; r4 = " "
@@ -79,7 +81,7 @@
   0022:  HACC        GET_STR, r1, r3, "colType"          ; query:r1 = c:r3.colType
   0023:  SCONCAT     r1, r4, r1                          ; query:r1 = r4 + query:r1
   ;
-  ; line 23  if (i < t.cols.length() - 1) {
+  ; line 25  if (i < t.cols.length() - 1) {
   0024:  HACC        GET_OBJ, r6, r2, "cols"             ; r6 = t:r2.cols
   0025:  SCALL       __T[]_length!Column, p4, r6         ; p4 = scall __T[]_length!Column(p5..., r6...)
   0026:  MOV         p3, p4                              ; p3 = p4
@@ -87,27 +89,27 @@
   0028:  ILT         p1, p0, p2                          ; p1 = i:p0 < p2
   0029:  JIF         p1, @0033                           ; if p1==0 -> @0033
   ;
-  ; line 24  query = query + ", ";
+  ; line 26  query = query + ", ";
   0030:  LDC         r4, #12                             ; r4 = ", "
   0031:  SCONCAT     r1, r1, r4                          ; query:r1 = query:r1 + r4
   0032:  JMP         @0033                               ; -> @0033
   ;
-  ; line 26  i = i + 1;
+  ; line 28  i = i + 1;
   0033:  IADD        p0, p0, #1                          ; i:p0 = i:p0 + 1
   0034:  KILL_REF    r6                                  ; r6 = null (GC)
   0035:  JMP         @0011                               ; -> loop_start_1
   ;
-  ; line 28  query = query + ");";
+  ; line 30  query = query + ");";
   .loop_exit_1:
   0036:  LDC         r4, #13                             ; r4 = ");"
   0037:  SCONCAT     r1, r1, r4                          ; query:r1 = query:r1 + r4
   ;
-  ; line 31  File.write("migration.sql", query);
+  ; line 33  File.write("migration.sql", query);
   0038:  LDC         r6, #14                             ; r6 = "migration.sql"
   0039:  MOVR        r7, r1                              ; r7 = query:r1
   0040:  SCALL       File__write, p4, r6                 ; scall File__write(p4..., r6...)
   ;
-  ; line 32  File.read("migration.sql");
+  ; line 34  File.read("migration.sql");
   0041:  LDC         r7, #14                             ; r7 = "migration.sql"
   0042:  SCALL       File__read, p4, r6                  ; r6 = scall File__read(p4..., r7...)
   0043:  MOVR        r4, r6                              ; r4 = r6
@@ -116,13 +118,13 @@
   .catch_all:
   0046:  JMP         @0047                               ; -> end
   ;
-  ; line 36  if (query == "CREATE TABLE users (id INT, name VARCHAR);") {
+  ; line 38  if (query == "CREATE TABLE users (id INT, name VARCHAR);") {
   .end:
   0047:  LDC         r4, #17                             ; err:r4 = "CREATE TABLE users (id INT, name VARCHAR);"
   0048:  SEQ         p1, r1, r4                          ; p1 = query:r1 == err:r4
   0049:  JIF         p1, @0059                           ; if p1==0 -> @0059
   ;
-  ; line 37  return "ok";
+  ; line 39  return "ok";
   0050:  LDC         r1, #18                             ; query:r1 = "ok"
   0051:  KILL_REF    r2                                  ; t:r2 = null (GC)
   0052:  KILL_REF    r3                                  ; c:r3 = null (GC)
@@ -133,7 +135,7 @@
   0057:  RET         REF, r1                             ; return query:r1
   0058:  JMP         @0059                               ; -> @0059
   ;
-  ; line 39  return "error";
+  ; line 41  return "error";
   0059:  LDC         r1, #19                             ; query:r1 = "error"
   0060:  KILL_REF    r2                                  ; t:r2 = null (GC)
   0061:  KILL_REF    r3                                  ; c:r3 = null (GC)

@@ -12,6 +12,7 @@ object OutputFormatter {
         terminal: Terminal,
         data: String,
     ) {
+        // TEST
         terminal.println(data)
     }
 

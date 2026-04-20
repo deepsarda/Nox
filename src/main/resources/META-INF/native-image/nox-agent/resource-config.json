@@ -847,10 +847,6 @@
   }, {
     "pattern":"\\Qnox/compiler/ast/RawExpr.class\\E"
   }, {
-    "pattern":"\\Qnox/compiler/ast/RawHeader.class\\E"
-  }, {
-    "pattern":"\\Qnox/compiler/ast/RawHeaderImpl.class\\E"
-  }, {
     "pattern":"\\Qnox/compiler/ast/RawProgram.class\\E"
   }, {
     "pattern":"\\Qnox/compiler/ast/RawStmt.class\\E"

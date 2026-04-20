@@ -15,7 +15,7 @@
 ;  Function: main
 ;    Entry PC:   0
 ;    Params:     0
-;    Frame:      pMem=4  rMem=0
+;    Frame:      pMem=17  rMem=0
 
 .func main
   ;
@@ -32,22 +32,30 @@
   0003:  BAND        p3, p2, #255                        ; d:p3 = c:p2 & 255
   ;
   ; line 7  int e = a ^ b;
-  0004:  BXOR        p3, p0, p1                          ; e:p3 = a:p0 ^ b:p1
+  0004:  BXOR        p4, p0, p1                          ; e:p4 = a:p0 ^ b:p1
   ;
   ; line 8  int f = ~0;
-  0005:  LDC         p3, #0                              ; f:p3 = -1
+  0005:  LDC         p5, #0                              ; f:p5 = -1
   ;
   ; line 9  int g = 1 << 8;
-  0006:  LDI         p3, 256                             ; g:p3 = 256
+  0006:  LDI         p6, 256                             ; g:p6 = 256
   ;
   ; line 10  int h = 510 >> 1;
-  0007:  LDI         p3, 255                             ; h:p3 = 255
+  0007:  LDI         p7, 255                             ; h:p7 = 255
   ;
   ; line 11  int i = 510 >>> 1;
-  0008:  LDI         p3, 255                             ; i:p3 = 255
+  0008:  LDI         p8, 255                             ; i:p8 = 255
   ;
-  ; line 12  return c;
-  0009:  RET         INT, p2                             ; return c:p2
+  ; line 12  return a + b + c + d + e + f + g + h + i;
+  0009:  IADD        p16, p0, p1                         ; p16 = a:p0 + b:p1
+  0010:  IADD        p15, p16, p2                        ; p15 = p16 + c:p2
+  0011:  IADD        p14, p15, p3                        ; p14 = p15 + d:p3
+  0012:  IADD        p13, p14, p4                        ; p13 = p14 + e:p4
+  0013:  IADD        p12, p13, p5                        ; p12 = p13 + f:p5
+  0014:  IADD        p11, p12, p6                        ; p11 = p12 + g:p6
+  0015:  IADD        p10, p11, p7                        ; p10 = p11 + h:p7
+  0016:  IADD        p9, p10, p8                         ; p9 = p10 + i:p8
+  0017:  RET         INT, p9                             ; return p9
 
 
 ; Exception Table
@@ -62,8 +70,8 @@
   modules:      1
   init_blocks:  0
   functions:    1
-  instructions: 10
+  instructions: 18
   constants:    1
   exceptions:   0
   globals:      0p + 0r
-  bytecode:     80 bytes
+  bytecode:     144 bytes

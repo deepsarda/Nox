@@ -1,0 +1,33 @@
+@tool:name "Spacing Test"
+@tool:description "Tests various spacing rules"
+
+type Point {
+    int x;
+    int y;
+}
+
+type Line { Point start; Point end; }
+
+string doFormat(int a, int b) {
+    if (a > b) {
+        return "a is greater";
+    } else {
+        return "b is greater";
+    }
+}
+
+main() {
+    int[] arr = [1, 2, 3];
+
+    Line line = { start: { x: 0, y: 0 }, end: { x: 10, y: 10 } };
+
+    string s = `Point is ${line.start.x}, ${line.start.y}`;
+
+    try {
+        doFormat(1, 2);
+    } catch (err) {
+        // do nothing
+    }
+
+    return "ok";
+}

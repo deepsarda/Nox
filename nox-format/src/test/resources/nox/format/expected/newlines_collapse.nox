@@ -1,0 +1,20 @@
+type Foo {
+
+    int bar;
+}
+
+
+
+type Baz {
+
+    int qux;
+}
+
+
+
+main() {
+
+    int a = 1;
+
+    int b = 2;
+}
