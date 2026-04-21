@@ -12,22 +12,29 @@ import java.nio.file.Path
 
 object ExternalPluginBridge {
     private val activeContexts = java.util.concurrent.ConcurrentHashMap<Long, nox.runtime.RuntimeContext>()
-    private val nextContextId = java.util.concurrent.atomic.AtomicLong(1)
+    private val nextContextId =
+        java.util.concurrent.atomic
+            .AtomicLong(1)
 
-    private val yieldCallbackHandle: MethodHandle = MethodHandles.lookup().findStatic(
-        ExternalPluginBridge::class.java,
-        "yieldCallback",
-        MethodType.methodType(Void.TYPE, Long::class.javaPrimitiveType, MemorySegment::class.java)
-    )
+    private val yieldCallbackHandle: MethodHandle =
+        MethodHandles.lookup().findStatic(
+            ExternalPluginBridge::class.java,
+            "yieldCallback",
+            MethodType.methodType(Void.TYPE, Long::class.javaPrimitiveType, MemorySegment::class.java),
+        )
 
-    private val yieldFuncStub: MemorySegment = Linker.nativeLinker().upcallStub(
-        yieldCallbackHandle,
-        FunctionDescriptor.ofVoid(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS),
-        Arena.global()
-    )
+    private val yieldFuncStub: MemorySegment =
+        Linker.nativeLinker().upcallStub(
+            yieldCallbackHandle,
+            FunctionDescriptor.ofVoid(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS),
+            Arena.global(),
+        )
 
     @JvmStatic
-    private fun yieldCallback(contextId: Long, dataPtr: MemorySegment) {
+    private fun yieldCallback(
+        contextId: Long,
+        dataPtr: MemorySegment,
+    ) {
         val ctx = activeContexts[contextId] ?: return
         if (dataPtr == MemorySegment.NULL) return
         val data = dataPtr.reinterpret(Long.MAX_VALUE).getString(0)
@@ -40,14 +47,16 @@ object ExternalPluginBridge {
     ) {
         val lib = SymbolLookup.libraryLookup(Path.of(libraryPath), Arena.global())
 
-        val initFuncAddr = lib.find("nox_plugin_init").orElseThrow {
-            IllegalStateException("nox_plugin_init symbol not found")
-        }
+        val initFuncAddr =
+            lib.find("nox_plugin_init").orElseThrow {
+                IllegalStateException("nox_plugin_init symbol not found")
+            }
 
-        val initHandle = Linker.nativeLinker().downcallHandle(
-            initFuncAddr,
-            FunctionDescriptor.of(ValueLayout.ADDRESS)
-        )
+        val initHandle =
+            Linker.nativeLinker().downcallHandle(
+                initFuncAddr,
+                FunctionDescriptor.of(ValueLayout.ADDRESS),
+            )
 
         val manifestPtr = initHandle.invokeExact() as MemorySegment
         if (manifestPtr == MemorySegment.NULL) {
@@ -98,11 +107,10 @@ object ExternalPluginBridge {
         paramTypes: List<NoxTypeTag>,
         returnType: NoxTypeTag,
     ): NoxNativeFunc {
-        
         // Build the FunctionDescriptor
         // First parameter is ALWAYS the NoxContext pointer
         val argLayouts = mutableListOf<MemoryLayout>(ValueLayout.ADDRESS)
-        
+
         for (pt in paramTypes) {
             when (pt) {
                 NoxTypeTag.INT -> argLayouts.add(ValueLayout.JAVA_LONG)
@@ -116,22 +124,24 @@ object ExternalPluginBridge {
                 NoxTypeTag.VOID -> throw IllegalStateException("VOID cannot be a parameter type")
             }
         }
-        
-        val returnLayout = when (returnType) {
-            NoxTypeTag.INT -> ValueLayout.JAVA_LONG
-            NoxTypeTag.DOUBLE -> ValueLayout.JAVA_DOUBLE
-            NoxTypeTag.BOOLEAN -> ValueLayout.JAVA_BOOLEAN
-            NoxTypeTag.STRING -> ValueLayout.ADDRESS
-            NoxTypeTag.JSON -> ValueLayout.ADDRESS
-            NoxTypeTag.INT_ARRAY, NoxTypeTag.DOUBLE_ARRAY, NoxTypeTag.STRING_ARRAY -> ValueLayout.ADDRESS
-            NoxTypeTag.VOID -> null
-        }
 
-        val descriptor = if (returnLayout != null) {
-            FunctionDescriptor.of(returnLayout, *argLayouts.toTypedArray())
-        } else {
-            FunctionDescriptor.ofVoid(*argLayouts.toTypedArray())
-        }
+        val returnLayout =
+            when (returnType) {
+                NoxTypeTag.INT -> ValueLayout.JAVA_LONG
+                NoxTypeTag.DOUBLE -> ValueLayout.JAVA_DOUBLE
+                NoxTypeTag.BOOLEAN -> ValueLayout.JAVA_BOOLEAN
+                NoxTypeTag.STRING -> ValueLayout.ADDRESS
+                NoxTypeTag.JSON -> ValueLayout.ADDRESS
+                NoxTypeTag.INT_ARRAY, NoxTypeTag.DOUBLE_ARRAY, NoxTypeTag.STRING_ARRAY -> ValueLayout.ADDRESS
+                NoxTypeTag.VOID -> null
+            }
+
+        val descriptor =
+            if (returnLayout != null) {
+                FunctionDescriptor.of(returnLayout, *argLayouts.toTypedArray())
+            } else {
+                FunctionDescriptor.ofVoid(*argLayouts.toTypedArray())
+            }
 
         val targetHandle = Linker.nativeLinker().downcallHandle(nativeFuncAddr, descriptor)
 
@@ -212,7 +222,7 @@ object ExternalPluginBridge {
 
                 try {
                     val resultObj = targetHandle.invokeWithArguments(*invokeArgs)
-                    
+
                     when (returnType) {
                         NoxTypeTag.INT -> {
                             pMem[bp + destReg] = (resultObj as Number).toLong()
@@ -225,15 +235,31 @@ object ExternalPluginBridge {
                         }
                         NoxTypeTag.STRING -> {
                             val resMem = resultObj as MemorySegment
-                            rMem[bpRef + destReg] = if (resMem == MemorySegment.NULL) "" else resMem.reinterpret(Long.MAX_VALUE).getString(0)
+                            rMem[bpRef + destReg] =
+                                if (resMem ==
+                                    MemorySegment.NULL
+                                ) {
+                                    ""
+                                } else {
+                                    resMem.reinterpret(Long.MAX_VALUE).getString(0)
+                                }
                         }
                         NoxTypeTag.JSON -> {
                             val resMem = resultObj as MemorySegment
-                            val cStr = if (resMem == MemorySegment.NULL) "null" else resMem.reinterpret(Long.MAX_VALUE).getString(0)
+                            val cStr =
+                                if (resMem ==
+                                    MemorySegment.NULL
+                                ) {
+                                    "null"
+                                } else {
+                                    resMem.reinterpret(Long.MAX_VALUE).getString(0)
+                                }
                             rMem[bpRef + destReg] = NoxJsonParser(cStr).parse()
                         }
                         NoxTypeTag.INT_ARRAY, NoxTypeTag.DOUBLE_ARRAY, NoxTypeTag.STRING_ARRAY -> {
-                            throw UnsupportedOperationException("Returning arrays from C is not safely supported without a length protocol.")
+                            throw UnsupportedOperationException(
+                                "Returning arrays from C is not safely supported without a length protocol.",
+                            )
                         }
                         NoxTypeTag.VOID -> {
                             // No-op
