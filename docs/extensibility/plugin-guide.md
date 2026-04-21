@@ -277,22 +277,48 @@ int digits = x.getNumOfDigits();  // 2
  
 ### Registration and Discovery
 
-#### Automatic Discovery
+#### Automatic Discovery via ServiceLoader
 
-On startup, the runtime scans for classes annotated with `@NoxModule`. Each discovered module is:
+When you compile your plugin project using the `nox-ksp` Gradle plugin, the KSP processor automatically generates the adapter code and creates a `META-INF/services/nox.plugin.PluginRegistryProvider` file in your resulting `.jar`. 
 
-1. **Validated:** All `@NoxFunction` methods are checked for correct signatures
-2. **Linked:** `MethodHandle` adapters are generated for each function
-3. **Registered:** Functions are added to the `LibraryRegistry` under their namespace
-4. **Available:** The compiler can validate calls to these functions statically
-
-#### Manual Registration
-
+On startup, Nox calls `LibraryRegistry.createDefault()`, which simply executes:
 ```kotlin
-val runtime = NoxRuntime()
-runtime.registerModule(MathExtension::class)
-runtime.registerModule(SecureIO::class)
+val providers = ServiceLoader.load(PluginRegistryProvider::class.java)
+for (provider in providers) provider.registerAll(registry)
 ```
+This means **no manual registration is required**. Any plugin `.jar` dropped into the classpath is instantly and safely discovered without classpath collisions.
+
+### Developing and Packaging Your Own Plugin
+
+To build your own plugin, you create a standard Kotlin project.
+
+**1. Set up your `build.gradle.kts`:**
+```kotlin
+plugins {
+    kotlin("jvm") version "2.1.0"
+    id("com.google.devtools.ksp") version "2.1.0-1.0.29"
+}
+
+dependencies {
+    // Add the Nox core API
+    implementation("nox:core:1.0.0")
+    // Add the Nox KSP processor
+    ksp("nox:nox-ksp:1.0.0")
+}
+```
+
+**2. Write your plugin code:**
+Create your functions and annotate them with `@NoxModule` and `@NoxFunction`.
+
+**3. Build your plugin:**
+Run `./gradlew build`. The compiler will generate the `GeneratedRegistry` and `META-INF` files automatically. 
+
+**4. Distribute and Embed:**
+Take your resulting `my-plugin-1.0.0.jar` and distribute it. To use it in a host application, simply add it to the Java classpath when running Nox:
+```bash
+java -cp "nox.jar:my-plugin-1.0.0.jar" nox.cli.NoxCliKt script.nox
+```
+Because of the `ServiceLoader` integration, Nox will immediately recognize your module and its functions will be available to `.nox` scripts!
  
 ### Example: A Complete Plugin
 

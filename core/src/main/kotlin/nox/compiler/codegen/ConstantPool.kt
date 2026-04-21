@@ -9,10 +9,6 @@ import nox.compiler.types.TypeDescriptor
  * gets a stable index. Multiple references to the same value reuse the same index,
  * keeping the pool (and instruction operands) as compact as possible.
  *
- * Values that can be represented as a 16-bit immediate (i.e. ints in 0..65535) [basically 90% of usecases]
- * don't need to be pooled and are instead loaded via [Opcode.LDI] directly.
- * TODO: Is this actually useful? Do we optimize for constant pool or for instruction count?
- *
  * See docs/compiler/codegen.md.
  */
 class ConstantPool {

@@ -9,9 +9,9 @@ plugins {
 
 // JVM target
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(25)
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25)
     }
 }
 
@@ -21,8 +21,8 @@ repositories {
 
 // JVM compatibility for Java sources (ANTLR-generated)
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 dependencies {
@@ -32,10 +32,8 @@ dependencies {
     // ANTLR4: runtime (shipped in the final JAR, needed by generated lexer/parser)
     implementation(libs.antlr4.runtime)
 
+    // JNA: used by ExternalPluginBridge for Tier 1 C plugins
     implementation("net.java.dev.jna:jna:5.14.0")
-
-    // Kotlin reflection: used by plugin system for annotation scanning and MethodHandle linking
-    implementation(libs.kotlin.reflect)
 
     ksp(project(":tools:ksp"))
 
@@ -158,7 +156,7 @@ tasks.test {
         showStandardStreams = false
     }
     // Enable virtual threads for coroutine tests (JVM 21+)
-    jvmArgs("-XX:+EnableDynamicAgentLoading", "--enable-preview")
+    jvmArgs("-XX:+EnableDynamicAgentLoading")
 }
 
 // ktlint, exclude ANTLR-generated Java (not our code)
@@ -167,6 +165,7 @@ ktlint {
         exclude { entry -> entry.file.path.contains("generated-src") }
         exclude { entry -> entry.file.path.contains("antlr4") }
         exclude { entry -> entry.file.path.contains("generated/source/buildInfo") }
+        exclude { entry -> entry.file.path.contains("build") }
     }
 }
 
@@ -183,7 +182,6 @@ kover {
 
 tasks.withType<Test> {
     jvmArgs(
-        "-agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image/nox-agent",
         "--enable-native-access=ALL-UNNAMED",
     )
     this.testLogging {

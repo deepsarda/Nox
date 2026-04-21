@@ -133,7 +133,7 @@ See [`docs/`](docs/) for full documentation.
 
 ## Building
 
-**Requirements:** JDK 21+, Gradle 9+
+**Requirements:** JDK 25+, Gradle 9+
 
 ```bash
 # Build and run tests

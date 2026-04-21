@@ -2,7 +2,7 @@
 
 ## What is Nox?
 
-Nox is a purpose-built sandbox runtime designed to execute untrusted code safely and efficiently. It combines the security guarantees of a capability-based, zero-trust architecture with the performance of a register-based virtual machine. Written in Kotlin and targeting JVM 21+, Nox can be distributed as a **JVM library (JAR)**, a **standalone native binary** (via GraalVM Native Image), or a **shared library** (C ABI) for embedding in any language.
+Nox is a purpose-built sandbox runtime designed to execute untrusted code safely and efficiently. It combines the security guarantees of a capability-based, zero-trust architecture with the performance of a register-based virtual machine. Written in Kotlin and targeting JVM 25+, Nox can be distributed as a **JVM library (JAR)**, a **standalone native binary** (via GraalVM Native Image), or a **shared library** (C ABI) for embedding in any language.
 
 Unlike traditional sandboxes that rely on OS-level isolation (containers, VMs), Nox allows for permission to be granted on a per-call basis, with no implicit permissions. This provides a more secure and flexible environment for executing untrusted code. Compared to other sandbox runtimes, Nox is easily extensible with a powerful three-tier plugin system and can be easily adapted into any existing application.
 

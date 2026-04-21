@@ -1,12 +1,11 @@
 package nox.lsp
 
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.decodeFromJsonElement
+import nox.lsp.protocol.*
+import nox.lsp.protocol.JsonObject
 import nox.lsp.protocol.NotificationMessage
-import nox.lsp.protocol.RequestMessage
 import nox.lsp.protocol.ResponseMessage
+import nox.runtime.json.NoxJsonParser
+import nox.runtime.json.NoxJsonWriter
 import java.io.InputStream
 import java.io.OutputStream
 
@@ -15,12 +14,6 @@ class JsonRpcServer(
     private val output: OutputStream,
     private val languageServer: NoxLanguageServer,
 ) {
-    private val json =
-        Json {
-            ignoreUnknownKeys = true
-            encodeDefaults = true
-        }
-
     init {
         System.err.println("Starting Nox LSP Server")
     }
@@ -48,12 +41,12 @@ class JsonRpcServer(
                 log("RECV", bodyString)
 
                 try {
-                    val element = json.parseToJsonElement(bodyString)
-                    if (element is JsonObject) {
+                    val element = NoxJsonParser(bodyString).parse() as? JsonObject
+                    if (element is Map<*, *>) {
                         if (element.containsKey("id")) {
-                            handleRequest(element)
+                            handleRequest(element as JsonObject)
                         } else {
-                            handleNotification(element)
+                            handleNotification(element as JsonObject)
                         }
                     }
                 } catch (e: Exception) {
@@ -105,10 +98,10 @@ class JsonRpcServer(
 
     private fun handleRequest(element: JsonObject) {
         try {
-            val req = json.decodeFromJsonElement<RequestMessage>(element)
+            val req = parseRequestMessage(element)
             val result = languageServer.handleRequest(req.method, req.params)
             val res = ResponseMessage(id = req.id, result = result)
-            send(json.encodeToString(res))
+            send(NoxJsonWriter(prettyPrint = false).write(res.toJson()))
         } catch (e: Exception) {
             e.printStackTrace(System.err)
             // Could send error response here if id is known
@@ -117,7 +110,7 @@ class JsonRpcServer(
 
     private fun handleNotification(element: JsonObject) {
         try {
-            val notif = json.decodeFromJsonElement<NotificationMessage>(element)
+            val notif = parseNotificationMessage(element)
             languageServer.handleNotification(notif.method, notif.params)
         } catch (e: Exception) {
             e.printStackTrace(System.err)
@@ -126,10 +119,10 @@ class JsonRpcServer(
 
     fun notify(
         method: String,
-        params: JsonElement,
+        params: JsonObject?,
     ) {
         val notif = NotificationMessage(method = method, params = params)
-        send(json.encodeToString(notif))
+        send(NoxJsonWriter(prettyPrint = false).write(notif.toJson()))
     }
 
     @Synchronized

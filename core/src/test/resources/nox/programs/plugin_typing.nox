@@ -10,6 +10,7 @@ main() {
 
     // 2. JSON array methods
     json data = { ints: [10, 20], strings: ["a", "b"] };
+    //TODO: should handle [] auto-cast to int[] or string[] as appropriate
     int[] ja = data.getIntArray("ints", []);
     string[] sa = data.getStringArray("strings", []);
 

@@ -5,15 +5,15 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(25)
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25)
     }
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 repositories {
@@ -46,7 +46,7 @@ graalvmNative {
             sharedLibrary.set(false)
             javaLauncher.set(
                 javaToolchains.launcherFor {
-                    languageVersion.set(JavaLanguageVersion.of(21))
+                    languageVersion.set(JavaLanguageVersion.of(25))
                     vendor.set(JvmVendorSpec.matching("GraalVM"))
                 },
             )
@@ -60,7 +60,7 @@ graalvmNative {
             sharedLibrary.set(false)
             javaLauncher.set(
                 javaToolchains.launcherFor {
-                    languageVersion.set(JavaLanguageVersion.of(21))
+                    languageVersion.set(JavaLanguageVersion.of(25))
                     vendor.set(JvmVendorSpec.matching("GraalVM"))
                 },
             )
@@ -85,7 +85,6 @@ tasks.register<JavaExec>("nox") {
     description = "Runs a Nox program"
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("nox.cli.NoxCliKt")
-    jvmArgs("--enable-preview")
     standardInput = System.`in`
     dependsOn(tasks.named("classes"))
 }
@@ -99,6 +98,5 @@ tasks.register<JavaExec>("noxc") {
     description = "Compiles a Nox source file"
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("nox.cli.NoxcCliKt")
-    jvmArgs("--enable-preview")
     dependsOn(tasks.named("classes"))
 }

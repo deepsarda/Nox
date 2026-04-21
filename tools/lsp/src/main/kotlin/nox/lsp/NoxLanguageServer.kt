@@ -1,10 +1,8 @@
 package nox.lsp
 
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.encodeToJsonElement
 import nox.lsp.features.SemanticTokensProvider
 import nox.lsp.protocol.*
+import nox.lsp.protocol.JsonObject
 
 /**
  * Nox language server. Advertises every capability we implement so clients (VSCode,
@@ -18,19 +16,19 @@ class NoxLanguageServer {
     var client: JsonRpcServer? = null
         set(value) {
             field = value
-            textService.notifyClient = { method: String, params: JsonElement -> value?.notify(method, params) }
+            textService.notifyClient = { method: String, params: JsonObject? -> value?.notify(method, params) }
         }
 
     fun handleRequest(
         method: String,
-        params: JsonElement?,
-    ): JsonElement? {
+        params: Any?,
+    ): Any? {
         // Here we do synchronous dispatch. TODO: might use CompletableFutures.
         // For simplicity, we just block and wait for the async results.
         return when (method) {
             "initialize" -> {
-                val p = json.decodeFromJsonElement<InitializeParams>(params!!)
-                json.encodeToJsonElement(initialize(p))
+                val p = parseInitializeParams(params as JsonObject)
+                initialize(p).toJson()
             }
             "shutdown" -> {
                 shutdown()
@@ -39,57 +37,31 @@ class NoxLanguageServer {
 
             // Text Document Sync
             "textDocument/hover" ->
-                json.encodeToJsonElement(
-                    textService.hover(json.decodeFromJsonElement<HoverParams>(params!!)),
-                )
+                textService.hover(parseHoverParams(params as JsonObject))?.toJson()
             "textDocument/definition" ->
-                json.encodeToJsonElement(
-                    textService.definition(json.decodeFromJsonElement<DefinitionParams>(params!!)),
-                )
+                textService.definition(parseDefinitionParams(params as JsonObject))?.toJson()
             "textDocument/references" ->
-                json.encodeToJsonElement(
-                    textService.references(json.decodeFromJsonElement<ReferenceParams>(params!!)),
-                )
+                textService.references(parseReferenceParams(params as JsonObject))?.toJson()
             "textDocument/rename" ->
-                json.encodeToJsonElement(
-                    textService.rename(json.decodeFromJsonElement<RenameParams>(params!!)),
-                )
+                textService.rename(parseRenameParams(params as JsonObject))?.toJson()
             "textDocument/prepareRename" ->
-                json.encodeToJsonElement(
-                    textService.prepareRename(json.decodeFromJsonElement<PrepareRenameParams>(params!!)),
-                )
+                textService.prepareRename(parsePrepareRenameParams(params as JsonObject))?.toJson()
             "textDocument/documentSymbol" ->
-                json.encodeToJsonElement(
-                    textService.documentSymbol(json.decodeFromJsonElement<DocumentSymbolParams>(params!!)),
-                )
+                textService.documentSymbol(parseDocumentSymbolParams(params as JsonObject))?.toJson()
             "textDocument/foldingRange" ->
-                json.encodeToJsonElement(
-                    textService.foldingRange(json.decodeFromJsonElement<FoldingRangeRequestParams>(params!!)),
-                )
+                textService.foldingRange(parseFoldingRangeRequestParams(params as JsonObject))?.toJson()
             "textDocument/semanticTokens/full" ->
-                json.encodeToJsonElement(
-                    textService.semanticTokensFull(json.decodeFromJsonElement<SemanticTokensParams>(params!!)),
-                )
+                textService.semanticTokensFull(parseSemanticTokensParams(params as JsonObject))?.toJson()
             "textDocument/inlayHint" ->
-                json.encodeToJsonElement(
-                    textService.inlayHint(json.decodeFromJsonElement<InlayHintParams>(params!!)),
-                )
+                textService.inlayHint(parseInlayHintParams(params as JsonObject))?.toJson()
             "textDocument/formatting" ->
-                json.encodeToJsonElement(
-                    textService.formatting(json.decodeFromJsonElement<DocumentFormattingParams>(params!!)),
-                )
+                textService.formatting(parseDocumentFormattingParams(params as JsonObject))?.toJson()
             "textDocument/completion" ->
-                json.encodeToJsonElement(
-                    textService.completion(json.decodeFromJsonElement<CompletionParams>(params!!)),
-                )
+                textService.completion(parseCompletionParams(params as JsonObject))?.toJson()
             "textDocument/signatureHelp" ->
-                json.encodeToJsonElement(
-                    textService.signatureHelp(json.decodeFromJsonElement<SignatureHelpParams>(params!!)),
-                )
+                textService.signatureHelp(parseSignatureHelpParams(params as JsonObject))?.toJson()
             "textDocument/codeAction" ->
-                json.encodeToJsonElement(
-                    textService.codeAction(json.decodeFromJsonElement<CodeActionParams>(params!!)),
-                )
+                textService.codeAction(parseCodeActionParams(params as JsonObject))?.toJson()
 
             else -> null
         }
@@ -97,7 +69,7 @@ class NoxLanguageServer {
 
     fun handleNotification(
         method: String,
-        params: JsonElement?,
+        params: Any?,
     ) {
         when (method) {
             "initialized" -> {}
@@ -105,15 +77,15 @@ class NoxLanguageServer {
 
             "textDocument/didOpen" ->
                 textService.didOpen(
-                    json.decodeFromJsonElement<DidOpenTextDocumentParams>(params!!),
+                    parseDidOpenTextDocumentParams(params as JsonObject),
                 )
             "textDocument/didChange" ->
                 textService.didChange(
-                    json.decodeFromJsonElement<DidChangeTextDocumentParams>(params!!),
+                    parseDidChangeTextDocumentParams(params as JsonObject),
                 )
             "textDocument/didClose" ->
                 textService.didClose(
-                    json.decodeFromJsonElement<DidCloseTextDocumentParams>(params!!),
+                    parseDidCloseTextDocumentParams(params as JsonObject),
                 )
 
             "$/cancelRequest" -> {} // Ignore for now
@@ -154,9 +126,5 @@ class NoxLanguageServer {
 
     private fun exit() {
         System.exit(0)
-    }
-
-    companion object {
-        val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
     }
 }

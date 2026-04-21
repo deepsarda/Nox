@@ -3,19 +3,20 @@ package nox.lsp
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.encodeToJsonElement
+import nox.runtime.json.NoxJsonParser
+import nox.runtime.json.NoxJsonWriter
+
+
 import nox.lsp.protocol.*
 
 class InitTest :
     StringSpec({
         "initialize returns all registered capabilities" {
             val server = NoxLanguageServer()
-            val params = Json.encodeToJsonElement(InitializeParams(processId = 1, rootUri = "file:///tmp"))
+            val params = InitializeParams(processId = 1, rootUri = "file:///tmp").toJson()
             val result = server.handleRequest("initialize", params)
             result shouldNotBe null
-            val initResult = NoxLanguageServer.json.decodeFromJsonElement<InitializeResult>(result!!)
+            val initResult = parseInitializeResult(result as JsonObject)
             val caps = initResult.capabilities
             caps.textDocumentSync shouldBe 1
             caps.hoverProvider shouldBe true

@@ -90,8 +90,6 @@ class NoxRuntime private constructor(
 
         fun withRegistry(r: LibraryRegistry) = apply { registry = r }
 
-        fun registerModule(instance: Any) = apply { registry.registerModule(instance) }
-
         fun setPermissionHandler(handler: suspend (PermissionRequest) -> PermissionResponse) =
             apply { permissionHandler = handler }
 

@@ -45,8 +45,8 @@ class LibraryRegistryTest :
         // Manual Module Registration
 
         test("registerModule discovers @NoxFunction annotated methods") {
-            val registry = LibraryRegistry()
-            registry.registerModule(TestNamespaceModule)
+            val registry = LibraryRegistry.createDefault()
+            GeneratedRegistryTest().registerAll(registry)
 
             registry.isBuiltinNamespace("TestNS") shouldBe true
             val target = registry.lookupNamespaceFunc("TestNS", "add")
@@ -56,8 +56,8 @@ class LibraryRegistryTest :
         }
 
         test("registerModule discovers @NoxTypeMethod annotated methods") {
-            val registry = LibraryRegistry()
-            registry.registerModule(TestTypeMethods)
+            val registry = LibraryRegistry.createDefault()
+            GeneratedRegistryTest().registerAll(registry)
 
             val method = registry.lookupBuiltinMethod(TypeRef.STRING, "reverse")
             method.shouldNotBeNull()
@@ -66,8 +66,8 @@ class LibraryRegistryTest :
         }
 
         test("registerModule discovers conversion methods and puts them in typeMethods") {
-            val registry = LibraryRegistry()
-            registry.registerModule(TestTypeMethods)
+            val registry = LibraryRegistry.createDefault()
+            GeneratedRegistryTest().registerAll(registry)
 
             val method = registry.lookupTypeMethod(TypeRef.STRING, "toUpperCase")
             method.shouldNotBeNull()
@@ -77,8 +77,8 @@ class LibraryRegistryTest :
         // SCALL Name Generation
 
         test("namespace functions get namespace-qualified SCALL names") {
-            val registry = LibraryRegistry()
-            registry.registerModule(TestNamespaceModule)
+            val registry = LibraryRegistry.createDefault()
+            GeneratedRegistryTest().registerAll(registry)
 
             val target = registry.lookupNamespaceFunc("TestNS", "add")
             target.shouldNotBeNull()
@@ -86,8 +86,8 @@ class LibraryRegistryTest :
         }
 
         test("type-bound methods get type-qualified SCALL names") {
-            val registry = LibraryRegistry()
-            registry.registerModule(TestTypeMethods)
+            val registry = LibraryRegistry.createDefault()
+            GeneratedRegistryTest().registerAll(registry)
 
             val method = registry.lookupBuiltinMethod(TypeRef.STRING, "reverse")
             method.shouldNotBeNull()
@@ -95,9 +95,8 @@ class LibraryRegistryTest :
         }
 
         test("no collisions between same-named functions in different namespaces") {
-            val registry = LibraryRegistry()
-            registry.registerModule(TestNamespaceModule)
-            registry.registerModule(TestNamespaceModule2)
+            val registry = LibraryRegistry.createDefault()
+            GeneratedRegistryTest().registerAll(registry)
 
             val target1 = registry.lookupNamespaceFunc("TestNS", "add")
             val target2 = registry.lookupNamespaceFunc("TestNS2", "add")
@@ -110,18 +109,20 @@ class LibraryRegistryTest :
         // Namespace Query API
 
         test("isBuiltinNamespace returns false for unknown namespaces") {
-            val registry = LibraryRegistry()
+            val registry = LibraryRegistry.createDefault()
+            GeneratedRegistryTest().registerAll(registry)
             registry.isBuiltinNamespace("NonExistent") shouldBe false
         }
 
         test("lookupNamespaceFunc returns null for unknown function") {
-            val registry = LibraryRegistry()
-            registry.registerModule(TestNamespaceModule)
+            val registry = LibraryRegistry.createDefault()
+            GeneratedRegistryTest().registerAll(registry)
             registry.lookupNamespaceFunc("TestNS", "nonexistent").shouldBeNull()
         }
 
         test("lookupNamespaceFunc returns null for unknown namespace") {
-            val registry = LibraryRegistry()
+            val registry = LibraryRegistry.createDefault()
+            GeneratedRegistryTest().registerAll(registry)
             registry.lookupNamespaceFunc("NonExistent", "add").shouldBeNull()
         }
 
@@ -220,7 +221,8 @@ class LibraryRegistryTest :
         // Tier 1 External Plugin Registration
 
         test("registerExternalPlugin adds namespace functions") {
-            val registry = LibraryRegistry()
+            val registry = LibraryRegistry.createDefault()
+            GeneratedRegistryTest().registerAll(registry)
             val manifest =
                 NoxPluginManifest(
                     namespace = "GameAPI",
@@ -253,15 +255,6 @@ class LibraryRegistryTest :
         }
 
         // Type Mapping Utilities
-
-        test("kotlinTypeToTypeRef maps Kotlin types correctly") {
-            LibraryRegistry.kotlinTypeToTypeRef(Long::class.java) shouldBe TypeRef.INT
-            LibraryRegistry.kotlinTypeToTypeRef(Int::class.java) shouldBe TypeRef.INT
-            LibraryRegistry.kotlinTypeToTypeRef(Double::class.java) shouldBe TypeRef.DOUBLE
-            LibraryRegistry.kotlinTypeToTypeRef(Boolean::class.java) shouldBe TypeRef.BOOLEAN
-            LibraryRegistry.kotlinTypeToTypeRef(String::class.java) shouldBe TypeRef.STRING
-            LibraryRegistry.kotlinTypeToTypeRef(Unit::class.java) shouldBe TypeRef.VOID
-        }
 
         test("parseTypeRefString handles simple and array types") {
             LibraryRegistry.parseTypeRefString("int") shouldBe TypeRef.INT

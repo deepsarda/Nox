@@ -15,7 +15,7 @@ class NoxTextDocumentService(
     private val cache: AnalysisCache,
 ) {
     @Volatile
-    var notifyClient: ((String, kotlinx.serialization.json.JsonElement) -> Unit)? = null
+    var notifyClient: ((String, JsonObject?) -> Unit)? = null
 
     private val debounceJobs = ConcurrentHashMap<String, Job>()
     private val scope = CoroutineScope(Dispatchers.Default)
@@ -221,10 +221,7 @@ class NoxTextDocumentService(
     ) {
         notifyClient?.invoke(
             "textDocument/publishDiagnostics",
-            NoxLanguageServer.json.encodeToJsonElement(
-                PublishDiagnosticsParams.serializer(),
-                PublishDiagnosticsParams(uri, diagnostics),
-            ),
+            PublishDiagnosticsParams(uri, diagnostics).toJson(),
         )
     }
 }

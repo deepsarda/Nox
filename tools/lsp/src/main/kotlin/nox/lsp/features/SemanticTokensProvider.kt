@@ -5,7 +5,8 @@ import nox.compiler.types.FuncSymbol
 import nox.compiler.types.GlobalSymbol
 import nox.compiler.types.ParamSymbol
 import nox.compiler.types.SourceLocation
-import nox.lsp.protocol.*
+import nox.lsp.protocol.SemanticTokens
+import nox.lsp.protocol.SemanticTokensLegend
 
 /**
  * Full-document semantic tokens. Nox's lexer already categorizes tokens, but we use the
@@ -94,7 +95,6 @@ object SemanticTokensProvider {
         out: MutableList<Raw>,
     ) {
         when (expr) {
-            // TODO: We can do better.
             is TypedIdentifierExpr ->
                 when (expr.resolvedSymbol) {
                     is FuncSymbol -> out.emit(expr.loc, expr.name.length, TokenType.FUNCTION)

@@ -1,81 +1,87 @@
 package nox.plugin.external
 
-import com.sun.jna.Callback
-import com.sun.jna.CallbackReference
-import com.sun.jna.Function
-import com.sun.jna.Memory
-import com.sun.jna.NativeLibrary
-import com.sun.jna.Pointer
 import nox.plugin.LibraryRegistry
 import nox.plugin.NoxNativeFunc
 import nox.runtime.json.NoxJsonParser
 import nox.runtime.json.NoxJsonWriter
-
-interface YieldCallback : Callback {
-    fun callback(
-        contextId: Long,
-        dataPtr: Pointer?,
-    )
-}
+import java.lang.foreign.*
+import java.lang.invoke.MethodHandle
+import java.lang.invoke.MethodHandles
+import java.lang.invoke.MethodType
+import java.nio.file.Path
 
 object ExternalPluginBridge {
     private val activeContexts = java.util.concurrent.ConcurrentHashMap<Long, nox.runtime.RuntimeContext>()
-    private val nextContextId =
-        java.util.concurrent.atomic
-            .AtomicLong(1)
+    private val nextContextId = java.util.concurrent.atomic.AtomicLong(1)
 
-    class YieldCallbackImpl : YieldCallback {
-        override fun callback(
-            contextId: Long,
-            dataPtr: Pointer?,
-        ) {
-            val ctx = activeContexts[contextId] ?: return
-            val data = dataPtr?.getString(0) ?: return
-            ctx.yield(data)
-        }
+    private val yieldCallbackHandle: MethodHandle = MethodHandles.lookup().findStatic(
+        ExternalPluginBridge::class.java,
+        "yieldCallback",
+        MethodType.methodType(Void.TYPE, Long::class.javaPrimitiveType, MemorySegment::class.java)
+    )
+
+    private val yieldFuncStub: MemorySegment = Linker.nativeLinker().upcallStub(
+        yieldCallbackHandle,
+        FunctionDescriptor.ofVoid(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS),
+        Arena.global()
+    )
+
+    @JvmStatic
+    private fun yieldCallback(contextId: Long, dataPtr: MemorySegment) {
+        val ctx = activeContexts[contextId] ?: return
+        if (dataPtr == MemorySegment.NULL) return
+        val data = dataPtr.reinterpret(Long.MAX_VALUE).getString(0)
+        ctx.yield(data)
     }
-
-    private val yieldCallback = YieldCallbackImpl()
-    private val yieldFuncPtr: Pointer = CallbackReference.getFunctionPointer(yieldCallback)
-
-    private val loadedLibraries = mutableListOf<NativeLibrary>()
 
     fun loadPlugin(
         libraryPath: String,
         registry: LibraryRegistry,
     ) {
-        val jnaLibrary = NativeLibrary.getInstance(libraryPath)
-        loadedLibraries.add(jnaLibrary)
+        val lib = SymbolLookup.libraryLookup(Path.of(libraryPath), Arena.global())
 
-        val initFunc = jnaLibrary.getFunction("nox_plugin_init")
-        val manifestPtr =
-            initFunc.invokePointer(emptyArray())
-                ?: throw IllegalStateException("nox_plugin_init returned NULL")
+        val initFuncAddr = lib.find("nox_plugin_init").orElseThrow {
+            IllegalStateException("nox_plugin_init symbol not found")
+        }
 
-        val namespaceStr = manifestPtr.getPointer(0).getString(0)
-        val funcCount = manifestPtr.getInt(8)
-        val funcsArrayPtr = manifestPtr.getPointer(16)
+        val initHandle = Linker.nativeLinker().downcallHandle(
+            initFuncAddr,
+            FunctionDescriptor.of(ValueLayout.ADDRESS)
+        )
+
+        val manifestPtr = initHandle.invokeExact() as MemorySegment
+        if (manifestPtr == MemorySegment.NULL) {
+            throw IllegalStateException("nox_plugin_init returned NULL")
+        }
+
+        // Reinterpret the manifest pointer so we can read its contents
+        // Size: 24 bytes minimum (8 for string ptr, 4 for int, 4 padding, 8 for array ptr)
+        // We reinterpret to Long.MAX_VALUE safely since we know what we're reading.
+        val manifestMem = manifestPtr.reinterpret(Long.MAX_VALUE)
+
+        val namespaceStr = manifestMem.get(ValueLayout.ADDRESS, 0).reinterpret(Long.MAX_VALUE).getString(0)
+        val funcCount = manifestMem.get(ValueLayout.JAVA_INT, 8)
+        val funcsArrayPtr = manifestMem.get(ValueLayout.ADDRESS, 16).reinterpret(Long.MAX_VALUE)
 
         val externalFuncs = mutableListOf<NoxExternalFunc>()
 
         for (i in 0 until funcCount) {
-            val funcPtr = funcsArrayPtr.share(i * 40L)
+            val funcPtr = funcsArrayPtr.asSlice(i * 40L, 40L)
 
-            val name = funcPtr.getPointer(0).getString(0)
-            val paramCount = funcPtr.getInt(8)
-            val paramTypesPtr = funcPtr.getPointer(16)
+            val name = funcPtr.get(ValueLayout.ADDRESS, 0).reinterpret(Long.MAX_VALUE).getString(0)
+            val paramCount = funcPtr.get(ValueLayout.JAVA_INT, 8)
+            val paramTypesPtr = funcPtr.get(ValueLayout.ADDRESS, 16).reinterpret(Long.MAX_VALUE)
             val paramTypes = mutableListOf<NoxTypeTag>()
             for (j in 0 until paramCount) {
-                val tagInt = paramTypesPtr.getInt(j * 4L)
+                val tagInt = paramTypesPtr.get(ValueLayout.JAVA_INT, j * 4L)
                 paramTypes.add(NoxTypeTag.entries.first { it.ordinal == tagInt })
             }
-            val returnType = NoxTypeTag.entries.first { it.ordinal == funcPtr.getInt(24) }
-            val nativeFuncPtr = funcPtr.getPointer(32)
-
-            val jnaFunc = Function.getFunction(nativeFuncPtr)
+            val returnTypeTagInt = funcPtr.get(ValueLayout.JAVA_INT, 24L)
+            val returnType = NoxTypeTag.entries.first { it.ordinal == returnTypeTagInt }
+            val nativeFuncPtr = funcPtr.get(ValueLayout.ADDRESS, 32)
 
             val scallName = "${namespaceStr}__$name"
-            val noxNativeFunc = createFunc(jnaFunc, paramTypes, returnType)
+            val noxNativeFunc = createFunc(nativeFuncPtr, paramTypes, returnType)
             registry.registerNativeFunc(scallName, noxNativeFunc)
 
             val apiParamTypes = paramTypes.map { NoxTypeTag.entries[it.ordinal] }
@@ -88,95 +94,114 @@ object ExternalPluginBridge {
     }
 
     private fun createFunc(
-        jnaFunc: Function,
+        nativeFuncAddr: MemorySegment,
         paramTypes: List<NoxTypeTag>,
         returnType: NoxTypeTag,
-    ): NoxNativeFunc =
-        NoxNativeFunc { context, pMem, rMem, bp, bpRef, primArgStart, refArgStart, destReg ->
+    ): NoxNativeFunc {
+        
+        // Build the FunctionDescriptor
+        // First parameter is ALWAYS the NoxContext pointer
+        val argLayouts = mutableListOf<MemoryLayout>(ValueLayout.ADDRESS)
+        
+        for (pt in paramTypes) {
+            when (pt) {
+                NoxTypeTag.INT -> argLayouts.add(ValueLayout.JAVA_LONG)
+                NoxTypeTag.DOUBLE -> argLayouts.add(ValueLayout.JAVA_DOUBLE)
+                NoxTypeTag.BOOLEAN -> argLayouts.add(ValueLayout.JAVA_BOOLEAN)
+                NoxTypeTag.STRING -> argLayouts.add(ValueLayout.ADDRESS)
+                NoxTypeTag.JSON -> argLayouts.add(ValueLayout.ADDRESS)
+                NoxTypeTag.INT_ARRAY -> argLayouts.add(ValueLayout.ADDRESS)
+                NoxTypeTag.DOUBLE_ARRAY -> argLayouts.add(ValueLayout.ADDRESS)
+                NoxTypeTag.STRING_ARRAY -> argLayouts.add(ValueLayout.ADDRESS)
+                NoxTypeTag.VOID -> throw IllegalStateException("VOID cannot be a parameter type")
+            }
+        }
+        
+        val returnLayout = when (returnType) {
+            NoxTypeTag.INT -> ValueLayout.JAVA_LONG
+            NoxTypeTag.DOUBLE -> ValueLayout.JAVA_DOUBLE
+            NoxTypeTag.BOOLEAN -> ValueLayout.JAVA_BOOLEAN
+            NoxTypeTag.STRING -> ValueLayout.ADDRESS
+            NoxTypeTag.JSON -> ValueLayout.ADDRESS
+            NoxTypeTag.INT_ARRAY, NoxTypeTag.DOUBLE_ARRAY, NoxTypeTag.STRING_ARRAY -> ValueLayout.ADDRESS
+            NoxTypeTag.VOID -> null
+        }
+
+        val descriptor = if (returnLayout != null) {
+            FunctionDescriptor.of(returnLayout, *argLayouts.toTypedArray())
+        } else {
+            FunctionDescriptor.ofVoid(*argLayouts.toTypedArray())
+        }
+
+        val targetHandle = Linker.nativeLinker().downcallHandle(nativeFuncAddr, descriptor)
+
+        return NoxNativeFunc { context, pMem, rMem, bp, bpRef, primArgStart, refArgStart, destReg ->
             val contextId = nextContextId.getAndIncrement()
             activeContexts[contextId] = context
 
-            val ctxStruct = Memory(16)
-            ctxStruct.setLong(0, contextId)
-            ctxStruct.setPointer(8, yieldFuncPtr)
+            // Use an arena to manage memory for this function call
+            Arena.ofConfined().use { arena ->
+                val ctxStruct = arena.allocate(16L)
+                ctxStruct.set(ValueLayout.JAVA_LONG, 0, contextId)
+                ctxStruct.set(ValueLayout.ADDRESS, 8, yieldFuncStub)
 
-            val args = arrayOfNulls<Any>(paramTypes.size + 1)
-            args[0] = ctxStruct
+                val invokeArgs = arrayOfNulls<Any>(paramTypes.size + 1)
+                invokeArgs[0] = ctxStruct
 
-            var pIdx = 0
-            var rIdx = 0
+                var pIdx = 0
+                var rIdx = 0
 
-            val memoryToFree = mutableListOf<Memory>()
-
-            try {
                 for ((i, pt) in paramTypes.withIndex()) {
                     val argIndex = i + 1
                     when (pt) {
                         NoxTypeTag.INT -> {
-                            args[argIndex] = pMem[bp + primArgStart + pIdx]
+                            invokeArgs[argIndex] = pMem[bp + primArgStart + pIdx]
                             pIdx++
                         }
                         NoxTypeTag.DOUBLE -> {
-                            args[argIndex] = java.lang.Double.longBitsToDouble(pMem[bp + primArgStart + pIdx])
+                            invokeArgs[argIndex] = java.lang.Double.longBitsToDouble(pMem[bp + primArgStart + pIdx])
                             pIdx++
                         }
                         NoxTypeTag.BOOLEAN -> {
-                            args[argIndex] = pMem[bp + primArgStart + pIdx] != 0L
+                            invokeArgs[argIndex] = pMem[bp + primArgStart + pIdx] != 0L
                             pIdx++
                         }
                         NoxTypeTag.STRING -> {
                             val str = rMem[bpRef + refArgStart + rIdx] as String
-                            val strBytes = str.toByteArray(Charsets.UTF_8)
-                            val strMem = Memory((strBytes.size + 1).toLong())
-                            strMem.write(0, strBytes, 0, strBytes.size)
-                            strMem.setByte(strBytes.size.toLong(), 0)
-                            memoryToFree.add(strMem)
-                            args[argIndex] = strMem
+                            invokeArgs[argIndex] = arena.allocateFrom(str)
                             rIdx++
                         }
                         NoxTypeTag.JSON -> {
                             val value = rMem[bpRef + refArgStart + rIdx]
                             val jsonStr = NoxJsonWriter(prettyPrint = false).write(value)
-                            val strBytes = jsonStr.toByteArray(Charsets.UTF_8)
-                            val strMem = Memory((strBytes.size + 1).toLong())
-                            strMem.write(0, strBytes, 0, strBytes.size)
-                            strMem.setByte(strBytes.size.toLong(), 0)
-                            memoryToFree.add(strMem)
-                            args[argIndex] = strMem
+                            invokeArgs[argIndex] = arena.allocateFrom(jsonStr)
                             rIdx++
                         }
                         NoxTypeTag.INT_ARRAY -> {
                             @Suppress("UNCHECKED_CAST")
                             val list = rMem[bpRef + refArgStart + rIdx] as List<Long>
-                            val cArray = Memory(list.size * 8L)
-                            for (j in list.indices) cArray.setLong(j * 8L, list[j])
-                            memoryToFree.add(cArray)
-                            args[argIndex] = cArray
+                            val cArray = arena.allocate(ValueLayout.JAVA_LONG, list.size.toLong())
+                            for (j in list.indices) cArray.setAtIndex(ValueLayout.JAVA_LONG, j.toLong(), list[j])
+                            invokeArgs[argIndex] = cArray
                             rIdx++
                         }
                         NoxTypeTag.DOUBLE_ARRAY -> {
                             @Suppress("UNCHECKED_CAST")
                             val list = rMem[bpRef + refArgStart + rIdx] as List<Double>
-                            val cArray = Memory(list.size * 8L)
-                            for (j in list.indices) cArray.setDouble(j * 8L, list[j])
-                            memoryToFree.add(cArray)
-                            args[argIndex] = cArray
+                            val cArray = arena.allocate(ValueLayout.JAVA_DOUBLE, list.size.toLong())
+                            for (j in list.indices) cArray.setAtIndex(ValueLayout.JAVA_DOUBLE, j.toLong(), list[j])
+                            invokeArgs[argIndex] = cArray
                             rIdx++
                         }
                         NoxTypeTag.STRING_ARRAY -> {
                             @Suppress("UNCHECKED_CAST")
                             val list = rMem[bpRef + refArgStart + rIdx] as List<String>
-                            val cArray = Memory(list.size * 8L)
+                            val cArray = arena.allocate(ValueLayout.ADDRESS, list.size.toLong())
                             for (j in list.indices) {
-                                val strBytes = list[j].toByteArray(Charsets.UTF_8)
-                                val strMem = Memory((strBytes.size + 1).toLong())
-                                strMem.write(0, strBytes, 0, strBytes.size)
-                                strMem.setByte(strBytes.size.toLong(), 0)
-                                memoryToFree.add(strMem)
-                                cArray.setPointer(j * 8L, strMem)
+                                val strMem = arena.allocateFrom(list[j])
+                                cArray.setAtIndex(ValueLayout.ADDRESS, j.toLong(), strMem)
                             }
-                            memoryToFree.add(cArray)
-                            args[argIndex] = cArray
+                            invokeArgs[argIndex] = cArray
                             rIdx++
                         }
                         NoxTypeTag.VOID -> {
@@ -185,40 +210,39 @@ object ExternalPluginBridge {
                     }
                 }
 
-                when (returnType) {
-                    NoxTypeTag.INT -> {
-                        pMem[bp + destReg] = (jnaFunc.invoke(Long::class.java, args) as Number).toLong()
+                try {
+                    val resultObj = targetHandle.invokeWithArguments(*invokeArgs)
+                    
+                    when (returnType) {
+                        NoxTypeTag.INT -> {
+                            pMem[bp + destReg] = (resultObj as Number).toLong()
+                        }
+                        NoxTypeTag.DOUBLE -> {
+                            pMem[bp + destReg] = java.lang.Double.doubleToRawLongBits((resultObj as Number).toDouble())
+                        }
+                        NoxTypeTag.BOOLEAN -> {
+                            pMem[bp + destReg] = if (resultObj as Boolean) 1L else 0L
+                        }
+                        NoxTypeTag.STRING -> {
+                            val resMem = resultObj as MemorySegment
+                            rMem[bpRef + destReg] = if (resMem == MemorySegment.NULL) "" else resMem.reinterpret(Long.MAX_VALUE).getString(0)
+                        }
+                        NoxTypeTag.JSON -> {
+                            val resMem = resultObj as MemorySegment
+                            val cStr = if (resMem == MemorySegment.NULL) "null" else resMem.reinterpret(Long.MAX_VALUE).getString(0)
+                            rMem[bpRef + destReg] = NoxJsonParser(cStr).parse()
+                        }
+                        NoxTypeTag.INT_ARRAY, NoxTypeTag.DOUBLE_ARRAY, NoxTypeTag.STRING_ARRAY -> {
+                            throw UnsupportedOperationException("Returning arrays from C is not safely supported without a length protocol.")
+                        }
+                        NoxTypeTag.VOID -> {
+                            // No-op
+                        }
                     }
-                    NoxTypeTag.DOUBLE -> {
-                        pMem[bp + destReg] =
-                            java.lang.Double.doubleToRawLongBits(
-                                (jnaFunc.invoke(Double::class.java, args) as Number).toDouble(),
-                            )
-                    }
-                    NoxTypeTag.BOOLEAN -> {
-                        val result = jnaFunc.invoke(Boolean::class.java, args) as Boolean
-                        pMem[bp + destReg] = if (result) 1L else 0L
-                    }
-                    NoxTypeTag.STRING -> {
-                        val resultPtr = jnaFunc.invoke(Pointer::class.java, args) as Pointer?
-                        rMem[bpRef + destReg] = resultPtr?.getString(0) ?: ""
-                    }
-                    NoxTypeTag.JSON -> {
-                        val resultPtr = jnaFunc.invoke(Pointer::class.java, args) as Pointer?
-                        val cStr = resultPtr?.getString(0) ?: "null"
-                        rMem[bpRef + destReg] = NoxJsonParser(cStr).parse()
-                    }
-                    NoxTypeTag.INT_ARRAY, NoxTypeTag.DOUBLE_ARRAY, NoxTypeTag.STRING_ARRAY -> {
-                        throw UnsupportedOperationException(
-                            "Returning arrays from C is not safely supported without a length protocol.",
-                        ) // TODO: Implement a safe protocol for returning arrays (e.g. return struct)
-                    }
-                    NoxTypeTag.VOID -> {
-                        jnaFunc.invoke(Void::class.java, args)
-                    }
+                } finally {
+                    activeContexts.remove(contextId)
                 }
-            } finally {
-                activeContexts.remove(contextId)
             }
         }
+    }
 }

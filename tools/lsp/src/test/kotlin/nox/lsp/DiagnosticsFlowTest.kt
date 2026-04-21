@@ -148,10 +148,7 @@ private fun bootServer(): Pair<NoxLanguageServer, FakeClient> {
     server.textService.notifyClient = { method, params ->
         if (method == "textDocument/publishDiagnostics") {
             client.diagnostics.put(
-                NoxLanguageServer.json.decodeFromJsonElement(
-                    PublishDiagnosticsParams.serializer(),
-                    params,
-                ),
+                parsePublishDiagnosticsParams(params as JsonObject),
             )
         }
     }

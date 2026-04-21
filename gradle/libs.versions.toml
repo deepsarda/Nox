@@ -7,7 +7,6 @@ kotest            = "6.1.11"
 junit-platform    = "1.14.3"
 ktlint-gradle     = "14.2.0"
 kover             = "0.9.8"
-classgraph        = "4.8.184"
 clikt             = "5.1.0"
 mordant           = "3.0.2"
 kotlinx-serialization = "1.11.0"
@@ -16,8 +15,6 @@ kotlinx-serialization = "1.11.0"
 ksp-api           = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 antlr4-tool       = { module = "org.antlr:antlr4",                              version.ref = "antlr4" }
 antlr4-runtime    = { module = "org.antlr:antlr4-runtime",                      version.ref = "antlr4" }
-kotlin-reflect    = { module = "org.jetbrains.kotlin:kotlin-reflect",            version.ref = "kotlin" }
-classgraph        = { module = "io.github.classgraph:classgraph",                version.ref = "classgraph" }
 coroutines-core   = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 coroutines-test   = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 # Kotest: kotest-runner-junit5 is the JUnit Platform engine (no junit-jupiter needed)
