@@ -7,8 +7,9 @@ on:
       - '.github/workflows/release-dry-run.yml'
       - 'editors/vscode/package.json'
       - 'editors/intellij/**'
-      - 'nox-format/**'
-      - 'nox-lsp/**'
+      - 'core/**'
+      - 'tools/format/**'
+      - 'tools/lsp/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
       - 'gradle/libs.versions.toml'
@@ -52,8 +53,8 @@ jobs:
       - name: Native compile all four binaries
         shell: bash
         run: |
-          ./gradlew nativeCompile nativeNoxcCompile \
-                    :nox-lsp:nativeCompile :nox-format:nativeCompile
+          ./gradlew :tools:cli:nativeCompile :tools:cli:nativeNoxcCompile \
+                    :tools:lsp:nativeCompile :tools:format:nativeCompile
 
       - name: Stage distribution
         shell: bash
@@ -62,15 +63,15 @@ jobs:
           stage="nox-dryrun-${{ matrix.asset }}"
           mkdir -p "$stage/bin"
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cp build/native/nativeCompile/nox.exe                 "$stage/bin/"
-            cp build/native/nativeNoxcCompile/noxc.exe            "$stage/bin/"
-            cp nox-lsp/build/native/nativeCompile/nox-lsp.exe     "$stage/bin/"
-            cp nox-format/build/native/nativeCompile/noxfmt.exe   "$stage/bin/"
+            cp tools/cli/build/native/nativeCompile/nox.exe                 "$stage/bin/"
+            cp tools/cli/build/native/nativeNoxcCompile/noxc.exe            "$stage/bin/"
+            cp tools/lsp/build/native/nativeCompile/nox-lsp.exe     "$stage/bin/"
+            cp tools/format/build/native/nativeCompile/noxfmt.exe   "$stage/bin/"
           else
-            cp build/native/nativeCompile/nox                 "$stage/bin/"
-            cp build/native/nativeNoxcCompile/noxc            "$stage/bin/"
-            cp nox-lsp/build/native/nativeCompile/nox-lsp     "$stage/bin/"
-            cp nox-format/build/native/nativeCompile/noxfmt   "$stage/bin/"
+            cp tools/cli/build/native/nativeCompile/nox                 "$stage/bin/"
+            cp tools/cli/build/native/nativeNoxcCompile/noxc            "$stage/bin/"
+            cp tools/lsp/build/native/nativeCompile/nox-lsp     "$stage/bin/"
+            cp tools/format/build/native/nativeCompile/noxfmt   "$stage/bin/"
             chmod +x "$stage"/bin/*
           fi
           for b in "$stage"/bin/*; do

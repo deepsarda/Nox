@@ -4,7 +4,7 @@ Now that you know what NSL looks like, it is time to run it. NSL comes with two 
 
 ## Installing the Tools
 
-> **TODO:** Insert specific instructions on how to download pre-built binaries or install the CLI via a package manager.
+> **TODO:** Insert specific instructions on how to download pre-built binaries.
 
 If you have the Nox repository, you can build the native binaries using Gradle:
 ```bash

@@ -17,8 +17,6 @@ import kotlin.system.exitProcess
 
 /**
  * `noxc` CLI compiler: compiles a Nox source file and outputs its `.noxc` disassembly.
- *
- * Replaces the old `NoxcApp`.
  */
 class NoxcCli : CliktCommand(name = "noxc") {
     init {

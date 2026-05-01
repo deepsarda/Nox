@@ -76,19 +76,19 @@ jobs:
         run: ./gradlew generateGrammarSource
 
       - name: Native compile nox (main runtime)
-        run: ./gradlew nativeCompile
+        run: ./gradlew tools:cli:nativeCompile
         shell: bash
 
       - name: Native compile noxc (compiler CLI)
-        run: ./gradlew nativeNoxcCompile
+        run: ./gradlew tools:cli:nativeNoxcCompile
         shell: bash
 
       - name: Native compile nox-lsp (language server)
-        run: ./gradlew :nox-lsp:nativeCompile
+        run: ./gradlew :tools:lsp:nativeCompile
         shell: bash
 
       - name: Native compile noxfmt (formatter CLI)
-        run: ./gradlew :nox-format:nativeCompile
+        run: ./gradlew :tools:format:nativeCompile
         shell: bash
 
       - name: Assemble distribution (unix)
@@ -101,10 +101,10 @@ jobs:
           mkdir -p "$stage/bin"
 
           # Every binary lives under its own nativeCompile variant output dir.
-          cp build/native/nativeCompile/nox                 "$stage/bin/"
-          cp build/native/nativeNoxcCompile/noxc            "$stage/bin/"
-          cp nox-lsp/build/native/nativeCompile/nox-lsp     "$stage/bin/"
-          cp nox-format/build/native/nativeCompile/noxfmt   "$stage/bin/"
+          cp tools/cli/build/native/nativeCompile/nox                 "$stage/bin/"
+          cp tools/cli/build/native/nativeNoxcCompile/noxc            "$stage/bin/"
+          cp tools/lsp/build/native/nativeCompile/nox-lsp     "$stage/bin/"
+          cp tools/format/build/native/nativeCompile/noxfmt   "$stage/bin/"
           chmod +x "$stage"/bin/*
 
           cp README.md "$stage/" 2>/dev/null || true
@@ -127,10 +127,10 @@ jobs:
           $stage = "nox-$ver-${{ matrix.asset }}"
           New-Item -ItemType Directory -Force -Path "$stage\bin" | Out-Null
 
-          Copy-Item "build\native\nativeCompile\nox.exe"               "$stage\bin\"
-          Copy-Item "build\native\nativeNoxcCompile\noxc.exe"          "$stage\bin\"
-          Copy-Item "nox-lsp\build\native\nativeCompile\nox-lsp.exe"   "$stage\bin\"
-          Copy-Item "nox-format\build\native\nativeCompile\noxfmt.exe" "$stage\bin\"
+          Copy-Item "tools\cli\build\native\nativeCompile\nox.exe"               "$stage\bin\"
+          Copy-Item "tools\cli\build\native\nativeNoxcCompile\noxc.exe"          "$stage\bin\"
+          Copy-Item "tools\lsp\build\native\nativeCompile\nox-lsp.exe"   "$stage\bin\"
+          Copy-Item "tools\format\build\native\nativeCompile\noxfmt.exe" "$stage\bin\"
 
           if (Test-Path "README.md") { Copy-Item "README.md" -Destination $stage }
 
@@ -188,6 +188,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/download-artifact@v4
         with:
@@ -197,13 +199,25 @@ jobs:
       - name: Compose release notes
         run: |
           ver="${{ needs.prepare.outputs.version }}"
-          if [ -f CHANGELOG.md ]; then
-            awk -v v="$ver" '
-              /^## / { if (found) exit; if (index($0, v) > 0) { found=1; next } }
-              found { print }
-            ' CHANGELOG.md > RELEASE_NOTES.md
+          if [ -f RELEASE_NOTES.md ]; then
+            cp RELEASE_NOTES.md FINAL_RELEASE_NOTES.md
+          else
+            echo "Release ${ver}." > FINAL_RELEASE_NOTES.md
           fi
-          [ -s RELEASE_NOTES.md ] || echo "Release ${ver}." > RELEASE_NOTES.md
+          
+          echo "" >> FINAL_RELEASE_NOTES.md
+          echo "### Commits" >> FINAL_RELEASE_NOTES.md
+          
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            git log --pretty=format:"* %s (%h)" "$PREV_TAG..HEAD" >> FINAL_RELEASE_NOTES.md
+          else
+            git log --pretty=format:"* %s (%h)" >> FINAL_RELEASE_NOTES.md
+          fi
+          
+          echo "" >> FINAL_RELEASE_NOTES.md
+          echo "" >> FINAL_RELEASE_NOTES.md
+          echo "Thank you to all our contributors!" >> FINAL_RELEASE_NOTES.md
 
       - name: Create draft release
         env:
@@ -215,5 +229,5 @@ jobs:
           [ "$publish" = "true" ] && flags=""
           gh release create "v${ver}" $flags \
             --title "Nox v${ver}" \
-            --notes-file RELEASE_NOTES.md \
+            --notes-file FINAL_RELEASE_NOTES.md \
             dist/*
