@@ -7,6 +7,8 @@ import react from '@astrojs/react';
 
 // https://astro.build/config
 export default defineConfig({
+  site: 'https://deepsarda.github.io',
+  base: '/Nox',
   integrations: [
     starlight({
       title: 'Nox',
