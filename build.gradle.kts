@@ -33,7 +33,6 @@ allprojects {
     }
 }
 
-
 /**
  * Copy the canonical `llms.txt` (LLM-optimized Nox reference) to
  * `ai-cli/shared/NOX_LANGUAGE_REFERENCE.md` so every AI CLI integration

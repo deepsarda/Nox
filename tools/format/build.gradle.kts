@@ -23,12 +23,6 @@ graalvmNative {
             mainClass.set("nox.format.NoxFmtCliKt")
             buildArgs.add("-O3")
             sharedLibrary.set(false)
-            javaLauncher.set(
-                javaToolchains.launcherFor {
-                    languageVersion.set(JavaLanguageVersion.of(25))
-                    vendor.set(JvmVendorSpec.matching("GraalVM"))
-                },
-            )
         }
     }
 }

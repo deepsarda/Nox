@@ -44,12 +44,6 @@ graalvmNative {
             buildArgs.add("-O3")
             buildArgs.add("--report-unsupported-elements-at-runtime")
             sharedLibrary.set(false)
-            javaLauncher.set(
-                javaToolchains.launcherFor {
-                    languageVersion.set(JavaLanguageVersion.of(25))
-                    vendor.set(JvmVendorSpec.matching("GraalVM"))
-                },
-            )
         }
 
         create("noxc") {
@@ -58,12 +52,6 @@ graalvmNative {
             buildArgs.add("-O3")
             buildArgs.add("--report-unsupported-elements-at-runtime")
             sharedLibrary.set(false)
-            javaLauncher.set(
-                javaToolchains.launcherFor {
-                    languageVersion.set(JavaLanguageVersion.of(25))
-                    vendor.set(JvmVendorSpec.matching("GraalVM"))
-                },
-            )
         }
     }
 }

@@ -25,12 +25,6 @@ graalvmNative {
             buildArgs.add("--report-unsupported-elements-at-runtime")
             buildArgs.add("--initialize-at-build-time=kotlin")
             sharedLibrary.set(false)
-            javaLauncher.set(
-                javaToolchains.launcherFor {
-                    languageVersion.set(JavaLanguageVersion.of(25))
-                    vendor.set(JvmVendorSpec.matching("GraalVM"))
-                },
-            )
         }
     }
 }
