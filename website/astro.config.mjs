@@ -25,7 +25,7 @@ export default defineConfig({
       customCss: [
         './src/styles/global.css',
       ],
-      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/nox-lang/nox' }],
+      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/deepsarda/Nox' }],
       sidebar: [
         {
           label: 'Guides',

@@ -60,7 +60,7 @@ val generateTextMateManifest =
             outFile.get().asFile.writeText(
                 """
                 {
-                  "name": "nox",
+                  "name": "nox-language",
                   "displayName": "Nox Language",
                   "version": "${project.version}",
                   "publisher": "DeepSarda",

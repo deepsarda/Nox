@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.nox.lang</id>
     <name>Nox Language</name>
-    <vendor url="https://github.com/nox-lang/nox">Nox Language</vendor>
+    <vendor url="https://github.com/deepsarda/Nox">Nox Language</vendor>
 
     <description><![CDATA[
         Nox language support for IntelliJ IDEA. Powered by <code>nox-lsp</code>.
