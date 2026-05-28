@@ -52,6 +52,7 @@ graalvmNative {
             buildArgs.add("-O3")
             buildArgs.add("--report-unsupported-elements-at-runtime")
             sharedLibrary.set(false)
+            classpath.from(sourceSets["main"].runtimeClasspath)
         }
     }
 }
