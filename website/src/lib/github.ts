@@ -32,8 +32,8 @@ export async function fetchReleases(): Promise<GithubRelease[]> {
         return [
             {
                 id: 1,
-                name: "Nox v0.1.0-alpha",
-                tag_name: "v0.1.0-alpha",
+                name: "Nox v0.0.0",
+                tag_name: "v0.0.0",
                 published_at: new Date().toISOString(),
                 html_url: "https://github.com/deepsarda/nox/releases",
                 body: "Initial alpha release of the Nox compiler and VM.\n- Sandboxed execution\n- Basic Kotlin Interop",
