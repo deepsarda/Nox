@@ -1,0 +1,59 @@
+---
+const pathname = new URL(Astro.request.url).pathname;
+const currentPath = pathname.slice(1); // remove leading slash
+---
+
+<header class="fixed top-0 w-full z-50 bg-[#000000]/80 backdrop-blur-md border-b border-white/5">
+    <div class="container mx-auto px-6 h-16 flex items-center justify-between">
+        <!-- Logo -->
+        <a href="/" class="text-2xl font-bold tracking-tight text-white flex items-center gap-2 group">
+            Nox
+        </a>
+        
+        <!-- Desktop Nav -->
+        <nav class="hidden md:flex gap-8 text-sm font-medium text-zinc-400">
+            <a href="/guides/getting-started" class={`hover:text-white transition-colors ${currentPath.startsWith('guides') || currentPath.startsWith('docs') ? 'text-white' : ''}`}>Docs</a>
+            <a href="/downloads" class={`hover:text-white transition-colors ${currentPath.startsWith('downloads') ? 'text-white' : ''}`}>Downloads</a>
+            <a href="/ecosystem" class={`hover:text-white transition-colors ${currentPath.startsWith('ecosystem') ? 'text-white' : ''}`}>Ecosystem</a>
+            <a href="/blog" class={`hover:text-white transition-colors ${currentPath.startsWith('blog') ? 'text-white' : ''}`}>Blog</a>
+        </nav>
+        
+        <!-- Desktop Right (GitHub) -->
+        <div class="hidden md:flex items-center gap-4">
+            <a href="https://github.com/nox-lang/nox" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-white transition-colors" title="GitHub">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+            </a>
+        </div>
+
+        <!-- Mobile Menu Button -->
+        <button id="mobile-menu-btn" class="md:hidden text-zinc-400 hover:text-white focus:outline-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+    </div>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu" class="hidden md:hidden bg-[#09090b] border-b border-white/5 px-6 py-4">
+        <nav class="flex flex-col gap-4 text-sm font-medium text-zinc-400">
+            <a href="/guides/getting-started" class={`hover:text-white transition-colors ${currentPath.startsWith('guides') || currentPath.startsWith('docs') ? 'text-white' : ''}`}>Docs</a>
+            <a href="/downloads" class={`hover:text-white transition-colors ${currentPath.startsWith('downloads') ? 'text-white' : ''}`}>Downloads</a>
+            <a href="/ecosystem" class={`hover:text-white transition-colors ${currentPath.startsWith('ecosystem') ? 'text-white' : ''}`}>Ecosystem</a>
+            <a href="/blog" class={`hover:text-white transition-colors ${currentPath.startsWith('blog') ? 'text-white' : ''}`}>Blog</a>
+            <div class="h-px bg-white/5 my-2"></div>
+            <a href="https://github.com/nox-lang/nox" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 hover:text-white transition-colors">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                GitHub
+            </a>
+        </nav>
+    </div>
+</header>
+
+<script>
+    const btn = document.getElementById('mobile-menu-btn');
+    const menu = document.getElementById('mobile-menu');
+    
+    if (btn && menu) {
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+        });
+    }
+</script>

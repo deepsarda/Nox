@@ -82,7 +82,8 @@ json user = Http.getJson("/api/user/123");
 string name = user.getString("name", "Unknown"); // Returns "Unknown" if missing
 int age = user.getInt("age", 0);
 
-// Extract an array safely
+// Extract an array safely. The `[]` default is typed by the parameter,
+// so it becomes int[] here automatically — no cast needed.
 int[] ids = user.getIntArray("ids", []);
 ```
 

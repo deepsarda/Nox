@@ -1,0 +1,136 @@
+;  Nox Bytecode Disassembly
+;  Source:   json_nested_literals.nox
+;  Program:  "(unnamed)"
+;  Modules:  1 (main)
+
+
+; Constant Pool
+
+.constants
+  #0   str   "id"
+  #1   str   "Alice"
+  #2   str   "name"
+  #3   str   "user"
+  #4   str   "admin"
+  #5   str   "owner"
+  #6   str   "tags"
+  #7   str   "A"
+  #8   str   "sku"
+  #9   str   "qty"
+  #10  str   "B"
+  #11  str   "items"
+  #12  str   "__json_getJSON"
+  #13  str   "__json_getInt"
+  #14  str   "?"
+  #15  str   "__json_getString"
+  #16  str   "ok:"
+  #17  str   ":"
+
+
+; Functions
+
+;  Function: main
+;    Entry PC:   0
+;    Params:     0
+;    Frame:      pMem=3  rMem=9
+
+.func main
+  ;
+  ; line 3  json payload = {
+  0000:  NEW_OBJ     r1                                  ; payload:r1 = {}
+  ;
+  ; line 4  user: { id: 1, name: "Alice" },
+  0001:  NEW_OBJ     r2                                  ; r2 = {}
+  0002:  LDI         p0, 1                               ; p0 = 1
+  0003:  OBJ_SET     SET_INT, r2, "id", p0               ; r2.id = p0
+  0004:  LDC         r3, #1                              ; r3 = "Alice"
+  0005:  OBJ_SET     SET_STR, r2, "name", r3             ; r2.name = r3
+  ;
+  ; line 3  json payload = {
+  0006:  OBJ_SET     SET_OBJ, r1, "user", r2             ; payload:r1.user = r2
+  ;
+  ; line 5  tags: ["admin", "owner"],
+  0007:  NEW_ARRAY   r2                                  ; r2 = []
+  0008:  LDC         r3, #4                              ; r3 = "admin"
+  0009:  ARR_PUSH    SET_STR, r2, r3                     ; r2.push(r3)
+  0010:  LDC         r3, #5                              ; r3 = "owner"
+  0011:  ARR_PUSH    SET_STR, r2, r3                     ; r2.push(r3)
+  ;
+  ; line 3  json payload = {
+  0012:  OBJ_SET     SET_STR, r1, "tags", r2             ; payload:r1.tags = r2
+  ;
+  ; line 6  items: [{ sku: "A", qty: 2 }, { sku: "B", qty: 1 }]
+  0013:  NEW_ARRAY   r2                                  ; r2 = []
+  0014:  NEW_OBJ     r3                                  ; r3 = {}
+  0015:  LDC         r4, #7                              ; r4 = "A"
+  0016:  OBJ_SET     SET_STR, r3, "sku", r4              ; r3.sku = r4
+  0017:  LDI         p0, 2                               ; p0 = 2
+  0018:  OBJ_SET     SET_INT, r3, "qty", p0              ; r3.qty = p0
+  0019:  ARR_PUSH    SET_OBJ, r2, r3                     ; r2.push(r3)
+  0020:  NEW_OBJ     r3                                  ; r3 = {}
+  0021:  LDC         r4, #10                             ; r4 = "B"
+  0022:  OBJ_SET     SET_STR, r3, "sku", r4              ; r3.sku = r4
+  0023:  LDI         p0, 1                               ; p0 = 1
+  0024:  OBJ_SET     SET_INT, r3, "qty", p0              ; r3.qty = p0
+  0025:  ARR_PUSH    SET_OBJ, r2, r3                     ; r2.push(r3)
+  ;
+  ; line 3  json payload = {
+  0026:  OBJ_SET     SET_OBJ, r1, "items", r2            ; payload:r1.items = r2
+  ;
+  ; line 9  json user = payload.getJSON("user", null);
+  0027:  MOVR        r6, r1                              ; r6 = payload:r1
+  0028:  LDC         r7, #3                              ; r7 = "user"
+  0029:  KILL_REF    r8                                  ; r8 = null (GC)
+  0030:  SCALL       __json_getJSON, p1, r5              ; r5 = scall __json_getJSON(p1..., r6...)
+  0031:  MOVR        r2, r5                              ; user:r2 = r5
+  ;
+  ; line 10  int id = user.getInt("id", 0);
+  0032:  MOVR        r5, r2                              ; r5 = user:r2
+  0033:  LDC         r6, #0                              ; r6 = "id"
+  0034:  LDI         p2, 0                               ; p2 = 0
+  0035:  SCALL       __json_getInt, p1, r5               ; p1 = scall __json_getInt(p2..., r5...)
+  0036:  MOV         p0, p1                              ; id:p0 = p1
+  ;
+  ; line 11  string name = user.getString("name", "?");
+  0037:  MOVR        r6, r2                              ; r6 = user:r2
+  0038:  LDC         r7, #2                              ; r7 = "name"
+  0039:  LDC         r8, #14                             ; r8 = "?"
+  0040:  SCALL       __json_getString, p1, r5            ; r5 = scall __json_getString(p1..., r6...)
+  0041:  MOVR        r1, r5                              ; name:r1 = r5
+  ;
+  ; line 13  return `ok:${id}:${name}`;
+  0042:  LDC         r3, #16                             ; r3 = "ok:"
+  0043:  MOVR        r2, r3                              ; user:r2 = r3
+  0044:  I2S         r3, p0                              ; r3 = toString(id:p0)
+  0045:  SCONCAT     r2, r2, r3                          ; user:r2 = user:r2 + r3
+  0046:  LDC         r3, #17                             ; r3 = ":"
+  0047:  SCONCAT     r2, r2, r3                          ; user:r2 = user:r2 + r3
+  0048:  MOVR        r1, r1                              ; name:r1 = name:r1
+  0049:  SCONCAT     r2, r2, r1                          ; user:r2 = user:r2 + name:r1
+  0050:  KILL_REF    r1                                  ; name:r1 = null (GC)
+  0051:  KILL_REF    r3                                  ; r3 = null (GC)
+  0052:  KILL_REF    r4                                  ; r4 = null (GC)
+  0053:  KILL_REF    r5                                  ; r5 = null (GC)
+  0054:  KILL_REF    r6                                  ; r6 = null (GC)
+  0055:  KILL_REF    r7                                  ; r7 = null (GC)
+  0056:  KILL_REF    r8                                  ; r8 = null (GC)
+  0057:  RET         REF, r2                             ; return user:r2
+
+
+; Exception Table
+
+.exceptions
+  (none)
+
+
+; Summary
+
+.summary
+  modules:      1
+  init_blocks:  0
+  functions:    1
+  instructions: 58
+  constants:    18
+  exceptions:   0
+  globals:      0p + 0r
+  bytecode:     464 bytes

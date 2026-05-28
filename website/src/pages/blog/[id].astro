@@ -1,0 +1,94 @@
+---
+import { getCollection, render } from 'astro:content';
+import '../../styles/global.css';
+import Navbar from '../../components/Navbar.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts.map(post => ({
+    params: { id: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={post.data.description || post.data.title} />
+    <meta name="viewport" content="width=device-width" />
+    <title>{post.data.title} | Nox Blog</title>
+</head>
+<body class="bg-black text-white selection:bg-cyan-500/30 font-sans overflow-x-hidden min-h-screen flex flex-col">
+    <Navbar />
+
+    <main class="flex-grow pt-16 pb-24">
+        <div class="container mx-auto px-6 max-w-3xl">
+            <a href="/blog" class="inline-flex items-center gap-2 text-sm text-cyan-400 hover:text-cyan-300 mb-8 transition-colors">
+                &larr; Back to blog
+            </a>
+            
+            <article class="prose prose-invert prose-cyan max-w-none">
+                <header class="mb-12 border-b border-white/10 pb-8">
+                    <div class="flex items-center gap-4 mb-6">
+                        <time datetime={post.data.date.toISOString()} class="text-gray-400 font-mono text-sm">
+                            {post.data.date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </time>
+                        <div class="flex gap-2">
+                            {post.data.tags.map(tag => (
+                                <span class="text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                    <h1 class="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight leading-tight text-white">{post.data.title}</h1>
+                    {post.data.description && <p class="text-xl text-gray-400">{post.data.description}</p>}
+                    <div class="mt-6 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center text-sm font-bold">
+                            N
+                        </div>
+                        <div>
+                            <div class="font-medium text-white">{post.data.author}</div>
+                            <div class="text-xs text-gray-500">Nox Core Team</div>
+                        </div>
+                    </div>
+                </header>
+                
+                <div class="mt-8 sl-markdown-content text-gray-300 prose-headings:text-white prose-a:text-cyan-400 hover:prose-a:text-cyan-300 prose-pre:bg-[#0f111a] prose-pre:border prose-pre:border-white/5">
+                    <Content />
+                </div>
+            </article>
+
+            <!-- Giscus Comments -->
+            <div class="mt-24 pt-12 border-t border-white/10">
+                <h3 class="text-2xl font-bold mb-8">Discussion</h3>
+                <script src="https://giscus.app/client.js"
+                        data-repo="nox-lang/nox"
+                        data-repo-id="R_kgDOM1"
+                        data-category="Announcements"
+                        data-category-id="DIC_kwDOM1"
+                        data-mapping="pathname"
+                        data-strict="0"
+                        data-reactions-enabled="1"
+                        data-emit-metadata="0"
+                        data-input-position="bottom"
+                        data-theme="transparent_dark"
+                        data-lang="en"
+                        data-loading="lazy"
+                        crossorigin="anonymous"
+                        async>
+                </script>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-black py-8 border-t border-white/10 text-center">
+        <p class="text-sm text-gray-600">© 2026 Nox Language Team.</p>
+    </footer>
+</body>
+</html>

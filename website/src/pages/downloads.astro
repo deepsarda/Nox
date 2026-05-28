@@ -1,0 +1,102 @@
+---
+import '../styles/global.css';
+import Navbar from '../components/Navbar.astro';
+import { fetchReleases } from '../lib/github';
+
+const releases = await fetchReleases();
+const latest = releases[0];
+---
+
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Download Nox CLI and VM" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Downloads | Nox</title>
+</head>
+<body class="bg-black text-white selection:bg-cyan-500/30 font-sans overflow-x-hidden min-h-screen flex flex-col">
+    <Navbar />
+
+    <main class="flex-grow pt-16 pb-24">
+        <div class="container mx-auto px-6 max-w-5xl">
+            <h1 class="text-5xl font-extrabold mb-4">Downloads</h1>
+            <p class="text-gray-400 text-xl mb-12">Get the latest Nox compiler and Virtual Machine.</p>
+            
+            <!-- Latest Release Highlight -->
+            {latest && (
+                <div class="bg-[#0a0a0a] rounded-2xl p-8 border border-cyan-500/30 mb-12 shadow-[0_0_40px_rgba(6,182,212,0.1)] relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 relative z-10">
+                        <div>
+                            <div class="flex items-center gap-3 mb-2">
+                                <h2 class="text-3xl font-bold">{latest.name}</h2>
+                                <span class="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-mono font-semibold border border-green-500/30">LATEST</span>
+                            </div>
+                            <p class="text-gray-500 text-sm">Released {new Date(latest.published_at).toLocaleDateString()}</p>
+                        </div>
+                        <a href={latest.html_url} target="_blank" class="px-6 py-2 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold transition-all">
+                            View on GitHub
+                        </a>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-3 gap-4 relative z-10">
+                        {latest.assets.map(asset => (
+                            <a href={asset.browser_download_url} class="bg-black/50 border border-white/10 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:border-cyan-500/50 hover:bg-white/5 transition-all group">
+                                <svg class="w-8 h-8 text-gray-400 group-hover:text-cyan-400 mb-3 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                <span class="font-mono text-sm text-gray-300 break-all">{asset.name}</span>
+                                <span class="text-xs text-gray-500 mt-1">{(asset.size / 1024 / 1024).toFixed(1)} MB</span>
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            )}
+            
+            <h3 class="text-2xl font-bold mb-6">Install via Script</h3>
+            <div class="bg-black p-6 rounded-xl border border-white/10 mb-16 font-mono text-sm flex justify-between items-center group">
+                <span class="text-gray-300">curl -fsSL insert url here/install.sh | bash</span>
+                <button class="text-gray-500 hover:text-white transition-colors" title="Copy to clipboard">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+            
+            <h3 class="text-2xl font-bold mb-6">Version History</h3>
+            <div class="border border-white/10 rounded-xl overflow-hidden bg-[#0a0a0a]">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-black/50 border-b border-white/10 text-gray-400 text-sm">
+                            <th class="py-4 px-6 font-medium">Version</th>
+                            <th class="py-4 px-6 font-medium hidden md:table-cell">Date</th>
+                            <th class="py-4 px-6 font-medium text-right">Links</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {releases.slice(1).map(release => (
+                            <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                                <td class="py-4 px-6">
+                                    <span class="font-mono text-gray-200">{release.tag_name}</span>
+                                </td>
+                                <td class="py-4 px-6 hidden md:table-cell text-gray-500 text-sm">
+                                    {new Date(release.published_at).toLocaleDateString()}
+                                </td>
+                                <td class="py-4 px-6 text-right">
+                                    <a href={release.html_url} class="text-cyan-400 hover:text-cyan-300 text-sm">Release Notes &rarr;</a>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                {releases.length <= 1 && (
+                    <div class="p-8 text-center text-gray-500">
+                        No previous releases found.
+                    </div>
+                )}
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-black py-8 border-t border-white/10 text-center">
+        <p class="text-sm text-gray-600">© 2026 Nox Language Team.</p>
+    </footer>
+</body>
+</html>

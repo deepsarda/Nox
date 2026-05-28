@@ -187,6 +187,18 @@ json data = Http.getJson("/api/data");
 json config = { key: "value", count: 42 };
 ```
 
+JSON literals can be nested arbitrarily — field values may themselves be JSON objects, arrays, or arrays of objects:
+
+```c
+json payload = {
+    user: { id: 1, name: "Alice" },
+    tags: ["admin", "owner"],
+    items: [{ sku: "A", qty: 2 }, { sku: "B", qty: 1 }],
+};
+```
+
+Inside a JSON literal, every value is treated as a JSON value, so nested `{ ... }` does not need an explicit struct type.
+
 ### Auto-Casting: Struct to `json`
 
 Any user-defined struct can be **implicitly** cast to `json`:

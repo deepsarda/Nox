@@ -66,7 +66,17 @@ class ExpressionResolver(
         expr: RawArrayLiteralExpr,
         expectedType: TypeRef?,
     ): TypedExpr {
-        val contextElementType = expectedType?.takeIf { it.isArray }?.elementType()
+        // Inside a JSON literal field/value, the expected type is the JSON scalar itself.
+        // We don't constrain the inferred element type (so [1,2,3] still infers int[]),
+        // but we do pass JSON down per-element so nested struct literals get a type context.
+        val isJsonContext = expectedType == TypeRef.JSON
+        val contextElementType =
+            when {
+                isJsonContext -> null
+                expectedType?.isArray == true -> expectedType.elementType()
+                else -> null
+            }
+        val perElementHint: TypeRef? = contextElementType ?: if (isJsonContext) TypeRef.JSON else null
 
         if (expr.elements.isEmpty()) {
             val elementType = contextElementType ?: TypeRef.JSON
@@ -74,7 +84,7 @@ class ExpressionResolver(
         }
 
         // 1. Resolve all elements with the context element type if available
-        val firstElem = resolveExpr(scope, expr.elements[0], contextElementType)
+        val firstElem = resolveExpr(scope, expr.elements[0], perElementHint)
         if (firstElem is TypedNullLiteralExpr && contextElementType == null) {
             errors.report(
                 expr.elements[0].loc,
@@ -90,7 +100,7 @@ class ExpressionResolver(
         typedElements.add(firstElem)
 
         for (i in 1 until expr.elements.size) {
-            val typedElem = resolveExpr(scope, expr.elements[i], elementType)
+            val typedElem = resolveExpr(scope, expr.elements[i], elementType.takeIf { !isJsonContext } ?: TypeRef.JSON)
             val elemType = typedElem.type
 
             if (elementType.isAssignableFrom(elemType)) {
@@ -155,7 +165,7 @@ class ExpressionResolver(
                             suggestion = "Remove the duplicate key or rename it",
                         )
                     }
-                    TypedFieldInit(f.name, resolveExpr(scope, f.value), f.loc)
+                    TypedFieldInit(f.name, resolveExpr(scope, f.value, TypeRef.JSON), f.loc)
                 }
             return TypedStructLiteralExpr(typedFields, expr.loc, TypeRef.JSON)
         }
@@ -315,6 +325,12 @@ class ExpressionResolver(
         return TypedErrorExpr(expr.loc, expectedType ?: TypeRef.JSON)
     }
 
+    private fun resolveCallArgs(
+        scope: SymbolTable,
+        args: List<RawExpr>,
+        paramTypes: List<TypeRef>,
+    ): List<TypedExpr> = args.mapIndexed { i, a -> resolveExpr(scope, a, paramTypes.getOrNull(i)) }
+
     private fun resolveFuncCall(
         scope: SymbolTable,
         expr: RawFuncCallExpr,
@@ -328,7 +344,7 @@ class ExpressionResolver(
             return TypedErrorExpr(expr.loc, expectedType ?: TypeRef.JSON)
         }
 
-        val typedArgs = expr.args.map { resolveExpr(scope, it) }
+        val typedArgs = resolveCallArgs(scope, expr.args, symbol.params.map { it.type })
         val tExpr = TypedFuncCallExpr(expr.name, typedArgs, expr.loc, symbol.returnType, symbol)
         validateArgs(expr.loc, expr.name, paramSpecs(symbol.params), typedArgs, scope)
         return tExpr
@@ -345,7 +361,6 @@ class ExpressionResolver(
             // 1. Check imported modules
             val module = modules.find { it.namespace == name }
             if (module != null) {
-                val typedArgs = call.args.map { resolveExpr(scope, it) }
                 val importedFunc = module.program.functionsByName[call.methodName]
                 if (importedFunc != null) {
                     val callTarget =
@@ -358,6 +373,7 @@ class ExpressionResolver(
                             returnType = importedFunc.returnType,
                             astNode = importedFunc,
                         )
+                    val typedArgs = resolveCallArgs(scope, call.args, callTarget.params.map { it.type })
                     // We still need a typedTarget for the AST structure, even if it's just a dummy placeholder for the namespace
                     val typedTarget = TypedIdentifierExpr(name, call.target.loc, TypeRef.JSON, NamespaceSymbol(name))
                     val tExpr =
@@ -394,9 +410,9 @@ class ExpressionResolver(
 
             // 2. Check built-in namespaces
             if (registry.isBuiltinNamespace(name)) {
-                val typedArgs = call.args.map { resolveExpr(scope, it) }
                 val builtin = registry.lookupNamespaceFunc(name, call.methodName)
                 if (builtin != null) {
+                    val typedArgs = resolveCallArgs(scope, call.args, builtin.params.map { it.type })
                     val typedTarget = TypedIdentifierExpr(name, call.target.loc, TypeRef.JSON, NamespaceSymbol(name))
                     val tExpr =
                         TypedMethodCallExpr(
@@ -416,7 +432,6 @@ class ExpressionResolver(
         }
 
         val typedTarget = resolveExpr(scope, call.target)
-        val typedArgs = call.args.map { resolveExpr(scope, it) }
 
         if (typedTarget is TypedIdentifierExpr) {
             val namespaceName = typedTarget.name
@@ -424,6 +439,7 @@ class ExpressionResolver(
             if (registry.isBuiltinNamespace(namespaceName)) {
                 val builtin = registry.lookupNamespaceFunc(namespaceName, call.methodName)
                 if (builtin != null) {
+                    val typedArgs = resolveCallArgs(scope, call.args, builtin.params.map { it.type })
                     val tExpr =
                         TypedMethodCallExpr(
                             typedTarget,
@@ -458,6 +474,7 @@ class ExpressionResolver(
             registry.lookupBuiltinMethod(targetType, call.methodName)
                 ?: registry.lookupTypeMethod(targetType, call.methodName)
         if (typeBoundMethod != null) {
+            val typedArgs = resolveCallArgs(scope, call.args, typeBoundMethod.params.map { it.type })
             val tExpr =
                 TypedMethodCallExpr(
                     typedTarget,
@@ -491,6 +508,8 @@ class ExpressionResolver(
                     returnType = ufcsFunc.returnType,
                     astNode = ufcsFunc.astNode,
                 )
+            val remainingParams = ufcsFunc.params.drop(1)
+            val typedArgs = resolveCallArgs(scope, call.args, remainingParams.map { it.type })
             val tExpr =
                 TypedMethodCallExpr(
                     typedTarget,
@@ -502,7 +521,6 @@ class ExpressionResolver(
                     TypedMethodCallExpr.Resolution.UFCS,
                     ufcsTarget,
                 )
-            val remainingParams = ufcsFunc.params.drop(1)
             validateArgs(call.loc, call.methodName, paramSpecs(remainingParams), typedArgs, scope)
             return tExpr
         }

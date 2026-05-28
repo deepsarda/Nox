@@ -1,9 +1,28 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.ktlint)
     alias(libs.plugins.kover) apply false
     id("org.graalvm.buildtools.native") version "0.11.1" apply false
+    alias(libs.plugins.shadow)
+}
+
+kotlin {
+    jvmToolchain(25)
+}
+
+dependencies {
+    implementation(project(":core"))
+    implementation(project(":tools:cli"))
+    implementation(project(":tools:format"))
+    implementation(project(":tools:lsp"))
+}
+
+tasks.shadowJar {
+    manifest {
+        attributes["Main-Class"] = "nox.cli.NoxCliKt"
+    }
+    archiveClassifier.set("all")
 }
 
 allprojects {
@@ -13,6 +32,7 @@ allprojects {
         mavenCentral()
     }
 }
+
 
 /**
  * Copy the canonical `llms.txt` (LLM-optimized Nox reference) to

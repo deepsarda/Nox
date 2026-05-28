@@ -146,6 +146,7 @@ intellijPlatform {
             recommended()
         }
     }
+    buildSearchableOptions = false
 }
 
 tasks.test {

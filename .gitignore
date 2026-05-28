@@ -40,3 +40,13 @@ PLAN.md
 dummy_out.json
 migration.sql
 .intellijPlatform/
+
+# Website generated docs
+website/src/content/docs/docs/
+website/src/content/docs/guides/
+website/dist
+
+# Astro
+.astro/
+.vscode/
+node_modules/

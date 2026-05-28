@@ -1,0 +1,99 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* 
+  Tailwind v4 integration with Starlight custom properties.
+  Nox uses a clean, professional, high-contrast dark theme.
+*/
+
+:root {
+  /* Core Nox colors: Professional High-Contrast Dark Theme */
+  --sl-color-accent-low: #0f172a; /* gray-900 */
+  --sl-color-accent: #06b6d4; /* cyan-500 */
+  --sl-color-accent-high: #22d3ee; /* cyan-400 */
+  
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #f3f4f6;
+  --sl-color-gray-2: #e5e7eb;
+  --sl-color-gray-3: #d1d5db;
+  --sl-color-gray-4: #9ca3af;
+  --sl-color-gray-5: #6b7280;
+  --sl-color-gray-6: #4b5563;
+  --sl-color-gray-7: #27272a; /* zinc-800 */
+  
+  --sl-color-bg-nav: #000000;
+  --sl-color-bg-sidebar: #09090b; /* zinc-950 */
+  --sl-color-bg: #000000;
+  --sl-color-black: #000000;
+  --sl-color-text-accent: #22d3ee;
+
+  /* Expressive Code overrides for Starlight */
+  --ec-theme-bg: #09090b !important; /* zinc-950 */
+  --ec-theme-border: #27272a !important; /* zinc-800 */
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #e0f2fe;
+  --sl-color-accent: #0891b2;
+  --sl-color-accent-high: #164e63;
+  --sl-color-bg-nav: #f4f4f5;
+  --sl-color-bg-sidebar: #fafafa;
+  --sl-color-bg: #ffffff;
+  
+  --ec-theme-bg: #f4f4f5 !important;
+  --ec-theme-border: #e4e4e7 !important;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--sl-color-bg);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.sl-markdown-content {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Typography Overrides */
+.prose {
+  --tw-prose-body: #a1a1aa; /* zinc-400 */
+  --tw-prose-headings: #ffffff;
+  --tw-prose-links: #22d3ee; /* cyan-400 */
+  --tw-prose-bold: #ffffff;
+  --tw-prose-counters: #71717a; /* zinc-500 */
+  --tw-prose-bullets: #52525b; /* zinc-600 */
+  --tw-prose-hr: #27272a; /* zinc-800 */
+  --tw-prose-quotes: #e4e4e7; /* zinc-200 */
+  --tw-prose-quote-borders: #27272a; /* zinc-800 */
+  --tw-prose-captions: #a1a1aa; /* zinc-400 */
+  --tw-prose-code: #ffffff;
+  --tw-prose-pre-code: #e4e4e7; /* zinc-200 */
+  --tw-prose-pre-bg: #09090b; /* zinc-950 */
+  --tw-prose-th-borders: #3f3f46; /* zinc-700 */
+  --tw-prose-td-borders: #27272a; /* zinc-800 */
+}
+
+/* Force Starlight Expressive Code to use Nox Dark Theme */
+.expressive-code .frame pre,
+.expressive-code .frame {
+  background-color: #09090b !important;
+  border-color: #27272a !important;
+  box-shadow: none !important;
+}
+
+.expressive-code .frame header {
+  background-color: #000000 !important;
+  border-bottom-color: #27272a !important;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}

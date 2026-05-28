@@ -1,0 +1,14 @@
+// @test:result "ok:1:Alice"
+main() {
+    json payload = {
+        user: { id: 1, name: "Alice" },
+        tags: ["admin", "owner"],
+        items: [{ sku: "A", qty: 2 }, { sku: "B", qty: 1 }]
+    };
+
+    json user = payload.getJSON("user", null);
+    int id = user.getInt("id", 0);
+    string name = user.getString("name", "?");
+
+    return `ok:${id}:${name}`;
+}
