@@ -63,7 +63,7 @@ val generateTextMateManifest =
                   "name": "nox",
                   "displayName": "Nox Language",
                   "version": "${project.version}",
-                  "publisher": "nox-lang",
+                  "publisher": "DeepSarda",
                   "engines": { "vscode": "^1.82.0" },
                   "contributes": {
                     "languages": [
