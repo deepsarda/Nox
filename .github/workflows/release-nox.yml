@@ -56,7 +56,7 @@ jobs:
             archive: zip
     runs-on: ${{ matrix.os }}
     env:
-      GRADLE_OPTS: -Djava.io.tmpdir=${{ github.workspace }}
+      GRADLE_OPTS: -Djava.io.tmpdir=.
     steps:
       - uses: actions/checkout@v4
 
