@@ -51,13 +51,12 @@ jobs:
           - os: macos-latest
             asset: macos-arm64
             archive: tar.gz
-          - os: macos-13
-            asset: macos-x64
-            archive: tar.gz
           - os: windows-latest
             asset: windows-x64
             archive: zip
     runs-on: ${{ matrix.os }}
+    env:
+      GRADLE_OPTS: -Djava.io.tmpdir=${{ runner.temp }}
     steps:
       - uses: actions/checkout@v4
 

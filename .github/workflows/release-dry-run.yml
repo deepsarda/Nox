@@ -36,6 +36,8 @@ jobs:
           - os: windows-latest
             asset: windows-x64
     runs-on: ${{ matrix.os }}
+    env:
+      GRADLE_OPTS: -Djava.io.tmpdir=${{ runner.temp }}
     steps:
       - uses: actions/checkout@v4
 
