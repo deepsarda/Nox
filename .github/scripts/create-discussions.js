@@ -144,7 +144,7 @@ async function run() {
         query: mutation,
         variables: {
           repoId,
-          categoryId,
+          catId: categoryId,
           title: `Blog: ${title}`,
           body
         }
