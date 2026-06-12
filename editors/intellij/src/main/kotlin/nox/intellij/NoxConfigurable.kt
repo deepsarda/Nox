@@ -1,8 +1,12 @@
 package nox.intellij
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.BoundConfigurable
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.ui.DialogPanel
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindText
@@ -28,6 +32,40 @@ class NoxConfigurable : BoundConfigurable("Nox") {
                         "Overrides the <code>NOX_LSP</code> environment variable and " +
                             "<code>PATH</code> lookup. Restart the LSP after changing.",
                     )
+            }
+
+            row {
+                button("Download/Update LSP") {
+                    ProgressManager.getInstance().run(object : Task.Backgroundable(null, "Downloading Nox LSP", true) {
+                        override fun run(indicator: com.intellij.openapi.progress.ProgressIndicator) {
+                            try {
+                                val path = NoxLspBinary.downloadAndInstallLatest { status ->
+                                    indicator.text = status
+                                }
+                                ApplicationManager.getApplication().invokeLater {
+                                    if (path != null) {
+                                        Messages.showInfoMessage(
+                                            "Successfully downloaded and installed Nox LSP to:\n$path\n\nLeave the path field empty to use this version. Please restart the LSP/IDE to apply.",
+                                            "Nox LSP"
+                                        )
+                                    } else {
+                                        Messages.showErrorDialog(
+                                            "Failed to verify download of Nox LSP binary.",
+                                            "Nox LSP Error"
+                                        )
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                ApplicationManager.getApplication().invokeLater {
+                                    Messages.showErrorDialog(
+                                        "Failed to download Nox LSP: ${e.message}",
+                                        "Nox LSP Error"
+                                    )
+                                }
+                            }
+                        }
+                    })
+                }.comment("Downloads and installs the latest Nox toolchain binaries (nox, noxc, nox-lsp, noxfmt) to <code>~/.nox/bin/</code>.")
             }
 
             row("LSP backend:") {

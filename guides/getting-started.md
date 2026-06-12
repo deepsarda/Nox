@@ -4,9 +4,23 @@ Now that you know what NSL looks like, it is time to run it. NSL comes with two 
 
 ## Installing the Tools
 
-> **TODO:** Insert specific instructions on how to download pre-built binaries.
+You can install the Nox compiler, runner, formatter, and language server using our automated installation scripts:
 
-If you have the Nox repository, you can build the native binaries using Gradle:
+### macOS and Linux (bash/zsh)
+Run the following command in your terminal:
+```bash
+curl -fsSL https://deepsarda.github.io/Nox/install.sh | bash
+```
+
+### Windows (PowerShell)
+Run the following command in PowerShell:
+```powershell
+irm https://deepsarda.github.io/Nox/install.ps1 | iex
+```
+
+This will download the latest pre-built binaries for your platform and install them into `~/.nox/bin/` (or `C:\Users\username\.nox\bin`), and configure your `PATH` environment variable.
+
+If you prefer to build from source, you can build the native binaries using Gradle:
 ```bash
 ./gradlew nativeCompile
 # This produces 'nox' and 'noxc' inside build/native/nativeCompile/

@@ -52,4 +52,20 @@ if (fs.existsSync(guidesDest)) fs.rmSync(guidesDest, { recursive: true, force: t
 
 copyDir(docsSrc, docsDest);
 copyDir(guidesSrc, guidesDest);
+
+// Sync install scripts
+const installShSrc = path.join(__dirname, '../bin/install.sh');
+const installShDest = path.join(__dirname, 'public/install.sh');
+const installPs1Src = path.join(__dirname, '../bin/install.ps1');
+const installPs1Dest = path.join(__dirname, 'public/install.ps1');
+
+if (fs.existsSync(installShSrc)) {
+  fs.copyFileSync(installShSrc, installShDest);
+  console.log("Synced install.sh to website public folder.");
+}
+if (fs.existsSync(installPs1Src)) {
+  fs.copyFileSync(installPs1Src, installPs1Dest);
+  console.log("Synced install.ps1 to website public folder.");
+}
+
 console.log("Done.");

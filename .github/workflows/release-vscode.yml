@@ -70,7 +70,7 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Publish
+    name: GitHub release vscode extension
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event.inputs.publish == 'true'
@@ -80,34 +80,6 @@ jobs:
         with:
           name: vscode-vsix
           path: editors/vscode
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Publish to VSCode Marketplace
-        working-directory: editors/vscode
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: |
-          if [ -z "${VSCE_PAT:-}" ]; then
-            echo "::warning::VSCE_PAT not set, so skipping Marketplace publish"
-            exit 0
-          fi
-          vsix=$(ls *.vsix | head -n1)
-          npx --yes @vscode/vsce publish --packagePath "$vsix" --pat "$VSCE_PAT"
-
-      - name: Publish to Open VSX
-        working-directory: editors/vscode
-        env:
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
-        run: |
-          if [ -z "${OVSX_PAT:-}" ]; then
-            echo "::warning::OVSX_PAT not set, so skipping Open VSX publish"
-            exit 0
-          fi
-          vsix=$(ls *.vsix | head -n1)
-          npx --yes ovsx publish "$vsix" --pat "$OVSX_PAT"
 
       - name: GitHub release
         env:

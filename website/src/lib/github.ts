@@ -14,7 +14,7 @@ export interface GithubRelease {
 
 export async function fetchReleases(): Promise<GithubRelease[]> {
     try {
-        const response = await fetch('https://api.github.com/repos/deepsarda/nox/releases', {
+        const response = await fetch('https://api.github.com/repos/deepsarda/Nox/releases', {
             headers: {
                 'User-Agent': 'Nox-Website',
             },
@@ -25,7 +25,14 @@ export async function fetchReleases(): Promise<GithubRelease[]> {
         }
         
         const data = await response.json();
-        return data as GithubRelease[];
+        const allReleases = data as GithubRelease[];
+        // Filter out vscode and intellij releases, keeping only core language releases (v*.*.*)
+        const coreReleases = allReleases.filter(r => 
+            r.tag_name.startsWith('v') && 
+            !r.tag_name.startsWith('vscode-') && 
+            !r.tag_name.startsWith('intellij-')
+        );
+        return coreReleases;
     } catch (e) {
         console.warn("Failed to fetch releases from GitHub, returning fallback data:", e);
         // Fallback for development / early stages before real releases exist
