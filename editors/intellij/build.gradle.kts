@@ -93,7 +93,7 @@ intellijPlatform {
     pluginConfiguration {
         id = "nox-lang"
         name = "Nox Language"
-        version = project.findProperty("pluginVersion")?.toString() ?: "0.1.0"
+        version = project.findProperty("pluginVersion")?.toString() ?: "0.0.1-alpha"
 
         description =
             """

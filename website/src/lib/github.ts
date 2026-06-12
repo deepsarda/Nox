@@ -39,15 +39,15 @@ export async function fetchReleases(): Promise<GithubRelease[]> {
         return [
             {
                 id: 1,
-                name: "Nox v0.0.0",
-                tag_name: "v0.0.0",
+                name: "Nox v0.0.1-alpha",
+                tag_name: "v0.0.1-alpha",
                 published_at: new Date().toISOString(),
-                html_url: "https://github.com/deepsarda/nox/releases",
+                html_url: "https://github.com/deepsarda/Nox/releases",
                 body: "Initial alpha release of the Nox compiler and VM.\n- Sandboxed execution\n- Basic Kotlin Interop",
                 assets: [
-                    { name: "nox-macos-arm64.tar.gz", browser_download_url: "#", size: 1024 * 1024 * 15 },
-                    { name: "nox-linux-x64.tar.gz", browser_download_url: "#", size: 1024 * 1024 * 14 },
-                    { name: "nox-windows-x64.zip", browser_download_url: "#", size: 1024 * 1024 * 16 },
+                    { name: "nox-0.0.1-alpha-macos-arm64.tar.gz", browser_download_url: "#", size: 1024 * 1024 * 15 },
+                    { name: "nox-0.0.1-alpha-linux-x64.tar.gz", browser_download_url: "#", size: 1024 * 1024 * 14 },
+                    { name: "nox-0.0.1-alpha-windows-x64.zip", browser_download_url: "#", size: 1024 * 1024 * 16 },
                 ]
             }
         ];

@@ -2,7 +2,7 @@
   "name": "nox-language",
   "displayName": "Nox Language",
   "description": "Language support and LSP client for Nox",
-  "version": "0.0.0",
+  "version": "0.0.1-alpha",
   "publisher": "DeepSarda",
   "repository": {
     "type": "git",

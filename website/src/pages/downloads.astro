@@ -35,6 +35,22 @@ const latest = releases[0];
                     Windows
                 </button>
             </div>
+
+
+            <!-- Install Via Script -->
+            <h3 class="text-2xl font-bold mb-6">Install via Script</h3>
+            <div class="bg-black p-6 rounded-xl border border-white/10 mb-16 font-mono text-sm flex justify-between items-center group relative">
+                <span id="install-cmd" class="text-gray-300 select-all"></span>
+                <button id="copy-btn" class="text-gray-500 hover:text-white transition-colors p-1.5 rounded hover:bg-white/10" title="Copy to clipboard">
+                    <svg id="copy-icon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    <svg id="check-icon" class="w-5 h-5 hidden text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </button>
+            </div>
+            
             
             <!-- Latest Release Highlight -->
             {latest && (
@@ -77,19 +93,6 @@ const latest = releases[0];
                     </div>
                 </div>
             )}
-            
-            <h3 class="text-2xl font-bold mb-6">Install via Script</h3>
-            <div class="bg-black p-6 rounded-xl border border-white/10 mb-16 font-mono text-sm flex justify-between items-center group relative">
-                <span id="install-cmd" class="text-gray-300 select-all"></span>
-                <button id="copy-btn" class="text-gray-500 hover:text-white transition-colors p-1.5 rounded hover:bg-white/10" title="Copy to clipboard">
-                    <svg id="copy-icon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                    </svg>
-                    <svg id="check-icon" class="w-5 h-5 hidden text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                </button>
-            </div>
             
             <h3 class="text-2xl font-bold mb-6">Version History</h3>
             <div class="border border-white/10 rounded-xl overflow-hidden bg-[#0a0a0a]">

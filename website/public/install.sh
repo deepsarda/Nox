@@ -56,8 +56,8 @@ fi
 
 # Fallback tag if all else fails
 if [ -z "$LATEST_TAG" ]; then
-    echo "Warning: Could not fetch latest release tag dynamically. Defaulting to v0.0.0."
-    LATEST_TAG="v0.0.0"
+    echo "Warning: Could not fetch latest release tag dynamically. Defaulting to v0.0.1-alpha."
+    LATEST_TAG="v0.0.1-alpha"
 fi
 
 VERSION="${LATEST_TAG#v}"

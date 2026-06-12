@@ -38,8 +38,8 @@ try {
 }
 
 if (-not $LatestTag) {
-    Write-Warning "Could not fetch latest release tag dynamically. Defaulting to v0.0.0."
-    $LatestTag = "v0.0.0"
+    Write-Warning "Could not fetch latest release tag dynamically. Defaulting to v0.0.1-alpha."
+    $LatestTag = "v0.0.1-alpha"
 }
 
 $Version = $LatestTag.TrimStart('v')
