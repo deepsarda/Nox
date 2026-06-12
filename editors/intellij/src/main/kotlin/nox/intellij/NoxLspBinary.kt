@@ -35,11 +35,12 @@ object NoxLspBinary {
         System.getenv("NOX_LSP")?.takeIf { it.isNotBlank() }?.let { return it }
 
         // Default user-local directory (~/.nox/bin)
-        val exe = if (System.getProperty("os.name").startsWith("Windows", ignoreCase = true)) {
-            "nox-lsp.exe"
-        } else {
-            "nox-lsp"
-        }
+        val exe =
+            if (System.getProperty("os.name").startsWith("Windows", ignoreCase = true)) {
+                "nox-lsp.exe"
+            } else {
+                "nox-lsp"
+            }
         val userLocalFile = File(File(System.getProperty("user.home"), ".nox"), "bin/$exe")
         if (userLocalFile.canExecute()) {
             return userLocalFile.absolutePath
@@ -79,12 +80,13 @@ object NoxLspBinary {
     fun downloadAndInstallLatest(progressReporter: ((String) -> Unit)?): String? {
         val osName = System.getProperty("os.name").lowercase()
         val isWindows = osName.startsWith("win")
-        
-        val assetSuffix = when {
-            isWindows -> "windows-x64"
-            osName.startsWith("mac") || osName.contains("darwin") -> "macos-arm64"
-            else -> "linux-x64" // default fallback
-        }
+
+        val assetSuffix =
+            when {
+                isWindows -> "windows-x64"
+                osName.startsWith("mac") || osName.contains("darwin") -> "macos-arm64"
+                else -> "linux-x64" // default fallback
+            }
 
         val noxHome = File(System.getProperty("user.home"), ".nox")
         val noxBinDir = File(noxHome, "bin")
@@ -92,18 +94,22 @@ object NoxLspBinary {
         if (!noxBinDir.exists()) noxBinDir.mkdirs()
 
         progressReporter?.invoke("Checking for latest Nox release on GitHub...")
-        
-        val client = HttpClient.newBuilder()
-            .followRedirects(HttpClient.Redirect.ALWAYS)
-            .connectTimeout(Duration.ofSeconds(10))
-            .build()
 
-        val request = HttpRequest.newBuilder()
-            .uri(URI.create("https://api.github.com/repos/deepsarda/Nox/releases"))
-            .header("User-Agent", "Nox-IntelliJ")
-            .timeout(Duration.ofSeconds(15))
-            .GET()
-            .build()
+        val client =
+            HttpClient
+                .newBuilder()
+                .followRedirects(HttpClient.Redirect.ALWAYS)
+                .connectTimeout(Duration.ofSeconds(10))
+                .build()
+
+        val request =
+            HttpRequest
+                .newBuilder()
+                .uri(URI.create("https://api.github.com/repos/deepsarda/Nox/releases"))
+                .header("User-Agent", "Nox-IntelliJ")
+                .timeout(Duration.ofSeconds(15))
+                .GET()
+                .build()
 
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
         if (response.statusCode() != 200) {
@@ -111,35 +117,40 @@ object NoxLspBinary {
         }
 
         val releasesJson = response.body()
-        
+
         // Find the first tag_name that starts with v, excluding vscode- and intellij- releases
         val tagRegex = """\"tag_name\"\s*:\s*\"(v[0-9][^\"]+)\"""".toRegex()
-        val matchResult = tagRegex.findAll(releasesJson).firstOrNull { match ->
-            val tag = match.groupValues[1]
-            !tag.contains("vscode-") && !tag.contains("intellij-")
-        } ?: throw RuntimeException("No core Nox releases found on GitHub.")
+        val matchResult =
+            tagRegex.findAll(releasesJson).firstOrNull { match ->
+                val tag = match.groupValues[1]
+                !tag.contains("vscode-") && !tag.contains("intellij-")
+            } ?: throw RuntimeException("No core Nox releases found on GitHub.")
 
         val latestTag = matchResult.groupValues[1]
         val version = latestTag.substring(1) // strip 'v'
-        
+
         val releaseJson = releasesJson.substring(matchResult.range.first)
-        
+
         val urlRegex = """\"browser_download_url\"\s*:\s*\"(https://[^\"]+)\"""".toRegex()
-        val downloadUrl = urlRegex.findAll(releaseJson)
-            .map { it.groupValues[1] }
-            .firstOrNull { it.contains(assetSuffix) }
-            ?: throw RuntimeException("No asset found for platform $assetSuffix in release $latestTag")
+        val downloadUrl =
+            urlRegex
+                .findAll(releaseJson)
+                .map { it.groupValues[1] }
+                .firstOrNull { it.contains(assetSuffix) }
+                ?: throw RuntimeException("No asset found for platform $assetSuffix in release $latestTag")
 
         val archiveName = downloadUrl.substring(downloadUrl.lastIndexOf('/') + 1)
         val tempArchive = File(noxHome, archiveName)
 
         progressReporter?.invoke("Downloading Nox v$version ($archiveName)...")
-        
-        val downloadRequest = HttpRequest.newBuilder()
-            .uri(URI.create(downloadUrl))
-            .header("User-Agent", "Nox-IntelliJ")
-            .GET()
-            .build()
+
+        val downloadRequest =
+            HttpRequest
+                .newBuilder()
+                .uri(URI.create(downloadUrl))
+                .header("User-Agent", "Nox-IntelliJ")
+                .GET()
+                .build()
 
         val downloadResponse = client.send(downloadRequest, HttpResponse.BodyHandlers.ofInputStream())
         if (downloadResponse.statusCode() != 200) {
@@ -177,11 +188,16 @@ object NoxLspBinary {
         }
     }
 
-    private fun unzip(zipFile: File, targetDir: File, version: String, assetSuffix: String) {
+    private fun unzip(
+        zipFile: File,
+        targetDir: File,
+        version: String,
+        assetSuffix: String,
+    ) {
         val binDir = File(targetDir, "bin")
         if (!binDir.exists()) binDir.mkdirs()
         val expectedSubDir = "nox-$version-$assetSuffix"
-        
+
         ZipInputStream(zipFile.inputStream()).use { zis ->
             var entry = zis.nextEntry
             while (entry != null) {
@@ -200,23 +216,29 @@ object NoxLspBinary {
         }
     }
 
-    private fun untar(tarGzFile: File, targetDir: File, version: String, assetSuffix: String) {
+    private fun untar(
+        tarGzFile: File,
+        targetDir: File,
+        version: String,
+        assetSuffix: String,
+    ) {
         val tempDir = File(targetDir, "temp_untar")
         if (tempDir.exists()) tempDir.deleteRecursively()
         tempDir.mkdirs()
-        
-        val process = ProcessBuilder("tar", "-xzf", tarGzFile.absolutePath, "-C", tempDir.absolutePath)
-            .redirectErrorStream(true)
-            .start()
+
+        val process =
+            ProcessBuilder("tar", "-xzf", tarGzFile.absolutePath, "-C", tempDir.absolutePath)
+                .redirectErrorStream(true)
+                .start()
         val exitCode = process.waitFor()
         if (exitCode != 0) {
             val errorMsg = process.inputStream.bufferedReader().readText()
             throw RuntimeException("tar extraction failed with exit code $exitCode: $errorMsg")
         }
-        
+
         val binDir = File(targetDir, "bin")
         if (!binDir.exists()) binDir.mkdirs()
-        
+
         val extractedBinDir = File(tempDir, "nox-$version-$assetSuffix/bin")
         if (extractedBinDir.exists() && extractedBinDir.isDirectory) {
             extractedBinDir.listFiles()?.forEach { file ->
@@ -225,7 +247,7 @@ object NoxLspBinary {
                 destFile.setExecutable(true, false)
             }
         }
-        
+
         tempDir.deleteRecursively()
     }
 

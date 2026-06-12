@@ -54,7 +54,7 @@ const latest = releases[0];
                     </div>
                     
                     <div class="grid md:grid-cols-3 gap-4 relative z-10">
-                        {latest.assets.map(asset => {
+                        {latest.assets.filter(asset => !asset.name.endsWith('.sha256')).map(asset => {
                             let osClass = "other";
                             if (asset.name.includes("macos") || asset.name.includes("darwin")) {
                                 osClass = "macos";

@@ -36,36 +36,42 @@ class NoxConfigurable : BoundConfigurable("Nox") {
 
             row {
                 button("Download/Update LSP") {
-                    ProgressManager.getInstance().run(object : Task.Backgroundable(null, "Downloading Nox LSP", true) {
-                        override fun run(indicator: com.intellij.openapi.progress.ProgressIndicator) {
-                            try {
-                                val path = NoxLspBinary.downloadAndInstallLatest { status ->
-                                    indicator.text = status
-                                }
-                                ApplicationManager.getApplication().invokeLater {
-                                    if (path != null) {
-                                        Messages.showInfoMessage(
-                                            "Successfully downloaded and installed Nox LSP to:\n$path\n\nLeave the path field empty to use this version. Please restart the LSP/IDE to apply.",
-                                            "Nox LSP"
-                                        )
-                                    } else {
+                    ProgressManager.getInstance().run(
+                        object : Task.Backgroundable(null, "Downloading Nox LSP", true) {
+                            override fun run(indicator: com.intellij.openapi.progress.ProgressIndicator) {
+                                try {
+                                    val path =
+                                        NoxLspBinary.downloadAndInstallLatest { status ->
+                                            indicator.text = status
+                                        }
+                                    ApplicationManager.getApplication().invokeLater {
+                                        if (path != null) {
+                                            Messages.showInfoMessage(
+                                                "Successfully downloaded and installed Nox LSP to:\n$path\n\nLeave the path field empty to use this version. Please restart the LSP/IDE to apply.",
+                                                "Nox LSP",
+                                            )
+                                        } else {
+                                            Messages.showErrorDialog(
+                                                "Failed to verify download of Nox LSP binary.",
+                                                "Nox LSP Error",
+                                            )
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    ApplicationManager.getApplication().invokeLater {
                                         Messages.showErrorDialog(
-                                            "Failed to verify download of Nox LSP binary.",
-                                            "Nox LSP Error"
+                                            "Failed to download Nox LSP: ${e.message}",
+                                            "Nox LSP Error",
                                         )
                                     }
                                 }
-                            } catch (e: Exception) {
-                                ApplicationManager.getApplication().invokeLater {
-                                    Messages.showErrorDialog(
-                                        "Failed to download Nox LSP: ${e.message}",
-                                        "Nox LSP Error"
-                                    )
-                                }
                             }
-                        }
-                    })
-                }.comment("Downloads and installs the latest Nox toolchain binaries (nox, noxc, nox-lsp, noxfmt) to <code>~/.nox/bin/</code>.")
+                        },
+                    )
+                }.comment(
+                    "Downloads and installs the latest Nox toolchain binaries " +
+                        "(nox, noxc, nox-lsp, noxfmt) to <code>~/.nox/bin/</code>.",
+                )
             }
 
             row("LSP backend:") {

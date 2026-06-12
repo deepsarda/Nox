@@ -44,7 +44,7 @@ LATEST_TAG=$(curl -s "https://api.github.com/repos/deepsarda/Nox/releases" | \
              grep -v 'vscode-' | \
              grep -v 'intellij-' | \
              head -n 1 | \
-             cut -d'"' -f3 || true)
+             cut -d'"' -f4 || true)
 
 # If API failed or was rate limited, try redirect check
 if [ -z "$LATEST_TAG" ]; then
