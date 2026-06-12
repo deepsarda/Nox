@@ -1,5 +1,6 @@
 ---
-const base = import.meta.env.BASE_URL;
+const rawBase = import.meta.env.BASE_URL;
+const base = rawBase.endsWith('/') ? rawBase : `${rawBase}/`;
 const pathname = new URL(Astro.request.url).pathname;
 // Strip the base path from the beginning of pathname to correctly detect active subpaths
 const currentPath = pathname.startsWith(base) ? pathname.slice(base.length) : pathname.replace(/^\//, '');
