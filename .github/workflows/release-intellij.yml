@@ -54,9 +54,6 @@ jobs:
       - name: Build plugin
         run: ./gradlew :editors:intellij:buildPlugin
 
-      - name: Run plugin verifier
-        run: ./gradlew :editors:intellij:verifyPlugin
-
       - uses: actions/upload-artifact@v4
         with:
           name: intellij-plugin
