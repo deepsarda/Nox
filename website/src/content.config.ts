@@ -10,6 +10,7 @@ const blogSchema = z.object({
   description: z.string().optional(),
   author: z.string().default('Nox Team'),
   tags: z.array(z.string()).default([]),
+  discussionNumber: z.number().optional(),
 });
 
 export const collections = {

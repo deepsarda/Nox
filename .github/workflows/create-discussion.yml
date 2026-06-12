@@ -1,0 +1,43 @@
+name: Create Discussions for Blog Posts
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'website/src/content/blog/**/*.md'
+
+permissions:
+  discussions: write
+  contents: write
+
+jobs:
+  sync-discussions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Discussion Creation Script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node .github/scripts/create-discussions.js
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add website/src/content/blog/
+          if ! git diff --cached --quiet; then
+            git commit -m "Auto-assign Giscus discussion numbers [skip ci]"
+            git push
+          else
+            echo "No new discussions to commit."
+          fi
