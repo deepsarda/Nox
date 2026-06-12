@@ -18,7 +18,7 @@ Nox was born out of a simple necessity: we needed a language that AI agents coul
 
 ### Getting Started
 
-To get started, head over to the [Downloads](/downloads) page or read our [Getting Started Guide](/guides/getting-started).
+To get started, head over to the [Downloads](../../downloads) page or read our [Getting Started Guide](../../guides/getting-started).
 
 ```rust
 // A quick taste of Nox
